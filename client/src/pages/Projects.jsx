@@ -816,7 +816,11 @@ const Projects = () => {
                                 <div className="mobile-card-body">
                                     <h4>{proj.name}</h4>
                                     <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <Users size={14} /> {proj.assignee || 'Unassigned'}
+                                        <Users size={14} />
+                                        <AssigneeListPopover
+                                            assigneeString={proj.assignee}
+                                            employees={employees}
+                                        />
                                     </div>
                                     <div className="timeline">
                                         <span>{proj.start_date}</span>
