@@ -1,0 +1,617 @@
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const db = require('./database');
+
+const app = express();
+const PORT = 3001;
+
+app.use(cors());
+app.use(bodyParser.json());
+
+// ... (existing code)
+
+app.put("/api/storage/production/reorder", (req, res) => {
+    console.log("HIT /api/storage/production/reorder");
+    const { items } = req.body;
+
+    if (!items || !Array.isArray(items)) {
+        res.status(400).json({ "error": "Invalid input" });
+        return;
+    }
+
+    const sql = "UPDATE production_items SET display_order = ? WHERE id = ?";
+
+    db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+
+        items.forEach(item => {
+            db.run(sql, [item.display_order, item.id], function (err) {
+                if (err) {
+                    console.error("Error updating item:", item.id, err);
+                }
+            });
+        });
+
+        db.run("COMMIT", (err) => {
+            if (err) {
+                console.error("Error committing reorder:", err);
+                res.status(400).json({ "error": err.message });
+                return;
+            }
+            console.log("Reorder successful");
+            res.json({ "message": "success" });
+        });
+    });
+});
+
+app.put("/api/storage/production/:id", (req, res) => {
+    const { name, category, target_quantity, current_quantity, daily_rate, mold_count } = req.body;
+    const sql = `UPDATE production_items SET 
+               name = COALESCE(?, name), 
+               category = COALESCE(?, category), 
+               target_quantity = COALESCE(?, target_quantity), 
+               current_quantity = COALESCE(?, current_quantity), 
+               daily_rate = COALESCE(?, daily_rate), 
+               mold_count = COALESCE(?, mold_count) 
+               WHERE id = ?`;
+    const params = [name, category, target_quantity, current_quantity, daily_rate, mold_count, req.params.id];
+    db.run(sql, params, function (err, result) {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "success", "changes": this.changes });
+    });
+});
+
+
+
+// --- API Routes ---
+
+// Get all departments
+app.get('/api/departments', (req, res) => {
+    db.all('SELECT * FROM departments', [], (err, rows) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ data: rows });
+    });
+});
+
+// Create a department
+app.post('/api/departments', (req, res) => {
+    const { name, head_of_department, location } = req.body;
+    const sql = 'INSERT INTO departments (name, head_of_department, location) VALUES (?,?,?)';
+    const params = [name, head_of_department, location];
+    db.run(sql, params, function (err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'success',
+            data: req.body,
+            id: this.lastID
+        });
+    });
+});
+
+// Get all employees
+app.get('/api/employees', (req, res) => {
+    db.all('SELECT * FROM employees ORDER BY display_order ASC', [], (err, rows) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ data: rows });
+    });
+});
+
+// Create an employee
+app.post('/api/employees', (req, res) => {
+    const { name, role, department_id, contact_info } = req.body;
+
+    // Get max order to append to end
+    db.get("SELECT MAX(display_order) as maxOrder FROM employees", (err, row) => {
+        const nextOrder = (row && row.maxOrder !== null) ? row.maxOrder + 1 : 0;
+
+        const sql = 'INSERT INTO employees (name, role, department_id, contact_info, display_order, is_active) VALUES (?,?,?,?,?,?)';
+        const params = [name, role, department_id, contact_info, nextOrder, 1];
+        db.run(sql, params, function (err) {
+            if (err) {
+                res.status(400).json({ error: err.message });
+                return;
+            }
+            res.json({
+                message: 'success',
+                data: req.body,
+                id: this.lastID
+            });
+        });
+    });
+});
+
+// Update an employee
+app.put("/api/employees/reorder", (req, res) => {
+    console.log("HIT /api/employees/reorder");
+    const { items } = req.body;
+
+    if (!items || !Array.isArray(items)) {
+        res.status(400).json({ "error": "Invalid input" });
+        return;
+    }
+
+    const sql = "UPDATE employees SET display_order = ? WHERE id = ?";
+
+    db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+
+        items.forEach(item => {
+            db.run(sql, [item.display_order, item.id], function (err) {
+                if (err) {
+                    console.error("Error updating employee:", item.id, err);
+                }
+            });
+        });
+
+        db.run("COMMIT", (err) => {
+            if (err) {
+                console.error("Error committing employee reorder:", err);
+                res.status(400).json({ "error": err.message });
+                return;
+            }
+            console.log("Employee reorder successful");
+            res.json({ "message": "success" });
+        });
+    });
+});
+
+app.put('/api/employees/:id', (req, res) => {
+    const { name, role, contact_info, is_active } = req.body;
+    const sql = `UPDATE employees SET 
+               name = COALESCE(?, name), 
+               role = COALESCE(?, role), 
+               contact_info = COALESCE(?, contact_info),
+               is_active = COALESCE(?, is_active)
+               WHERE id = ?`;
+    const params = [name, role, contact_info, is_active, req.params.id];
+    db.run(sql, params, function (err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ message: 'success', changes: this.changes });
+    });
+});
+
+// Delete an employee
+app.delete('/api/employees/:id', (req, res) => {
+    const sql = 'DELETE FROM employees WHERE id = ?';
+    db.run(sql, req.params.id, function (err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ message: 'deleted', changes: this.changes });
+    });
+});
+
+// Reorder employees
+
+
+// Get all projects
+app.get('/api/projects', (req, res) => {
+    db.all('SELECT * FROM projects', [], (err, rows) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ data: rows });
+    });
+});
+
+// Create a project
+// Create a project
+app.post('/api/projects', (req, res) => {
+    const { name, description, status, start_date, end_date, department_id, priority, assignee } = req.body;
+    const sql = 'INSERT INTO projects (name, description, status, start_date, end_date, department_id, priority, assignee) VALUES (?,?,?,?,?,?,?,?)';
+    const params = [name, description, status, start_date, end_date, department_id, priority, assignee];
+    db.run(sql, params, function (err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'success',
+            data: req.body,
+            id: this.lastID
+        });
+    });
+});
+
+// Update a project
+app.put('/api/projects/:id', (req, res) => {
+    const { name, description, status, start_date, end_date, priority, assignee } = req.body;
+    const sql = `UPDATE projects SET 
+               name = COALESCE(?, name), 
+               description = COALESCE(?, description), 
+               status = COALESCE(?, status), 
+               start_date = COALESCE(?, start_date), 
+               end_date = COALESCE(?, end_date),
+               priority = COALESCE(?, priority),
+               assignee = COALESCE(?, assignee)
+               WHERE id = ?`;
+    const params = [name, description, status, start_date, end_date, priority, assignee, req.params.id];
+    db.run(sql, params, function (err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ message: 'success', changes: this.changes });
+    });
+});
+
+// Delete a project
+app.delete('/api/projects/:id', (req, res) => {
+    const sql = 'DELETE FROM projects WHERE id = ?';
+    db.run(sql, req.params.id, function (err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ message: 'deleted', changes: this.changes });
+    });
+});
+
+// --- Smart Storage API ---
+
+// Production Items
+app.get("/api/storage/production", (req, res) => {
+    const sql = "SELECT * FROM production_items ORDER BY display_order ASC";
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "success", "data": rows });
+    });
+});
+
+app.post("/api/storage/production", (req, res) => {
+    const { name, category, target_quantity, current_quantity, daily_rate, mold_count } = req.body;
+
+    // Get max order to append to end
+    db.get("SELECT MAX(display_order) as maxOrder FROM production_items", (err, row) => {
+        const nextOrder = (row && row.maxOrder !== null) ? row.maxOrder + 1 : 0;
+
+        const sql = 'INSERT INTO production_items (name, category, target_quantity, current_quantity, daily_rate, mold_count, display_order) VALUES (?,?,?,?,?,?,?)';
+        const params = [name, category, target_quantity, current_quantity, daily_rate, mold_count, nextOrder];
+        db.run(sql, params, function (err, result) {
+            if (err) {
+                res.status(400).json({ "error": err.message });
+                return;
+            }
+            res.json({ "message": "success", "data": req.body, "id": this.lastID });
+        });
+    });
+});
+
+
+
+app.delete("/api/storage/production/:id", (req, res) => {
+    const sql = 'DELETE FROM production_items WHERE id = ?';
+    db.run(sql, req.params.id, function (err, result) {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "deleted", "changes": this.changes });
+    });
+});
+
+
+
+// Iron Inventory
+app.get("/api/storage/iron", (req, res) => {
+    const sql = "SELECT * FROM iron_inventory ORDER BY display_order ASC";
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "success", "data": rows });
+    });
+});
+
+app.post("/api/storage/iron", (req, res) => {
+    const { diameter, quantity } = req.body;
+    // Get max order to append to end
+    db.get("SELECT MAX(display_order) as maxOrder FROM iron_inventory", (err, row) => {
+        const nextOrder = (row && row.maxOrder !== null) ? row.maxOrder + 1 : 0;
+
+        const sql = 'INSERT INTO iron_inventory (diameter, quantity, display_order) VALUES (?, ?, ?)';
+        const params = [diameter, quantity || 0, nextOrder];
+        db.run(sql, params, function (err, result) {
+            if (err) {
+                res.status(400).json({ "error": err.message });
+                return;
+            }
+            res.json({ "message": "success", "data": req.body, "id": this.lastID });
+        });
+    });
+});
+
+app.put("/api/storage/iron/reorder", (req, res) => {
+    console.log("HIT /api/storage/iron/reorder");
+    const { items } = req.body;
+
+    if (!items || !Array.isArray(items)) {
+        res.status(400).json({ "error": "Invalid input" });
+        return;
+    }
+
+    const sql = "UPDATE iron_inventory SET display_order = ? WHERE id = ?";
+
+    db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+
+        items.forEach(item => {
+            db.run(sql, [item.display_order, item.id], function (err) {
+                if (err) {
+                    console.error("Error updating iron item:", item.id, err);
+                }
+            });
+        });
+
+        db.run("COMMIT", (err) => {
+            if (err) {
+                console.error("Error committing iron reorder:", err);
+                res.status(400).json({ "error": err.message });
+                return;
+            }
+            console.log("Iron reorder successful");
+            res.json({ "message": "success" });
+        });
+    });
+});
+
+app.put("/api/storage/iron/:id", (req, res) => {
+    const { quantity } = req.body;
+    const sql = `UPDATE iron_inventory SET quantity = ? WHERE id = ?`;
+    const params = [quantity, req.params.id];
+    db.run(sql, params, function (err, result) {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "success", "changes": this.changes });
+    });
+});
+
+app.delete("/api/storage/iron/:id", (req, res) => {
+    const sql = 'DELETE FROM iron_inventory WHERE id = ?';
+    db.run(sql, req.params.id, function (err, result) {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "deleted", "changes": this.changes });
+    });
+});
+
+
+
+// Cement Inventory
+app.get("/api/storage/cement", (req, res) => {
+    const sql = "SELECT * FROM cement_inventory";
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "success", "data": rows });
+    });
+});
+
+app.post("/api/storage/cement", (req, res) => {
+    const { type, quantity } = req.body;
+    const sql = 'INSERT INTO cement_inventory (type, quantity) VALUES (?, ?)';
+    const params = [type, quantity || 0];
+    db.run(sql, params, function (err, result) {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "success", "data": req.body, "id": this.lastID });
+    });
+});
+
+app.put("/api/storage/cement/:id", (req, res) => {
+    console.log(`HIT /api/storage/cement/${req.params.id}`, req.body);
+    const { quantity } = req.body;
+
+    if (quantity < 0) {
+        res.status(400).json({ "error": "Quantity cannot be negative" });
+        return;
+    }
+
+    const sql = `UPDATE cement_inventory SET quantity = ? WHERE id = ?`;
+    const params = [quantity, req.params.id];
+    db.run(sql, params, function (err, result) {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "success", "changes": this.changes });
+    });
+});
+
+app.get("/api/storage/cement/:id/transactions", (req, res) => {
+    const sql = "SELECT * FROM cement_transactions WHERE cement_id = ? ORDER BY timestamp DESC";
+    db.all(sql, [req.params.id], (err, rows) => {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "success", "data": rows });
+    });
+});
+
+app.post("/api/storage/cement/transaction", (req, res) => {
+    const { cement_id, type, quantity, description } = req.body;
+    const timestamp = new Date().toISOString();
+
+    if (type === 'OUT') {
+        // Check for sufficient stock
+        db.get("SELECT quantity FROM cement_inventory WHERE id = ?", [cement_id], (err, row) => {
+            if (err) {
+                res.status(400).json({ "error": err.message });
+                return;
+            }
+            if (!row) {
+                res.status(404).json({ "error": "Cement item not found" });
+                return;
+            }
+            if (row.quantity < quantity) {
+                res.status(400).json({ "error": "Insufficient stock" });
+                return;
+            }
+
+            // Proceed with transaction
+            performTransaction();
+        });
+    } else {
+        performTransaction();
+    }
+
+    function performTransaction() {
+        const sql = `INSERT INTO cement_transactions (cement_id, type, quantity, description, timestamp) VALUES (?,?,?,?,?)`;
+        const params = [cement_id, type, quantity, description, timestamp];
+        db.run(sql, params, function (err, result) {
+            if (err) {
+                res.status(400).json({ "error": err.message });
+                return;
+            }
+
+            // Update inventory quantity
+            const updateSql = type === 'IN'
+                ? `UPDATE cement_inventory SET quantity = quantity + ? WHERE id = ?`
+                : `UPDATE cement_inventory SET quantity = quantity - ? WHERE id = ?`;
+
+            db.run(updateSql, [quantity, cement_id], function (err) {
+                if (err) {
+                    console.error("Error updating inventory:", err);
+                }
+            });
+
+            res.json({
+                "message": "success",
+                "data": { id: this.lastID, cement_id, type, quantity, description, timestamp }
+            });
+        });
+    }
+});
+
+app.delete("/api/storage/cement/transaction/:id", (req, res) => {
+    const transId = req.params.id;
+
+    // 1. Get transaction details to reverse the effect
+    const sqlGet = "SELECT * FROM cement_transactions WHERE id = ?";
+    db.get(sqlGet, [transId], (err, transaction) => {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        if (!transaction) {
+            res.status(404).json({ "error": "Transaction not found" });
+            return;
+        }
+
+        // 2. Reverse Inventory
+        // If it was IN, we now subtract. If OUT, we now add.
+        const operator = transaction.type === 'IN' ? '-' : '+';
+        const sqlUpdate = `UPDATE cement_inventory SET quantity = quantity ${operator} ? WHERE id = ?`;
+
+        db.run(sqlUpdate, [transaction.quantity, transaction.cement_id], function (err) {
+            if (err) {
+                res.status(400).json({ "error": err.message });
+                return;
+            }
+
+            // 3. Delete Transaction
+            const sqlDelete = "DELETE FROM cement_transactions WHERE id = ?";
+            db.run(sqlDelete, [transId], function (err) {
+                if (err) {
+                    res.status(400).json({ "error": err.message });
+                    return;
+                }
+                res.json({ "message": "deleted", "changes": this.changes });
+            });
+        });
+    });
+});
+
+// --- Attendance API ---
+
+app.get('/api/attendance/:employeeId', (req, res) => {
+    const { employeeId } = req.params;
+    const { startDate, endDate } = req.query;
+
+    let sql = "SELECT * FROM attendance WHERE employee_id = ?";
+    let params = [employeeId];
+
+    if (startDate && endDate) {
+        sql += " AND date BETWEEN ? AND ?";
+        params.push(startDate, endDate);
+    }
+
+    db.all(sql, params, (err, rows) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ data: rows });
+    });
+});
+
+app.post('/api/attendance', (req, res) => {
+    const { employee_id, date, status, start_time, end_time, notes } = req.body;
+
+    // Upsert logic: Insert or Replace
+    const sql = `INSERT INTO attendance (employee_id, date, status, start_time, end_time, notes) 
+                 VALUES (?, ?, ?, ?, ?, ?) 
+                 ON CONFLICT(employee_id, date) 
+                 DO UPDATE SET status=excluded.status, start_time=excluded.start_time, end_time=excluded.end_time, notes=excluded.notes`;
+
+    const params = [employee_id, date, status, start_time, end_time, notes];
+
+    db.run(sql, params, function (err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'success',
+            data: req.body,
+            id: this.lastID
+        });
+    });
+});
+
+// --- Deployment Configuration ---
+const path = require('path');
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
+
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
