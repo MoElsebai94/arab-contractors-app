@@ -1010,9 +1010,10 @@ const Storage = () => {
                             {modalType === 'production' && (
                                 <>
                                     <div className="form-group">
-                                        <label>Item Name</label>
+                                        <label className="form-label">Item Name</label>
                                         <input
                                             type="text"
+                                            className="form-input"
                                             value={newItem.name}
                                             onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
                                             required
@@ -1020,17 +1021,19 @@ const Storage = () => {
                                     </div>
                                     <div className="form-group-row">
                                         <div className="form-group">
-                                            <label>Target Qty</label>
+                                            <label className="form-label">Target Qty</label>
                                             <input
                                                 type="number"
+                                                className="form-input"
                                                 value={newItem.target_quantity}
                                                 onChange={(e) => setNewItem({ ...newItem, target_quantity: parseInt(e.target.value) })}
                                             />
                                         </div>
                                         <div className="form-group">
-                                            <label>Daily Rate</label>
+                                            <label className="form-label">Daily Rate</label>
                                             <input
                                                 type="number"
+                                                className="form-input"
                                                 value={newItem.daily_rate}
                                                 onChange={(e) => setNewItem({ ...newItem, daily_rate: parseInt(e.target.value) })}
                                             />
@@ -1038,17 +1041,19 @@ const Storage = () => {
                                     </div>
                                     <div className="form-group-row">
                                         <div className="form-group">
-                                            <label>Current Qty</label>
+                                            <label className="form-label">Current Qty</label>
                                             <input
                                                 type="number"
+                                                className="form-input"
                                                 value={newItem.current_quantity}
                                                 onChange={(e) => setNewItem({ ...newItem, current_quantity: parseInt(e.target.value) })}
                                             />
                                         </div>
                                         <div className="form-group">
-                                            <label>Mold Count</label>
+                                            <label className="form-label">Mold Count</label>
                                             <input
                                                 type="number"
+                                                className="form-input"
                                                 value={newItem.mold_count}
                                                 onChange={(e) => setNewItem({ ...newItem, mold_count: parseInt(e.target.value) })}
                                             />
@@ -1059,18 +1064,20 @@ const Storage = () => {
 
                             {modalType === 'iron' && (
                                 <div className="form-group">
-                                    <label>Diameter / Type</label>
+                                    <label className="form-label">Diameter / Type</label>
                                     <input
                                         type="text"
+                                        className="form-input"
                                         value={newIronItem.diameter}
                                         onChange={(e) => setNewIronItem({ ...newIronItem, diameter: e.target.value })}
                                         placeholder="e.g. Φ32"
                                         required
                                     />
                                     <div className="form-group" style={{ marginTop: '1rem' }}>
-                                        <label>Initial Quantity</label>
+                                        <label className="form-label">Initial Quantity</label>
                                         <input
                                             type="number"
+                                            className="form-input"
                                             value={newIronItem.quantity}
                                             onChange={(e) => setNewIronItem({ ...newIronItem, quantity: parseInt(e.target.value) })}
                                         />
@@ -1081,18 +1088,20 @@ const Storage = () => {
                             {(modalType === 'cement_in' || modalType === 'cement_out') && (
                                 <>
                                     <div className="form-group">
-                                        <label>Quantity (Bags)</label>
+                                        <label className="form-label">Quantity (Bags)</label>
                                         <input
                                             type="number"
+                                            className="form-input"
                                             value={transaction.quantity}
                                             onChange={(e) => setTransaction({ ...transaction, quantity: parseInt(e.target.value) })}
                                             required
                                         />
                                     </div>
                                     <div className="form-group">
-                                        <label>Description</label>
+                                        <label className="form-label">Description</label>
                                         <input
                                             type="text"
+                                            className="form-input"
                                             value={transaction.description}
                                             onChange={(e) => setTransaction({ ...transaction, description: e.target.value })}
                                             placeholder={modalType === 'cement_in' ? "e.g. Truck Plate #123" : "e.g. Subcontractor Ahmed"}
