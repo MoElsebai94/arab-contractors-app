@@ -3,8 +3,8 @@
     "version": "1.0.0",
     "description": "Monolithic deployment for Arab Contractors App",
     "scripts": {
-        "install-all": "npm install && cd client && npm install && cd ../server && npm install",
-        "build": "cd client && npm run build",
+        "install-all": "cd client && npm install --production=false && cd ../server && npm install",
+        "build": "npm run install-all && cd client && npm run build",
         "start": "cd server && node index.js",
         "dev": "concurrently \"cd server && node index.js\" \"cd client && npm run dev\""
     },
