@@ -6,7 +6,10 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from '@dnd-kit/utilities';
 import LoadingScreen from '../components/LoadingScreen';
 
+import { useLanguage } from '../context/LanguageContext';
+
 const SortableEmployeeRow = ({ emp, index, onEdit, onDelete, onToggleStatus, onOpenAttendance }) => {
+    const { t } = useLanguage();
     const {
         attributes,
         listeners,
@@ -33,7 +36,7 @@ const SortableEmployeeRow = ({ emp, index, onEdit, onDelete, onToggleStatus, onO
             <td>#{index + 1}</td>
             <td style={{ fontWeight: 500, color: emp.is_active === 0 ? 'red' : 'inherit' }}>
                 {emp.name}
-                {emp.is_active === 0 && <span style={{ fontSize: '0.8em', marginLeft: '0.5rem', color: 'red' }}>(Inactive)</span>}
+                {emp.is_active === 0 && <span style={{ fontSize: '0.8em', marginLeft: '0.5rem', color: 'red' }}>({t('inactive')})</span>}
             </td>
             <td>{emp.role}</td>
             <td>{emp.contact_info}</td>
@@ -42,18 +45,18 @@ const SortableEmployeeRow = ({ emp, index, onEdit, onDelete, onToggleStatus, onO
                     <button
                         className="btn-icon-action toggle"
                         onClick={() => onToggleStatus(emp)}
-                        title={emp.is_active === 0 ? "Activate" : "Deactivate"}
+                        title={emp.is_active === 0 ? t('active') : t('inactive')}
                         style={{ color: emp.is_active === 0 ? 'var(--text-secondary)' : 'var(--success-color)' }}
                     >
                         {emp.is_active === 0 ? <ToggleLeft size={20} /> : <ToggleRight size={20} />}
                     </button>
-                    <button className="btn-icon-action" onClick={() => onOpenAttendance(emp)} title="Attendance">
+                    <button className="btn-icon-action" onClick={() => onOpenAttendance(emp)} title={t('attendance')}>
                         <Calendar size={16} />
                     </button>
-                    <button className="btn-icon-action edit" onClick={() => onEdit(emp)} title="Edit">
+                    <button className="btn-icon-action edit" onClick={() => onEdit(emp)} title={t('editEmployee')}>
                         <Pencil size={16} />
                     </button>
-                    <button className="btn-icon-action delete" onClick={() => onDelete(emp)} title="Delete">
+                    <button className="btn-icon-action delete" onClick={() => onDelete(emp)} title={t('deleteEmployee')}>
                         <Trash2 size={16} />
                     </button>
                 </div>
@@ -63,6 +66,7 @@ const SortableEmployeeRow = ({ emp, index, onEdit, onDelete, onToggleStatus, onO
 };
 
 const AttendanceModal = ({ employee, onClose }) => {
+    const { t } = useLanguage();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [attendanceData, setAttendanceData] = useState({});
     const [loading, setLoading] = useState(false);
@@ -188,16 +192,16 @@ const AttendanceModal = ({ employee, onClose }) => {
         <div className="modal-overlay">
             <div className="modal-card" style={{ maxWidth: '800px' }}>
                 <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h3>Attendance: {employee.name}</h3>
+                    <h3>{t('attendance')}: {employee.name}</h3>
                     <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
                 </div>
 
                 <div className="calendar-controls" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <button className="btn btn-secondary" onClick={handlePrevMonth}>&lt; Prev Month</button>
+                    <button className="btn btn-secondary" onClick={handlePrevMonth}>&lt; {t('prevMonth')}</button>
                     <span style={{ fontWeight: 600 }}>
                         {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
-                    <button className="btn btn-secondary" onClick={handleNextMonth}>Next Month &gt;</button>
+                    <button className="btn btn-secondary" onClick={handleNextMonth}>{t('nextMonth')} &gt;</button>
                 </div>
 
                 <div className="calendar-grid">
@@ -238,26 +242,26 @@ const AttendanceModal = ({ employee, onClose }) => {
                 {selectedDay && (
                     <div className="day-details-overlay" onClick={() => setSelectedDay(null)}>
                         <div className="day-details-card" onClick={e => e.stopPropagation()}>
-                            <h4>Edit Details: {selectedDay}</h4>
+                            <h4>{t('editDetails')}: {selectedDay}</h4>
                             <div className="form-group">
-                                <label>Status</label>
+                                <label>{t('status')}</label>
                                 <select
                                     value={dayDetails.status}
                                     onChange={e => setDayDetails({ ...dayDetails, status: e.target.value })}
-                                    style={{ width: '100%', padding: '0.5rem' }}
+                                    className="form-input"
                                 >
-                                    <option value="">Select Status...</option>
-                                    <option value="present">Present</option>
-                                    <option value="absent">Absent</option>
-                                    <option value="late">Late</option>
-                                    <option value="vacation">Vacation</option>
-                                    <option value="sick">Sick</option>
+                                    <option value="">{t('selectStatus')}</option>
+                                    <option value="present">{t('present')}</option>
+                                    <option value="absent">{t('absent')}</option>
+                                    <option value="late">{t('late')}</option>
+                                    <option value="vacation">{t('vacation')}</option>
+                                    <option value="sick">{t('sick')}</option>
                                 </select>
                             </div>
                             {(dayDetails.status === 'present' || dayDetails.status === 'late') && (
                                 <div className="time-inputs" style={{ display: 'flex', gap: '1rem' }}>
                                     <div className="form-group" style={{ flex: 1 }}>
-                                        <label>Start Time</label>
+                                        <label>{t('startTime')}</label>
                                         <input
                                             type="time"
                                             value={dayDetails.start_time}
@@ -266,7 +270,7 @@ const AttendanceModal = ({ employee, onClose }) => {
                                         />
                                     </div>
                                     <div className="form-group" style={{ flex: 1 }}>
-                                        <label>End Time</label>
+                                        <label>{t('endTime')}</label>
                                         <input
                                             type="time"
                                             value={dayDetails.end_time}
@@ -277,27 +281,27 @@ const AttendanceModal = ({ employee, onClose }) => {
                                 </div>
                             )}
                             <div className="form-group">
-                                <label>Notes</label>
+                                <label>{t('notes')}</label>
                                 <textarea
                                     value={dayDetails.notes}
                                     onChange={e => setDayDetails({ ...dayDetails, notes: e.target.value })}
-                                    style={{ width: '100%', padding: '0.5rem', minHeight: '60px' }}
+                                    className="form-input"
                                 />
                             </div>
                             <div className="modal-actions">
-                                <button className="btn btn-secondary" onClick={() => setSelectedDay(null)}>Cancel</button>
-                                <button className="btn btn-primary" onClick={handleSaveDayDetails}>Save</button>
+                                <button className="btn btn-secondary" onClick={() => setSelectedDay(null)}>{t('cancel')}</button>
+                                <button className="btn btn-primary" onClick={handleSaveDayDetails}>{t('save')}</button>
                             </div>
                         </div>
                     </div>
                 )}
 
                 <div className="legend" style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.875rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><div style={{ width: 12, height: 12, background: 'var(--success-color)' }}></div> Present</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><div style={{ width: 12, height: 12, background: 'var(--danger-color)' }}></div> Absent</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><div style={{ width: 12, height: 12, background: '#f59e0b' }}></div> Late</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><div style={{ width: 12, height: 12, background: '#3b82f6' }}></div> Vacation</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><div style={{ width: 12, height: 12, background: '#8b5cf6' }}></div> Sick</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><div style={{ width: 12, height: 12, background: 'var(--success-color)' }}></div> {t('present')}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><div style={{ width: 12, height: 12, background: 'var(--danger-color)' }}></div> {t('absent')}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><div style={{ width: 12, height: 12, background: '#f59e0b' }}></div> {t('late')}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><div style={{ width: 12, height: 12, background: '#3b82f6' }}></div> {t('vacation')}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><div style={{ width: 12, height: 12, background: '#8b5cf6' }}></div> {t('sick')}</div>
                 </div>
 
                 <style>{`
@@ -360,6 +364,7 @@ const AttendanceModal = ({ employee, onClose }) => {
 };
 
 const ModernDropdown = ({ options, value, onChange, placeholder = "Select..." }) => {
+    const { t } = useLanguage();
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
 
@@ -396,7 +401,7 @@ const ModernDropdown = ({ options, value, onChange, placeholder = "Select..." })
                     borderColor: isOpen ? 'var(--primary-color)' : 'var(--border-color)'
                 }}
             >
-                <span style={{ fontWeight: 500 }}>{value === 'All' ? 'All Roles' : value}</span>
+                <span style={{ fontWeight: 500 }}>{value === 'All' ? t('allRoles') : value}</span>
                 <ChevronDown size={16} style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
             </button>
 
@@ -430,7 +435,7 @@ const ModernDropdown = ({ options, value, onChange, placeholder = "Select..." })
                             fontSize: '0.9rem'
                         }}
                     >
-                        <span>All Roles</span>
+                        <span>{t('allRoles')}</span>
                         {value === 'All' && <Check size={16} />}
                     </div>
                     {options.map(option => (
@@ -470,6 +475,7 @@ const ModernDropdown = ({ options, value, onChange, placeholder = "Select..." })
 };
 
 const Employees = () => {
+    const { t } = useLanguage();
     const [employees, setEmployees] = useState([]);
 
     // Calculate Role Counts
@@ -649,16 +655,16 @@ const Employees = () => {
     return (
         <div>
             <div className="page-header">
-                <h1 className="page-title">Employees</h1>
+                <h1 className="page-title">{t('employees')}</h1>
             </div>
 
             <div className="content-grid">
                 <div className="left-column">
                     <div className="card">
-                        <h3 className="card-title">Register New Employee</h3>
+                        <h3 className="card-title">{t('registerNewEmployee')}</h3>
                         <form onSubmit={handleSubmit}>
                             <div className="form-group">
-                                <label className="form-label">Full Name</label>
+                                <label className="form-label">{t('fullName')}</label>
                                 <input
                                     type="text"
                                     name="name"
@@ -670,7 +676,7 @@ const Employees = () => {
                                 />
                             </div>
                             <div className="form-group">
-                                <label className="form-label">Role / Position</label>
+                                <label className="form-label">{t('rolePosition')}</label>
                                 <input
                                     type="text"
                                     name="role"
@@ -681,7 +687,7 @@ const Employees = () => {
                                 />
                             </div>
                             <div className="form-group">
-                                <label className="form-label">Contact Information</label>
+                                <label className="form-label">{t('contactInfo')}</label>
                                 <input
                                     type="text"
                                     name="contact_info"
@@ -692,24 +698,24 @@ const Employees = () => {
                                 />
                             </div>
                             <button type="submit" className="btn btn-primary">
-                                <span>+ Register Employee</span>
+                                <span>+ {t('registerEmployee')}</span>
                             </button>
                         </form>
                     </div>
 
                     {/* Role Summary Card */}
                     <div className="card">
-                        <h3 className="card-title">Role Summary</h3>
+                        <h3 className="card-title">{t('roleSummary')}</h3>
                         <div className="role-stats">
                             {Object.entries(roleCounts).length > 0 ? (
                                 Object.entries(roleCounts).map(([role, count]) => (
                                     <div key={role} className="role-stat-item">
-                                        <span className="stat-role">{role}</span>
-                                        <span className="stat-count">{count}</span>
+                                        <span className="role-name">{role}</span>
+                                        <span className="role-count">{count}</span>
                                     </div>
                                 ))
                             ) : (
-                                <p>No roles registered.</p>
+                                <p>{t('noRolesRegistered')}</p>
                             )}
                         </div>
                     </div>
@@ -717,13 +723,13 @@ const Employees = () => {
 
                 <div className="card">
                     <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                        <h3 className="card-title" style={{ marginBottom: 0 }}>Staff Directory</h3>
+                        <h3 className="card-title" style={{ marginBottom: 0 }}>{t('staffDirectory')}</h3>
                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flex: 1, justifyContent: 'flex-end' }}>
                             <div className="search-wrapper" style={{ position: 'relative', flex: 1, maxWidth: '300px' }}>
                                 <Search size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
                                 <input
                                     type="text"
-                                    placeholder="Search employees..."
+                                    placeholder={t('searchEmployees')}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="form-input"
@@ -747,7 +753,7 @@ const Employees = () => {
                                     width: '38px',
                                     transition: 'all 0.2s'
                                 }}
-                                title={showInactive ? "Hide Inactive" : "Show Inactive"}
+                                title={showInactive ? t('hideInactive') : t('showInactive')}
                             >
                                 {showInactive ? <Eye size={20} /> : <EyeOff size={20} />}
                             </button>
@@ -774,10 +780,10 @@ const Employees = () => {
                                         <tr>
                                             <th style={{ width: '50px' }}></th>
                                             <th>ID</th>
-                                            <th>Name</th>
-                                            <th>Role</th>
-                                            <th>Contact</th>
-                                            <th>Actions</th>
+                                            <th>{t('name')}</th>
+                                            <th>{t('role')}</th>
+                                            <th>{t('contactInfo')}</th>
+                                            <th>{t('actions')}</th>
                                         </tr>
                                     </thead>
                                     <SortableContext

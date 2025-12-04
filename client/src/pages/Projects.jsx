@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useLanguage } from '../context/LanguageContext';
 import axios from 'axios';
 import { Pencil, X, Trash, Search, ChevronDown, Check, Users, ArrowRight } from 'lucide-react';
 import LoadingScreen from '../components/LoadingScreen';
@@ -223,7 +224,7 @@ import { createPortal } from 'react-dom';
 
 const AssigneeListPopover = ({ assigneeString, employees }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [position, setPosition] = useState({ top: 0, left: 0 });
+    const [position, setPosition] = useState({ top: 0, left: 0, isRTL: false });
     const buttonRef = useRef(null);
     const popoverRef = useRef(null);
 
@@ -239,9 +240,11 @@ const AssigneeListPopover = ({ assigneeString, employees }) => {
         const updatePosition = () => {
             if (isOpen && buttonRef.current) {
                 const rect = buttonRef.current.getBoundingClientRect();
+                const isRTL = document.documentElement.dir === 'rtl';
                 setPosition({
                     top: rect.bottom + window.scrollY + 5,
-                    left: rect.left + window.scrollX
+                    left: isRTL ? rect.right + window.scrollX : rect.left + window.scrollX,
+                    isRTL
                 });
             }
         };
@@ -305,6 +308,7 @@ const AssigneeListPopover = ({ assigneeString, employees }) => {
                         position: 'absolute',
                         top: position.top,
                         left: position.left,
+                        transform: position.isRTL ? 'translateX(-100%)' : 'none',
                         zIndex: 9999, // High z-index to sit on top of everything
                         background: 'white',
                         border: '1px solid var(--border-color)',
@@ -348,6 +352,7 @@ const AssigneeListPopover = ({ assigneeString, employees }) => {
 };
 
 const Projects = () => {
+    const { t } = useLanguage();
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [employees, setEmployees] = useState([]);
@@ -571,14 +576,14 @@ const Projects = () => {
     return (
         <div>
             <div className="page-header">
-                <h1 className="page-title">Task Manager</h1>
+                <h1 className="page-title">{t('taskManager')}</h1>
             </div>
 
             <div className="content-grid">
                 <div className="card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                         <h3 className="card-title" style={{ marginBottom: 0 }}>
-                            {editingTask ? 'Edit Task' : 'Create New Task'}
+                            {editingTask ? t('editTask') : t('createNewTask')}
                         </h3>
                         {editingTask && (
                             <button
@@ -592,20 +597,20 @@ const Projects = () => {
                     </div>
                     <form onSubmit={handleSubmit}>
                         <div className="form-group">
-                            <label className="form-label">Task Name</label>
+                            <label className="form-label">{t('taskName')}</label>
                             <input
                                 type="text"
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
-                                placeholder="Insert task"
+                                placeholder={t('insertTask')}
                                 className="form-input"
                                 required
                             />
                         </div>
                         {formData.status === 'In Progress' && (
                             <div className="form-group">
-                                <label className="form-label">Assignees</label>
+                                <label className="form-label">{t('assignees')}</label>
                                 <div className="assignee-selector">
                                     <div className="selected-tags">
                                         {selectedAssignees.map(name => (
@@ -629,12 +634,12 @@ const Projects = () => {
                             </div>
                         )}
                         <div className="form-group">
-                            <label className="form-label">Description</label>
+                            <label className="form-label">{t('description')}</label>
                             <textarea
                                 name="description"
                                 value={formData.description}
                                 onChange={handleChange}
-                                placeholder="Brief task details..."
+                                placeholder={t('briefTaskDetails')}
                                 rows="3"
                             />
                         </div>
@@ -642,7 +647,7 @@ const Projects = () => {
                         <div className="form-group-row">
                             {/* Removed duplicate Assignee input */}
                             <div className="form-group">
-                                <label className="form-label">Priority</label>
+                                <label className="form-label">{t('priority')}</label>
                                 <ModernSelect
                                     options={[
                                         { value: 'High', label: 'High' },
@@ -663,7 +668,7 @@ const Projects = () => {
                                 />
                             </div>
                             <div className="form-group">
-                                <label className="form-label">Status</label>
+                                <label className="form-label">{t('status')}</label>
                                 <ModernSelect
                                     options={[
                                         { value: 'Planned', label: 'Planned' },
@@ -683,7 +688,7 @@ const Projects = () => {
                         </div>
                         <div className="form-group-row">
                             <div className="form-group">
-                                <label className="form-label">Start Date</label>
+                                <label className="form-label">{t('startDate')}</label>
                                 <input
                                     type="date"
                                     name="start_date"
@@ -693,7 +698,7 @@ const Projects = () => {
                                 />
                             </div>
                             <div className="form-group">
-                                <label className="form-label">End Date</label>
+                                <label className="form-label">{t('endDate')}</label>
                                 <input
                                     type="date"
                                     name="end_date"
@@ -706,7 +711,7 @@ const Projects = () => {
                         {/* Department is automatically set to Genie Civil */}
                         <div style={{ display: 'flex', gap: '1rem' }}>
                             <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
-                                <span>{editingTask ? 'Update Task' : '+ Create Task'}</span>
+                                <span>{editingTask ? t('updateTask') : `+ ${t('createNewTask')}`}</span>
                             </button>
                             {editingTask && (
                                 <button
@@ -715,7 +720,7 @@ const Projects = () => {
                                     className="btn"
                                     style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
                                 >
-                                    Cancel
+                                    {t('cancel')}
                                 </button>
                             )}
                         </div>
@@ -723,19 +728,19 @@ const Projects = () => {
                 </div>
 
                 <div className="card">
-                    <h3 className="card-title">Task List</h3>
+                    <h3 className="card-title">{t('taskList')}</h3>
                     {/* Desktop Table View */}
                     <div className="table-view">
                         <div className="table-container">
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>Task</th>
-                                        <th>Assignee</th>
-                                        <th>Priority</th>
-                                        <th>Status</th>
-                                        <th>Timeline</th>
-                                        <th>Actions</th>
+                                        <th>{t('taskName')}</th>
+                                        <th>{t('assignees')}</th>
+                                        <th>{t('priority')}</th>
+                                        <th>{t('status')}</th>
+                                        <th>{t('time')}</th>
+                                        <th>{t('actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -788,7 +793,7 @@ const Projects = () => {
                                     {projects.length === 0 && (
                                         <tr>
                                             <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                                No tasks found.
+                                                {t('noTasksFound')}
                                             </td>
                                         </tr>
                                     )}
@@ -847,7 +852,7 @@ const Projects = () => {
                             </div>
                         ))}
                         {projects.length === 0 && (
-                            <p className="no-data">No tasks found.</p>
+                            <p className="no-data">{t('noTasksFound')}</p>
                         )}
                     </div>
                 </div>
@@ -857,17 +862,17 @@ const Projects = () => {
             {showDeleteModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
-                        <h3 className="modal-title">Delete Task</h3>
+                        <h3 className="modal-title">{t('deleteTask')}</h3>
                         <p className="modal-text">
-                            Are you sure you want to delete <strong>{taskToDelete?.name}</strong>?
-                            This action cannot be undone.
+                            {t('deleteTaskConfirm')} <strong>{taskToDelete?.name}</strong>?
+                            {t('deleteTaskWarning')}
                         </p>
                         <div className="modal-actions">
                             <button onClick={cancelDelete} className="btn btn-secondary">
-                                Cancel
+                                {t('cancel')}
                             </button>
                             <button onClick={confirmDelete} className="btn btn-danger">
-                                Delete
+                                {t('deleteTask')}
                             </button>
                         </div>
                     </div>

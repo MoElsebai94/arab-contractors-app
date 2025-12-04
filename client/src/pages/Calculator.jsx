@@ -4,31 +4,37 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import DalotVisualization from '../components/DalotVisualization';
 
-const ConfigTrigger = ({ isPuisard, onToggle }) => (
-    <button
-        className={`trigger-btn ${isPuisard ? 'puisard-mode' : 'standard-mode'}`}
-        onClick={onToggle}
-    >
-        <div className="trigger-content">
-            {isPuisard ? (
-                <>
-                    <ArrowRight size={20} />
-                    <span>With Puisard (1 Tête + 1 Puisard)</span>
-                </>
-            ) : (
-                <>
-                    <Box size={20} />
-                    <span>Standard (2 Têtes)</span>
-                </>
-            )}
-        </div>
-        <div className="trigger-indicator">
-            <div className="indicator-dot"></div>
-        </div>
-    </button>
-);
+import { useLanguage } from '../context/LanguageContext';
+
+const ConfigTrigger = ({ isPuisard, onToggle }) => {
+    const { t } = useLanguage();
+    return (
+        <button
+            className={`trigger-btn ${isPuisard ? 'puisard-mode' : 'standard-mode'}`}
+            onClick={onToggle}
+        >
+            <div className="trigger-content">
+                {isPuisard ? (
+                    <>
+                        <ArrowRight size={20} />
+                        <span>With Puisard (1 Tête + 1 Puisard)</span>
+                    </>
+                ) : (
+                    <>
+                        <Box size={20} />
+                        <span>Standard (2 Têtes)</span>
+                    </>
+                )}
+            </div>
+            <div className="trigger-indicator">
+                <div className="indicator-dot"></div>
+            </div>
+        </button>
+    );
+};
 
 const CalculatorPage = () => {
+    const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState('iron');
     const [dalotName, setDalotName] = useState('');
 
@@ -282,11 +288,11 @@ const CalculatorPage = () => {
 
     const getTitle = () => {
         switch (activeTab) {
-            case 'iron': return 'Iron Calculator';
-            case 'concrete': return 'Concrete Calculator';
-            case 'wood': return 'Wood Calculator';
-            case '3d': return '3D Visualization';
-            default: return 'Construction Calculator';
+            case 'iron': return t('ironCalculator');
+            case 'concrete': return t('concreteCalculator');
+            case 'wood': return t('woodCalculator');
+            case '3d': return t('threeDVisualization');
+            default: return t('constructionCalculator');
         }
     };
 
@@ -499,14 +505,14 @@ const CalculatorPage = () => {
                         <FileText size={18} className="input-icon" />
                         <input
                             type="text"
-                            placeholder="Enter Dalot Name (e.g. Dalot PK 10+500)"
+                            placeholder={t('enterDalotName')}
                             value={dalotName}
                             onChange={(e) => setDalotName(e.target.value)}
                             className="dalot-name-input"
                         />
                     </div>
                     <button className="generate-btn" onClick={generatePDF}>
-                        <Download size={18} /> Generate PDF Report
+                        <Download size={18} /> {t('generatePDFReport')}
                     </button>
                 </div>
             </div>
@@ -516,25 +522,25 @@ const CalculatorPage = () => {
                     className={`tab ${activeTab === 'iron' ? 'active' : ''}`}
                     onClick={() => setActiveTab('iron')}
                 >
-                    <Hammer size={18} /> Iron
+                    <Hammer size={18} /> {t('iron')}
                 </button>
                 <button
                     className={`tab ${activeTab === 'concrete' ? 'active' : ''}`}
                     onClick={() => setActiveTab('concrete')}
                 >
-                    <BrickWall size={18} /> Concrete
+                    <BrickWall size={18} /> {t('concreteCalculator')}
                 </button>
                 <button
                     className={`tab ${activeTab === 'wood' ? 'active' : ''}`}
                     onClick={() => setActiveTab('wood')}
                 >
-                    <Ruler size={18} /> Wood
+                    <Ruler size={18} /> {t('woodCalculator')}
                 </button>
                 <button
                     className={`tab ${activeTab === '3d' ? 'active' : ''}`}
                     onClick={() => setActiveTab('3d')}
                 >
-                    <Box size={18} /> 3D View
+                    <Box size={18} /> {t('threeDVisualization')}
                 </button>
             </div>
 
@@ -543,7 +549,7 @@ const CalculatorPage = () => {
                     <div className="calculator-section">
                         <div className="input-grid">
                             <div className="form-group">
-                                <label>Section Type</label>
+                                <label>{t('sectionType')}</label>
                                 <div className="input-wrapper">
                                     <BrickWall size={18} className="input-icon" />
                                     <select
@@ -580,7 +586,7 @@ const CalculatorPage = () => {
                             {/* Configuration Trigger for 1x1 Section */}
                             {calculatorParams.sectionType === '1x1' && (
                                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                                    <label>Configuration</label>
+                                    <label>{t('configuration')}</label>
                                     <ConfigTrigger
                                         isPuisard={calculatorParams.puisard === '1'}
                                         onToggle={() => {
@@ -596,7 +602,7 @@ const CalculatorPage = () => {
                             )}
 
                             <div className="form-group">
-                                <label>Specify Dalot Length</label>
+                                <label>{t('specifyDalotLength')}</label>
                                 <div className="input-wrapper">
                                     <Ruler size={18} className="input-icon" />
                                     <input
@@ -609,37 +615,37 @@ const CalculatorPage = () => {
                         </div>
 
                         <div className="results-container">
-                            <h3>Calculated Requirements</h3>
+                            <h3>{t('calculatedRequirements')}</h3>
                             <div className="results-grid">
                                 <div className={`result-card ${calculateIron("Φ6") > 0 ? 'active' : ''} color-phi6`}>
                                     <span className="result-label">Φ6</span>
                                     <span className="result-value">{calculateIron("Φ6") || "-"}</span>
-                                    <span className="result-unit">bars</span>
+                                    <span className="result-unit">{t('bars')}</span>
                                 </div>
                                 <div className={`result-card ${calculateIron("Φ8") > 0 ? 'active' : ''} color-phi8`}>
                                     <span className="result-label">Φ8</span>
                                     <span className="result-value">{calculateIron("Φ8") || "-"}</span>
-                                    <span className="result-unit">bars</span>
+                                    <span className="result-unit">{t('bars')}</span>
                                 </div>
                                 <div className={`result-card ${calculateIron("Φ10") > 0 ? 'active' : ''} color-phi10`}>
                                     <span className="result-label">Φ10</span>
                                     <span className="result-value">{calculateIron("Φ10") || "-"}</span>
-                                    <span className="result-unit">bars</span>
+                                    <span className="result-unit">{t('bars')}</span>
                                 </div>
                                 <div className={`result-card ${calculateIron("Φ12") > 0 ? 'active' : ''} color-phi12`}>
                                     <span className="result-label">Φ12</span>
                                     <span className="result-value">{calculateIron("Φ12") || "-"}</span>
-                                    <span className="result-unit">bars</span>
+                                    <span className="result-unit">{t('bars')}</span>
                                 </div>
                                 <div className={`result-card ${calculateIron("Φ14") > 0 ? 'active' : ''} color-phi14`}>
                                     <span className="result-label">Φ14</span>
                                     <span className="result-value">{calculateIron("Φ14") || "-"}</span>
-                                    <span className="result-unit">bars</span>
+                                    <span className="result-unit">{t('bars')}</span>
                                 </div>
                                 <div className={`result-card ${calculateIron("Φ16") > 0 ? 'active' : ''} color-phi16`}>
                                     <span className="result-label">Φ16</span>
                                     <span className="result-value">{calculateIron("Φ16") || "-"}</span>
-                                    <span className="result-unit">bars</span>
+                                    <span className="result-unit">{t('bars')}</span>
                                 </div>
                             </div>
                         </div>
@@ -651,7 +657,7 @@ const CalculatorPage = () => {
                         {/* Re-use the same input grid for now as dimensions are likely needed */}
                         <div className="input-grid">
                             <div className="form-group">
-                                <label>Section Type</label>
+                                <label>{t('sectionType')}</label>
                                 <div className="input-wrapper">
                                     <BrickWall size={18} className="input-icon" />
                                     <select
@@ -688,7 +694,7 @@ const CalculatorPage = () => {
                             {/* Configuration Trigger for 1x1 Section */}
                             {calculatorParams.sectionType === '1x1' && (
                                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                                    <label>Configuration</label>
+                                    <label>{t('configuration')}</label>
                                     <ConfigTrigger
                                         isPuisard={calculatorParams.puisard === '1'}
                                         onToggle={() => {
@@ -704,7 +710,7 @@ const CalculatorPage = () => {
                             )}
 
                             <div className="form-group">
-                                <label>Specify Dalot Length</label>
+                                <label>{t('specifyDalotLength')}</label>
                                 <div className="input-wrapper">
                                     <Ruler size={18} className="input-icon" />
                                     <input
@@ -717,7 +723,7 @@ const CalculatorPage = () => {
                         </div>
 
                         <div className="results-container">
-                            <h3>Volume (m³)</h3>
+                            <h3>{t('volumeM3')}</h3>
                             <div className="concrete-grid mb-8">
                                 <div className="concrete-card">
                                     <span className="result-label">B.P</span>
@@ -746,32 +752,32 @@ const CalculatorPage = () => {
                                 </div>
                             </div>
 
-                            <h3>Cement Bags</h3>
+                            <h3>{t('cementBags')}</h3>
                             <div className="concrete-grid">
                                 <div className="concrete-card">
                                     <span className="result-label">B.P</span>
                                     <span className="result-value">{calculateBags('bp')}</span>
-                                    <span className="result-unit">bags</span>
+                                    <span className="result-unit">{t('bags')}</span>
                                 </div>
                                 <div className="concrete-card">
                                     <span className="result-label">Radier</span>
                                     <span className="result-value">{calculateBags('radier')}</span>
-                                    <span className="result-unit">bags</span>
+                                    <span className="result-unit">{t('bags')}</span>
                                 </div>
                                 <div className="concrete-card">
                                     <span className="result-label">Piedroits</span>
                                     <span className="result-value">{calculateBags('piedroit')}</span>
-                                    <span className="result-unit">bags</span>
+                                    <span className="result-unit">{t('bags')}</span>
                                 </div>
                                 <div className="concrete-card">
                                     <span className="result-label">Dalle</span>
                                     <span className="result-value">{calculateBags('dalle')}</span>
-                                    <span className="result-unit">bags</span>
+                                    <span className="result-unit">{t('bags')}</span>
                                 </div>
                                 <div className="concrete-card total">
                                     <span className="result-label">Total</span>
                                     <span className="result-value">{calculateTotalBags()}</span>
-                                    <span className="result-unit">bags</span>
+                                    <span className="result-unit">{t('bags')}</span>
                                 </div>
                             </div>
                         </div>
@@ -782,7 +788,7 @@ const CalculatorPage = () => {
                     <div className="calculator-section">
                         <div className="input-grid">
                             <div className="form-group">
-                                <label>Section Type</label>
+                                <label>{t('sectionType')}</label>
                                 <div className="input-wrapper">
                                     <BrickWall size={18} className="input-icon" />
                                     <select
@@ -819,7 +825,7 @@ const CalculatorPage = () => {
                             {/* Configuration Trigger for 1x1 Section */}
                             {calculatorParams.sectionType === '1x1' && (
                                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                                    <label>Configuration</label>
+                                    <label>{t('configuration')}</label>
                                     <ConfigTrigger
                                         isPuisard={calculatorParams.puisard === '1'}
                                         onToggle={() => {
@@ -835,7 +841,7 @@ const CalculatorPage = () => {
                             )}
 
                             <div className="form-group">
-                                <label>Specify Dalot Length</label>
+                                <label>{t('specifyDalotLength')}</label>
                                 <div className="input-wrapper">
                                     <Ruler size={18} className="input-icon" />
                                     <input
@@ -848,7 +854,7 @@ const CalculatorPage = () => {
                         </div>
 
                         <div className="results-container">
-                            <h3>Wood Requirements</h3>
+                            <h3>{t('woodRequirements')}</h3>
                             <div className="results-grid">
                                 {Object.entries(calculateWood()).map(([key, value]) => {
                                     if (key === 'totalPrice') return null;
@@ -856,7 +862,7 @@ const CalculatorPage = () => {
                                         <div key={key} className={`result-card ${value > 0 ? 'active' : ''}`}>
                                             <span className="result-label" style={{ textTransform: 'capitalize' }}>{key}</span>
                                             <span className="result-value">{Math.ceil(value)}</span>
-                                            <span className="result-unit">units</span>
+                                            <span className="result-unit">{t('units')}</span>
                                         </div>
                                     );
                                 })}
@@ -874,7 +880,7 @@ const CalculatorPage = () => {
                                 justifyContent: 'center',
                                 boxShadow: '0 4px 6px -1px rgba(217, 119, 6, 0.2)'
                             }}>
-                                <span style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '0.5rem' }}>Estimated Total Cost</span>
+                                <span style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '0.5rem' }}>{t('estimatedTotalCost')}</span>
                                 <span style={{ fontSize: '2rem', fontWeight: 'bold' }}>
                                     {calculateWood().totalPrice?.toLocaleString()} FCFA
                                 </span>
@@ -887,7 +893,7 @@ const CalculatorPage = () => {
                     <div className="calculator-section">
                         <div className="input-grid">
                             <div className="form-group">
-                                <label>Section Type</label>
+                                <label>{t('sectionType')}</label>
                                 <div className="input-wrapper">
                                     <BrickWall size={18} className="input-icon" />
                                     <select
@@ -926,7 +932,7 @@ const CalculatorPage = () => {
                             {/* Configuration Trigger for 1x1 Section */}
                             {calculatorParams.sectionType === '1x1' && (
                                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                                    <label>Configuration</label>
+                                    <label>{t('configuration')}</label>
                                     <ConfigTrigger
                                         isPuisard={calculatorParams.puisard === '1'}
                                         onToggle={() => {

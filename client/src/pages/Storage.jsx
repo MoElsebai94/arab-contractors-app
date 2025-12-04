@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLanguage } from '../context/LanguageContext';
 import axios from 'axios';
 import { Factory, Hammer, BrickWall, Plus, Minus, X, ArrowDown, ArrowUp, GripVertical, Trash2, Pencil, RefreshCw, Check } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -340,19 +341,22 @@ const SortableProductionRow = ({ item, updateProduction, confirmDeleteProduction
         return Math.ceil(remaining / rate);
     };
 
+    const { language } = useLanguage();
+    const alignStyle = { textAlign: language === 'ar' ? 'right' : 'left' };
+
     return (
         <tr ref={setNodeRef} style={style}>
-            <td style={{ width: '50px' }}>
+            <td style={{ width: '50px', padding: '8px 4px' }}>
                 <button className="btn-drag-handle" {...attributes} {...listeners}>
                     <GripVertical size={16} />
                 </button>
             </td>
-            <td style={{ fontWeight: 600 }}>{item.name}</td>
-            <td><span className="badge badge-planned">{item.category}</span></td>
-            <td style={{ width: '30%' }}>
-                <div className="progress-label">
+            <td style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '8px 4px', ...alignStyle }} title={item.name}>{item.name}</td>
+            <td style={{ padding: '8px 4px', ...alignStyle }}><span className="badge badge-planned">{item.category}</span></td>
+            <td style={{ padding: '8px 4px', ...alignStyle }}>
+                <div className="progress-label" style={{ justifyContent: language === 'ar' ? 'flex-start' : 'space-between' }}>
                     <span>{item.current_quantity} / {item.target_quantity}</span>
-                    <span>{Math.round(percentage)}%</span>
+                    <span style={{ marginInlineStart: '10px' }}>{Math.round(percentage)}%</span>
                 </div>
                 <div className="progress-bar-bg">
                     <div
@@ -364,24 +368,38 @@ const SortableProductionRow = ({ item, updateProduction, confirmDeleteProduction
                     ></div>
                 </div>
             </td>
-            <td>{item.daily_rate} / day</td>
-            <td>{item.mold_count}</td>
-            <td style={{ fontWeight: 600, color: 'var(--primary-color)' }}>
+            <td style={{ padding: '8px 4px', ...alignStyle }}>{item.daily_rate} / day</td>
+            <td style={{ padding: '8px 4px', ...alignStyle }}>{item.mold_count}</td>
+            <td style={{ fontWeight: 600, color: 'var(--primary-color)', padding: '8px 4px', ...alignStyle }}>
                 {(() => {
                     const val = calculateDaysToFinish(item.current_quantity, item.target_quantity, item.daily_rate);
                     return val === 'Done' || val === '∞' ? val : `${val} days`;
                 })()}
             </td>
-            <td>
-                <div className="action-buttons" style={{ gap: '0.5rem' }}>
-                    <div className="qty-control">
-                        <input
-                            type="number"
-                            placeholder="Qty"
-                            value={qtyInput}
-                            onChange={(e) => handleQtyChange(e.target.value)}
-                            style={{ width: '60px', padding: '0.25rem', borderRadius: '4px', border: '1px solid #ddd' }}
-                        />
+            <td style={{ padding: '8px 4px' }}>
+                <div className="action-buttons" style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                    {/* Column 1: Minus & Edit */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <button
+                            className="btn-icon-action warning"
+                            onClick={() => handleQuickUpdate(-qtyInput)}
+                            disabled={!qtyInput}
+                            title="Decrease Quantity"
+                        >
+                            <Minus size={16} />
+                        </button>
+                        <button
+                            className="btn-icon-action"
+                            onClick={() => onEdit(item)}
+                            title="Edit Item"
+                            style={{ color: 'var(--text-secondary)' }}
+                        >
+                            <Pencil size={16} />
+                        </button>
+                    </div>
+
+                    {/* Column 2: Plus & Delete */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         <button
                             className="btn-icon-action success"
                             onClick={() => handleQuickUpdate(qtyInput)}
@@ -391,29 +409,22 @@ const SortableProductionRow = ({ item, updateProduction, confirmDeleteProduction
                             <Plus size={16} />
                         </button>
                         <button
-                            className="btn-icon-action warning"
-                            onClick={() => handleQuickUpdate(-qtyInput)}
-                            disabled={!qtyInput}
-                            title="Decrease Quantity"
+                            className="btn-icon-action delete"
+                            onClick={() => confirmDeleteProductionItem(item.id)}
+                            title="Delete Item"
                         >
-                            <Minus size={16} />
+                            <Trash2 size={16} />
                         </button>
                     </div>
-                    <button
-                        className="btn-icon-action"
-                        onClick={() => onEdit(item)}
-                        title="Edit Item"
-                        style={{ color: 'var(--text-secondary)' }}
-                    >
-                        <Pencil size={16} />
-                    </button>
-                    <button
-                        className="btn-icon-action delete"
-                        onClick={() => confirmDeleteProductionItem(item.id)}
-                        title="Delete Item"
-                    >
-                        <Trash2 size={16} />
-                    </button>
+
+                    {/* Column 3: Qty Input */}
+                    <input
+                        type="number"
+                        placeholder="Qty"
+                        value={qtyInput}
+                        onChange={(e) => handleQtyChange(e.target.value)}
+                        style={{ width: '60px', padding: '0.25rem', borderRadius: '4px', border: '1px solid #ddd', height: '32px' }}
+                    />
                 </div>
             </td>
         </tr>
@@ -421,6 +432,7 @@ const SortableProductionRow = ({ item, updateProduction, confirmDeleteProduction
 };
 
 const Storage = () => {
+    const { t, language } = useLanguage();
     const [activeTab, setActiveTab] = useState('production');
     const [productionItems, setProductionItems] = useState([]);
     const [ironInventory, setIronInventory] = useState([]);
@@ -708,17 +720,19 @@ const Storage = () => {
     return (
         <div>
             <div className="page-header">
-                <h1 className="page-title">Storage</h1>
-                {activeTab === 'production' && (
-                    <button className="btn btn-primary" onClick={() => openModal('production')}>
-                        + Add Production Item
-                    </button>
-                )}
-                {activeTab === 'iron' && (
-                    <button className="btn btn-primary" onClick={() => openModal('iron')}>
-                        + Add Iron Type
-                    </button>
-                )}
+                <h1 className="page-title">{t('storageManagement')}</h1>
+                <div className="header-actions">
+                    {activeTab === 'production' && (
+                        <button className="btn btn-primary" onClick={() => openModal('production')}>
+                            <Plus size={20} /> {t('addProductionItem')}
+                        </button>
+                    )}
+                    {activeTab === 'iron' && (
+                        <button className="btn btn-primary" onClick={() => openModal('iron')}>
+                            <Plus size={20} /> {t('addIronType')}
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="tabs">
@@ -726,19 +740,19 @@ const Storage = () => {
                     className={`tab ${activeTab === 'production' ? 'active' : ''}`}
                     onClick={() => setActiveTab('production')}
                 >
-                    <Factory size={18} /> Production
+                    <Factory size={18} /> {t('production')}
                 </button>
                 <button
                     className={`tab ${activeTab === 'iron' ? 'active' : ''}`}
                     onClick={() => setActiveTab('iron')}
                 >
-                    <Hammer size={18} /> Iron Store
+                    <Hammer size={18} /> {t('iron')}
                 </button>
                 <button
                     className={`tab ${activeTab === 'cement' ? 'active' : ''}`}
                     onClick={() => setActiveTab('cement')}
                 >
-                    <BrickWall size={18} /> Cement
+                    <BrickWall size={18} /> {t('cement')}
                 </button>
             </div>
 
@@ -746,17 +760,17 @@ const Storage = () => {
                 <div className="production-container">
                     {/* Desktop Table View */}
                     <div className="table-view">
-                        <table className="production-table">
+                        <table className="production-table" style={{ tableLayout: 'fixed', width: '100%' }}>
                             <thead>
                                 <tr>
                                     <th style={{ width: '50px' }}></th>
-                                    <th>Item Name</th>
-                                    <th>Category</th>
-                                    <th style={{ width: '30%' }}>Progress</th>
-                                    <th>Daily Rate</th>
-                                    <th>Molds</th>
-                                    <th>Est. Time</th>
-                                    <th>Actions</th>
+                                    <th style={{ width: '15%', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('itemName')}</th>
+                                    <th style={{ width: '12%', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('category')}</th>
+                                    <th style={{ width: '25%', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('currentQty')} / {t('targetQty')}</th>
+                                    <th style={{ width: '10%', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('dailyRate')}</th>
+                                    <th style={{ width: '8%', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('moldCount')}</th>
+                                    <th style={{ width: '10%', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('time')}</th>
+                                    <th style={{ width: '150px' }}>{t('actions')}</th>
                                 </tr>
                             </thead>
                             <DndContext
@@ -814,19 +828,19 @@ const Storage = () => {
 
                                         <div className="stats-grid">
                                             <div className="stat-item">
-                                                <span className="label">Rate</span>
-                                                <span className="value">{item.daily_rate}/day</span>
+                                                <span className="label">{t('rate')}</span>
+                                                <span className="value">{item.daily_rate}/{t('days')}</span>
                                             </div>
                                             <div className="stat-item">
-                                                <span className="label">Molds</span>
+                                                <span className="label">{t('molds')}</span>
                                                 <span className="value">{item.mold_count}</span>
                                             </div>
                                             <div className="stat-item">
-                                                <span className="label">Time</span>
-                                                <span className="value" style={{ color: 'var(--primary-color)' }}>
+                                                <span className="label">{t('time')}</span>
+                                                <span style={{ color: 'var(--primary-color)', fontWeight: 600 }}>
                                                     {(() => {
                                                         const val = calculateDaysToFinish(item.current_quantity, item.target_quantity, item.daily_rate);
-                                                        return val === 'Done' || val === '∞' ? val : `${val} days`;
+                                                        return val === 'Done' || val === '∞' ? t('done') : `${val} ${t('days')}`;
                                                     })()}
                                                 </span>
                                             </div>
@@ -903,30 +917,30 @@ const Storage = () => {
                                 <h2>{item.type}</h2>
                                 <div className="cement-stock">
                                     <span className="stock-value">{item.quantity}</span>
-                                    <span className="stock-unit">bags</span>
+                                    <span className="stock-unit">{t('bags')}</span>
                                 </div>
                             </div>
 
                             <div className="cement-actions">
                                 <button className="btn btn-success" onClick={() => openModal('cement_in', item.id)}>
-                                    <Plus size={18} /> Incoming (Truck)
+                                    <Plus size={18} /> {t('incoming')} ({t('truck')})
                                 </button>
                                 <button className="btn btn-danger" onClick={() => openModal('cement_out', item.id)}>
-                                    <Minus size={18} /> Outgoing (Subcontractor)
+                                    <Minus size={18} /> {t('outgoing')} ({t('subcontractor')})
                                 </button>
                                 <button
                                     type="button"
                                     className="btn btn-secondary"
                                     onClick={() => handleResetCement(item.id)}
-                                    title="Reset Quantity to 0"
+                                    title={t('resetQuantity')}
                                     style={{ marginLeft: 'auto' }}
                                 >
-                                    <RefreshCw size={18} /> Reset
+                                    <RefreshCw size={18} /> {t('reset')}
                                 </button>
                             </div>
 
                             <div className="transaction-history">
-                                <h4>Recent Transactions</h4>
+                                <h4>{t('recentTransactions')}</h4>
                                 <div className="history-list">
                                     {cementTransactions[item.id]?.slice(0, 5).map((trans) => (
                                         <div key={trans.id} className={`history-item ${trans.type.toLowerCase()}`}>
@@ -948,7 +962,7 @@ const Storage = () => {
                                         </div>
                                     ))}
                                     {(!cementTransactions[item.id] || cementTransactions[item.id].length === 0) && (
-                                        <p className="no-history">No transactions yet.</p>
+                                        <p className="no-history">{t('noTransactions')}</p>
                                     )}
                                 </div>
                             </div>
@@ -960,11 +974,11 @@ const Storage = () => {
             {showDeleteModal && (
                 <div className="modal-overlay">
                     <div className="modal-card">
-                        <h3>Confirm Cancellation</h3>
-                        <p>Are you sure you want to cancel this transaction? This will reverse the inventory change.</p>
+                        <h3>{t('confirmCancellation')}</h3>
+                        <p>{t('cancelTransactionConfirm')}</p>
                         <div className="modal-actions">
-                            <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>No, Keep it</button>
-                            <button className="btn btn-danger" onClick={handleDeleteTransaction}>Yes, Cancel it</button>
+                            <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>{t('noKeepIt')}</button>
+                            <button className="btn btn-danger" onClick={handleDeleteTransaction}>{t('yesCancelIt')}</button>
                         </div>
                     </div>
                 </div>
@@ -973,11 +987,11 @@ const Storage = () => {
             {showDeleteIronModal && (
                 <div className="modal-overlay">
                     <div className="modal-card">
-                        <h3>Delete Iron Item</h3>
-                        <p>Are you sure you want to delete this iron item? This action cannot be undone.</p>
+                        <h3>{t('deleteIronItem')}</h3>
+                        <p>{t('deleteIronConfirm')}</p>
                         <div className="modal-actions">
-                            <button className="btn btn-secondary" onClick={() => setShowDeleteIronModal(false)}>Cancel</button>
-                            <button className="btn btn-danger" onClick={handleDeleteIronItem}>Delete</button>
+                            <button className="btn btn-secondary" onClick={() => setShowDeleteIronModal(false)}>{t('cancel')}</button>
+                            <button className="btn btn-danger" onClick={handleDeleteIronItem}>{t('deleteTask')}</button>
                         </div>
                     </div>
                 </div>
@@ -986,11 +1000,11 @@ const Storage = () => {
             {showDeleteProductionModal && (
                 <div className="modal-overlay">
                     <div className="modal-card">
-                        <h3>Delete Production Item</h3>
-                        <p>Are you sure you want to delete this production item? This action cannot be undone.</p>
+                        <h3>{t('deleteProductionItem')}</h3>
+                        <p>{t('deleteProductionConfirm')}</p>
                         <div className="modal-actions">
-                            <button className="btn btn-secondary" onClick={() => setShowDeleteProductionModal(false)}>Cancel</button>
-                            <button className="btn btn-danger" onClick={handleDeleteProductionItem}>Delete</button>
+                            <button className="btn btn-secondary" onClick={() => setShowDeleteProductionModal(false)}>{t('cancel')}</button>
+                            <button className="btn btn-danger" onClick={handleDeleteProductionItem}>{t('deleteTask')}</button>
                         </div>
                     </div>
                 </div>
@@ -1000,17 +1014,17 @@ const Storage = () => {
                 <div className="modal-overlay">
                     <div className="modal-card">
                         <h3>
-                            {modalType === 'production' && (editingItem ? 'Edit Production Item' : 'Add Production Item')}
-                            {modalType === 'iron' && 'Add Iron Type'}
-                            {modalType === 'cement_in' && 'Incoming Cement Stock'}
-                            {modalType === 'cement_out' && 'Outgoing Cement Stock'}
+                            {modalType === 'production' && (editingItem ? t('editProductionItem') : t('addProductionItem'))}
+                            {modalType === 'iron' && t('addIronType')}
+                            {modalType === 'cement_in' && t('incomingCementStock')}
+                            {modalType === 'cement_out' && t('outgoingCementStock')}
                         </h3>
                         <form onSubmit={handleAddItem}>
 
                             {modalType === 'production' && (
                                 <>
                                     <div className="form-group">
-                                        <label className="form-label">Item Name</label>
+                                        <label className="form-label">{t('itemName')}</label>
                                         <input
                                             type="text"
                                             className="form-input"
@@ -1021,7 +1035,7 @@ const Storage = () => {
                                     </div>
                                     <div className="form-group-row">
                                         <div className="form-group">
-                                            <label className="form-label">Target Qty</label>
+                                            <label className="form-label">{t('targetQty')}</label>
                                             <input
                                                 type="number"
                                                 className="form-input"
@@ -1030,7 +1044,7 @@ const Storage = () => {
                                             />
                                         </div>
                                         <div className="form-group">
-                                            <label className="form-label">Daily Rate</label>
+                                            <label className="form-label">{t('dailyRate')}</label>
                                             <input
                                                 type="number"
                                                 className="form-input"
@@ -1041,7 +1055,7 @@ const Storage = () => {
                                     </div>
                                     <div className="form-group-row">
                                         <div className="form-group">
-                                            <label className="form-label">Current Qty</label>
+                                            <label className="form-label">{t('currentQty')}</label>
                                             <input
                                                 type="number"
                                                 className="form-input"
@@ -1050,7 +1064,7 @@ const Storage = () => {
                                             />
                                         </div>
                                         <div className="form-group">
-                                            <label className="form-label">Mold Count</label>
+                                            <label className="form-label">{t('moldCount')}</label>
                                             <input
                                                 type="number"
                                                 className="form-input"
@@ -1064,7 +1078,7 @@ const Storage = () => {
 
                             {modalType === 'iron' && (
                                 <div className="form-group">
-                                    <label className="form-label">Diameter / Type</label>
+                                    <label className="form-label">{t('diameterType')}</label>
                                     <input
                                         type="text"
                                         className="form-input"
@@ -1074,7 +1088,7 @@ const Storage = () => {
                                         required
                                     />
                                     <div className="form-group" style={{ marginTop: '1rem' }}>
-                                        <label className="form-label">Initial Quantity</label>
+                                        <label className="form-label">{t('initialQuantity')}</label>
                                         <input
                                             type="number"
                                             className="form-input"
@@ -1088,7 +1102,7 @@ const Storage = () => {
                             {(modalType === 'cement_in' || modalType === 'cement_out') && (
                                 <>
                                     <div className="form-group">
-                                        <label className="form-label">Quantity (Bags)</label>
+                                        <label className="form-label">{t('quantityBags')}</label>
                                         <input
                                             type="number"
                                             className="form-input"
@@ -1098,13 +1112,13 @@ const Storage = () => {
                                         />
                                     </div>
                                     <div className="form-group">
-                                        <label className="form-label">Description</label>
+                                        <label className="form-label">{t('description')}</label>
                                         <input
                                             type="text"
                                             className="form-input"
                                             value={transaction.description}
                                             onChange={(e) => setTransaction({ ...transaction, description: e.target.value })}
-                                            placeholder={modalType === 'cement_in' ? "e.g. Truck Plate #123" : "e.g. Subcontractor Ahmed"}
+                                            placeholder={modalType === 'cement_in' ? t('truckPlate') : t('subcontractorName')}
                                             required
                                         />
                                     </div>
@@ -1112,8 +1126,8 @@ const Storage = () => {
                             )}
 
                             <div className="modal-actions">
-                                <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Cancel</button>
-                                <button type="submit" className="btn btn-primary">Save</button>
+                                <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>{t('cancel')}</button>
+                                <button type="submit" className="btn btn-primary">{t('save')}</button>
                             </div>
                         </form>
                     </div>
