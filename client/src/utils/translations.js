@@ -183,7 +183,18 @@ export const translations = {
         days: "days",
         done: "Done",
         bags: "bags",
-        category: "Category"
+        category: "Category",
+        gasoline: "Fuel",
+        liters: "liters",
+        incomingGasoline: "Incoming Fuel",
+        outgoingGasoline: "Outgoing Fuel",
+        quantityLiters: "Quantity (Liters)",
+        gasolineIn: "e.g. Tanker #123",
+        gasolineOut: "e.g. Generator #5",
+        gasolineOut: "e.g. Generator #5",
+        fuel: "Fuel",
+        filterByMonth: "Filter by Month",
+        allTransactions: "All Transactions"
     },
     ar: {
         dashboard: "لوحة التحكم",
@@ -363,13 +374,21 @@ export const translations = {
         moldCount: "عدد القوالب",
         diameterType: "القطر / النوع",
         initialQuantity: "الكمية الأولية",
+        incomingGasoline: "وارد وقود",
+        outgoingGasoline: "صادر وقود",
+        quantityLiters: "الكمية (لتر)",
+        gasolineIn: "مثال: صهريج رقم 123",
+        gasolineOut: "مثال: مولد رقم 5",
         quantityBags: "الكمية (أكياس)",
         truckPlate: "مثال: رقم الشاحنة 123",
         subcontractorName: "مثال: مقاول باطن أحمد",
         days: "أيام",
         done: "تم",
-        done: "تم",
         bags: "أكياس",
-        category: "الفئة"
+        category: "الفئة",
+        liters: "لتر",
+        fuel: "الوقود",
+        filterByMonth: "تصفية حسب الشهر",
+        allTransactions: "كل المعاملات"
     }
 };

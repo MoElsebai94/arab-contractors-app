@@ -188,8 +188,74 @@ const db = new sqlite3.Database(dbPath, (err) => {
         quantity INTEGER,
         description TEXT,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        transaction_date TEXT, -- Format: YYYY-MM-DD
         FOREIGN KEY (cement_id) REFERENCES cement_inventory(id)
-      )`);
+      )`, (err) => {
+        if (!err) {
+          db.all("PRAGMA table_info(cement_transactions)", (err, rows) => {
+            if (!err) {
+              const hasDateCol = rows.some(r => r.name === 'transaction_date');
+              if (!hasDateCol) {
+                db.run("ALTER TABLE cement_transactions ADD COLUMN transaction_date TEXT", (err) => {
+                  if (!err) {
+                    console.log("Added transaction_date column to cement_transactions");
+                    // Initialize with date part of timestamp
+                    db.run("UPDATE cement_transactions SET transaction_date = DATE(timestamp) WHERE transaction_date IS NULL");
+                  }
+                });
+              }
+            }
+          });
+        }
+      });
+
+      // Create Gasoline Inventory Table (Smart Storage)
+      db.run(`CREATE TABLE IF NOT EXISTS gasoline_inventory (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT NOT NULL,
+        quantity INTEGER DEFAULT 0
+      )`, (err) => {
+        if (!err) {
+          // Initialize default gasoline types if empty
+          db.get("SELECT count(*) as count FROM gasoline_inventory", (err, row) => {
+            if (!err && row.count === 0) {
+              const types = ["Gasoil"];
+              const insert = 'INSERT INTO gasoline_inventory (type, quantity) VALUES (?, 0)';
+              types.forEach(t => db.run(insert, [t]));
+              console.log("Initialized Gasoline Inventory");
+            }
+          });
+        }
+      });
+
+      // Create Gasoline Transactions Table
+      db.run(`CREATE TABLE IF NOT EXISTS gasoline_transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        gasoline_id INTEGER,
+        type TEXT, -- 'IN' or 'OUT'
+        quantity INTEGER,
+        description TEXT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        transaction_date TEXT, -- Format: YYYY-MM-DD
+        FOREIGN KEY (gasoline_id) REFERENCES gasoline_inventory(id)
+      )`, (err) => {
+        if (!err) {
+          db.all("PRAGMA table_info(gasoline_transactions)", (err, rows) => {
+            if (!err) {
+              const hasDateCol = rows.some(r => r.name === 'transaction_date');
+              if (!hasDateCol) {
+                db.run("ALTER TABLE gasoline_transactions ADD COLUMN transaction_date TEXT", (err) => {
+                  if (!err) {
+                    console.log("Added transaction_date column to gasoline_transactions");
+                    // Initialize with date part of timestamp
+                    db.run("UPDATE gasoline_transactions SET transaction_date = DATE(timestamp) WHERE transaction_date IS NULL");
+                  }
+                });
+              }
+            }
+          });
+        }
+      });
 
       // Create Resources Table
       db.run(`CREATE TABLE IF NOT EXISTS resources (

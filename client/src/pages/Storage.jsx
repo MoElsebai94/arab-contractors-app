@@ -1,11 +1,56 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import axios from 'axios';
-import { Factory, Hammer, BrickWall, Plus, Minus, X, ArrowDown, ArrowUp, GripVertical, Trash2, Pencil, RefreshCw, Check } from 'lucide-react';
+import { Factory, Hammer, BrickWall, Fuel, Plus, Minus, X, ArrowDown, ArrowUp, GripVertical, Trash2, Pencil, RefreshCw, Check, ChevronDown } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, rectSortingStrategy, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import LoadingScreen from '../components/LoadingScreen';
+
+const CustomDropdown = ({ options, value, onChange, placeholder }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const wrapperRef = useRef(null);
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [wrapperRef]);
+
+    return (
+        <div className="custom-dropdown-container" ref={wrapperRef}>
+            <div className="custom-dropdown-trigger" onClick={() => setIsOpen(!isOpen)}>
+                <span>{value === 'all' ? placeholder : value}</span>
+                <ChevronDown size={16} className={`dropdown-arrow ${isOpen ? 'open' : ''}`} />
+            </div>
+            {isOpen && (
+                <div className="custom-dropdown-menu">
+                    <div
+                        className={`custom-dropdown-item ${value === 'all' ? 'selected' : ''}`}
+                        onClick={() => { onChange({ target: { value: 'all' } }); setIsOpen(false); }}
+                    >
+                        {placeholder}
+                    </div>
+                    {options.map(option => (
+                        <div
+                            key={option}
+                            className={`custom-dropdown-item ${value === option ? 'selected' : ''}`}
+                            onClick={() => { onChange({ target: { value: option } }); setIsOpen(false); }}
+                        >
+                            {option}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
 
 const ModernIronCard = ({ item, updateQuantity, confirmDeleteIronItem }) => {
     const {
@@ -438,15 +483,20 @@ const Storage = () => {
     const [ironInventory, setIronInventory] = useState([]);
     const [cementInventory, setCementInventory] = useState([]);
     const [cementTransactions, setCementTransactions] = useState({}); // Map of cement_id -> transactions[]
+    const [gasolineInventory, setGasolineInventory] = useState([]);
+    const [gasolineTransactions, setGasolineTransactions] = useState({}); // Map of gasoline_id -> transactions[]
 
     const [showAddModal, setShowAddModal] = useState(false);
-    const [modalType, setModalType] = useState('production'); // 'production', 'iron', 'cement_in', 'cement_out'
+    const [modalType, setModalType] = useState('production'); // 'production', 'iron', 'cement_in', 'cement_out', 'gasoline_in', 'gasoline_out'
     const [selectedCementId, setSelectedCementId] = useState(null);
+    const [selectedGasolineId, setSelectedGasolineId] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [transactionToDelete, setTransactionToDelete] = useState(null);
     const [ironItemToDelete, setIronItemToDelete] = useState(null);
     const [showDeleteIronModal, setShowDeleteIronModal] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
+    const [formError, setFormError] = useState(null);
+    const [filterMonth, setFilterMonth] = useState('all');
 
     const [newItem, setNewItem] = useState({
         name: '',
@@ -464,7 +514,8 @@ const Storage = () => {
 
     const [transaction, setTransaction] = useState({
         quantity: 0,
-        description: ''
+        description: '',
+        date: new Date().toISOString().split('T')[0]
     });
 
     const sensors = useSensors(
@@ -480,14 +531,16 @@ const Storage = () => {
 
     const fetchData = async () => {
         try {
-            const [prodRes, ironRes, cementRes] = await Promise.all([
+            const [prodRes, ironRes, cementRes, gasRes] = await Promise.all([
                 axios.get('/api/storage/production'),
                 axios.get('/api/storage/iron'),
-                axios.get('/api/storage/cement')
+                axios.get('/api/storage/cement'),
+                axios.get('/api/storage/gasoline')
             ]);
             setProductionItems(prodRes.data.data);
             setIronInventory(ironRes.data.data);
             setCementInventory(cementRes.data.data);
+            setGasolineInventory(gasRes.data.data);
 
             // Fetch transactions for each cement item
             const transactionsMap = {};
@@ -497,6 +550,14 @@ const Storage = () => {
             }
             setCementTransactions(transactionsMap);
 
+            // Fetch transactions for each gasoline item
+            const gasTransactionsMap = {};
+            for (const item of gasRes.data.data) {
+                const transRes = await axios.get(`/api/storage/gasoline/${item.id}/transactions`);
+                gasTransactionsMap[item.id] = transRes.data.data;
+            }
+            setGasolineTransactions(gasTransactionsMap);
+
         } catch (error) {
             console.error('Error fetching storage data:', error);
         }
@@ -504,6 +565,7 @@ const Storage = () => {
 
     const handleAddItem = async (e) => {
         e.preventDefault();
+        setFormError(null);
         try {
             if (modalType === 'production') {
                 if (editingItem) {
@@ -517,19 +579,40 @@ const Storage = () => {
                 await axios.post('/api/storage/iron', newIronItem);
                 setNewIronItem({ diameter: '', quantity: 0 });
             } else if (modalType === 'cement_in' || modalType === 'cement_out') {
+                if (!transaction.quantity || transaction.quantity <= 0) {
+                    setFormError('Quantity must be greater than 0');
+                    return;
+                }
                 const type = modalType === 'cement_in' ? 'IN' : 'OUT';
                 await axios.post('/api/storage/cement/transaction', {
                     cement_id: selectedCementId,
                     type,
                     quantity: transaction.quantity,
-                    description: transaction.description
+                    description: transaction.description,
+                    date: transaction.date
                 });
-                setTransaction({ quantity: 0, description: '' });
+                setTransaction({ quantity: 0, description: '', date: new Date().toISOString().split('T')[0] });
+            } else if (modalType === 'gasoline_in' || modalType === 'gasoline_out') {
+                if (!transaction.quantity || transaction.quantity <= 0) {
+                    setFormError('Quantity must be greater than 0');
+                    return;
+                }
+                const type = modalType === 'gasoline_in' ? 'IN' : 'OUT';
+                await axios.post('/api/storage/gasoline/transaction', {
+                    gasoline_id: selectedGasolineId,
+                    type,
+                    quantity: transaction.quantity,
+                    description: transaction.description,
+                    date: transaction.date
+                });
+                setTransaction({ quantity: 0, description: '', date: new Date().toISOString().split('T')[0] });
             }
             setShowAddModal(false);
             fetchData();
         } catch (error) {
             console.error('Error adding/updating item:', error);
+            const msg = error.response?.data?.error || 'Error processing request';
+            setFormError(msg);
         }
     };
 
@@ -551,6 +634,24 @@ const Storage = () => {
         }
     };
 
+    const getAvailableMonths = (transactionsMap) => {
+        const months = new Set();
+        Object.values(transactionsMap).flat().forEach(trans => {
+            const date = trans.transaction_date || trans.timestamp.split('T')[0];
+            const monthStr = date.substring(0, 7); // YYYY-MM
+            months.add(monthStr);
+        });
+        return Array.from(months).sort().reverse();
+    };
+
+    const getFilteredTransactions = (transactions) => {
+        if (filterMonth === 'all') return transactions;
+        return transactions.filter(trans => {
+            const date = trans.transaction_date || trans.timestamp.split('T')[0];
+            return date.startsWith(filterMonth);
+        });
+    };
+
     const confirmDeleteTransaction = (transId) => {
         setTransactionToDelete(transId);
         setShowDeleteModal(true);
@@ -559,12 +660,15 @@ const Storage = () => {
     const handleDeleteTransaction = async () => {
         if (!transactionToDelete) return;
         try {
-            await axios.delete(`/api/storage/cement/transaction/${transactionToDelete}`);
+            const endpoint = activeTab === 'cement' ? 'cement' : 'gasoline';
+            await axios.delete(`/api/storage/${endpoint}/transaction/${transactionToDelete}`);
             setShowDeleteModal(false);
             setTransactionToDelete(null);
             fetchData();
         } catch (error) {
             console.error('Error deleting transaction:', error);
+            const errorMsg = error.response?.data?.error || 'Failed to delete transaction';
+            alert(errorMsg);
         }
     };
 
@@ -613,6 +717,15 @@ const Storage = () => {
             fetchData();
         } catch (error) {
             console.error('Error resetting cement quantity:', error);
+        }
+    };
+
+    const handleResetGasoline = async (id) => {
+        try {
+            await axios.put(`/api/storage/gasoline/${id}`, { quantity: 0 });
+            fetchData();
+        } catch (error) {
+            console.error('Error resetting gasoline quantity:', error);
         }
     };
 
@@ -694,6 +807,7 @@ const Storage = () => {
 
     const openModal = (type, id = null) => {
         setModalType(type);
+        setFormError(null);
         if (type === 'production' && id) {
             // Edit mode for production
             const itemToEdit = productionItems.find(i => i.id === id);
@@ -713,7 +827,8 @@ const Storage = () => {
             setNewItem({ name: '', category: 'Prefabrication', target_quantity: 0, current_quantity: 0, daily_rate: 0, mold_count: 0 });
         }
 
-        if (id && type !== 'production') setSelectedCementId(id);
+        if (id && type.startsWith('cement')) setSelectedCementId(id);
+        if (id && type.startsWith('gasoline')) setSelectedGasolineId(id);
         setShowAddModal(true);
     };
 
@@ -753,6 +868,12 @@ const Storage = () => {
                     onClick={() => setActiveTab('cement')}
                 >
                     <BrickWall size={18} /> {t('cement')}
+                </button>
+                <button
+                    className={`tab ${activeTab === 'gasoline' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('gasoline')}
+                >
+                    <Fuel size={18} /> {t('fuel')}
                 </button>
             </div>
 
@@ -911,6 +1032,14 @@ const Storage = () => {
 
             {activeTab === 'cement' && (
                 <div className="cement-container">
+                    <div className="filter-bar" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+                        <CustomDropdown
+                            options={getAvailableMonths(cementTransactions)}
+                            value={filterMonth}
+                            onChange={(e) => setFilterMonth(e.target.value)}
+                            placeholder={t('allTransactions')}
+                        />
+                    </div>
                     {cementInventory.map((item) => (
                         <div key={item.id} className="card cement-card">
                             <div className="cement-header">
@@ -928,26 +1057,17 @@ const Storage = () => {
                                 <button className="btn btn-danger" onClick={() => openModal('cement_out', item.id)}>
                                     <Minus size={18} /> {t('outgoing')} ({t('subcontractor')})
                                 </button>
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary"
-                                    onClick={() => handleResetCement(item.id)}
-                                    title={t('resetQuantity')}
-                                    style={{ marginLeft: 'auto' }}
-                                >
-                                    <RefreshCw size={18} /> {t('reset')}
-                                </button>
                             </div>
 
                             <div className="transaction-history">
                                 <h4>{t('recentTransactions')}</h4>
                                 <div className="history-list">
-                                    {cementTransactions[item.id]?.slice(0, 5).map((trans) => (
+                                    {(cementTransactions[item.id] ? getFilteredTransactions(cementTransactions[item.id]) : []).slice(0, 5).map((trans) => (
                                         <div key={trans.id} className={`history-item ${trans.type.toLowerCase()}`}>
                                             <span className="trans-icon">{trans.type === 'IN' ? <ArrowDown size={16} /> : <ArrowUp size={16} />}</span>
                                             <div className="trans-details">
                                                 <span className="trans-desc">{trans.description}</span>
-                                                <span className="trans-date">{new Date(trans.timestamp).toLocaleDateString()}</span>
+                                                <span className="trans-date">{trans.transaction_date || new Date(trans.timestamp).toLocaleDateString()}</span>
                                             </div>
                                             <span className="trans-qty">
                                                 {trans.type === 'IN' ? '+' : '-'}{trans.quantity}
@@ -971,168 +1091,300 @@ const Storage = () => {
                 </div>
             )}
 
-            {showDeleteModal && (
-                <div className="modal-overlay">
-                    <div className="modal-card">
-                        <h3>{t('confirmCancellation')}</h3>
-                        <p>{t('cancelTransactionConfirm')}</p>
-                        <div className="modal-actions">
-                            <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>{t('noKeepIt')}</button>
-                            <button className="btn btn-danger" onClick={handleDeleteTransaction}>{t('yesCancelIt')}</button>
-                        </div>
+            {activeTab === 'gasoline' && (
+                <div className="cement-container">
+                    <div className="filter-bar" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+                        <CustomDropdown
+                            options={getAvailableMonths(gasolineTransactions)}
+                            value={filterMonth}
+                            onChange={(e) => setFilterMonth(e.target.value)}
+                            placeholder={t('allTransactions')}
+                        />
                     </div>
+                    {gasolineInventory.map((item) => (
+                        <div key={item.id} className="card cement-card">
+                            <div className="cement-header">
+                                <h2>{t(item.type.toLowerCase()) === item.type.toLowerCase() ? item.type : t(item.type.toLowerCase())}</h2>
+                                <div className="cement-stock">
+                                    <span className="stock-value">{item.quantity}</span>
+                                    <span className="stock-unit">{t('liters')}</span>
+                                </div>
+                            </div>
+
+                            <div className="cement-actions">
+                                <button className="btn btn-success" onClick={() => openModal('gasoline_in', item.id)}>
+                                    <Plus size={18} /> {t('incoming')}
+                                </button>
+                                <button className="btn btn-danger" onClick={() => openModal('gasoline_out', item.id)}>
+                                    <Minus size={18} /> {t('outgoing')}
+                                </button>
+                            </div>
+
+                            <div className="transaction-history">
+                                <h4>{t('recentTransactions')}</h4>
+                                <div className="history-list">
+                                    {(gasolineTransactions[item.id] ? getFilteredTransactions(gasolineTransactions[item.id]) : []).slice(0, 5).map((trans) => (
+                                        <div key={trans.id} className={`history-item ${trans.type.toLowerCase()}`}>
+                                            <span className="trans-icon">{trans.type === 'IN' ? <ArrowDown size={16} /> : <ArrowUp size={16} />}</span>
+                                            <div className="trans-details">
+                                                <span className="trans-desc">{trans.description}</span>
+                                                <span className="trans-date">{trans.transaction_date || new Date(trans.timestamp).toLocaleDateString()}</span>
+                                            </div>
+                                            <span className="trans-qty">
+                                                {trans.type === 'IN' ? '+' : '-'}{trans.quantity}
+                                            </span>
+                                            <button
+                                                className="btn-delete-trans"
+                                                onClick={() => confirmDeleteTransaction(trans.id)}
+                                                title="Cancel Transaction"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {(!gasolineTransactions[item.id] || gasolineTransactions[item.id].length === 0) && (
+                                        <p className="no-history">{t('noTransactions')}</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
 
-            {showDeleteIronModal && (
-                <div className="modal-overlay">
-                    <div className="modal-card">
-                        <h3>{t('deleteIronItem')}</h3>
-                        <p>{t('deleteIronConfirm')}</p>
-                        <div className="modal-actions">
-                            <button className="btn btn-secondary" onClick={() => setShowDeleteIronModal(false)}>{t('cancel')}</button>
-                            <button className="btn btn-danger" onClick={handleDeleteIronItem}>{t('deleteTask')}</button>
+            {
+                showDeleteModal && (
+                    <div className="modal-overlay">
+                        <div className="modal-card">
+                            <h3>{t('confirmCancellation')}</h3>
+                            <p>{t('cancelTransactionConfirm')}</p>
+                            <div className="modal-actions">
+                                <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>{t('noKeepIt')}</button>
+                                <button className="btn btn-danger" onClick={handleDeleteTransaction}>{t('yesCancelIt')}</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
-            {showDeleteProductionModal && (
-                <div className="modal-overlay">
-                    <div className="modal-card">
-                        <h3>{t('deleteProductionItem')}</h3>
-                        <p>{t('deleteProductionConfirm')}</p>
-                        <div className="modal-actions">
-                            <button className="btn btn-secondary" onClick={() => setShowDeleteProductionModal(false)}>{t('cancel')}</button>
-                            <button className="btn btn-danger" onClick={handleDeleteProductionItem}>{t('deleteTask')}</button>
+            {
+                showDeleteIronModal && (
+                    <div className="modal-overlay">
+                        <div className="modal-card">
+                            <h3>{t('deleteIronItem')}</h3>
+                            <p>{t('deleteIronConfirm')}</p>
+                            <div className="modal-actions">
+                                <button className="btn btn-secondary" onClick={() => setShowDeleteIronModal(false)}>{t('cancel')}</button>
+                                <button className="btn btn-danger" onClick={handleDeleteIronItem}>{t('deleteTask')}</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
-            {showAddModal && (
-                <div className="modal-overlay">
-                    <div className="modal-card">
-                        <h3>
-                            {modalType === 'production' && (editingItem ? t('editProductionItem') : t('addProductionItem'))}
-                            {modalType === 'iron' && t('addIronType')}
-                            {modalType === 'cement_in' && t('incomingCementStock')}
-                            {modalType === 'cement_out' && t('outgoingCementStock')}
-                        </h3>
-                        <form onSubmit={handleAddItem}>
+            {
+                showDeleteProductionModal && (
+                    <div className="modal-overlay">
+                        <div className="modal-card">
+                            <h3>{t('deleteProductionItem')}</h3>
+                            <p>{t('deleteProductionConfirm')}</p>
+                            <div className="modal-actions">
+                                <button className="btn btn-secondary" onClick={() => setShowDeleteProductionModal(false)}>{t('cancel')}</button>
+                                <button className="btn btn-danger" onClick={handleDeleteProductionItem}>{t('deleteTask')}</button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
 
-                            {modalType === 'production' && (
-                                <>
-                                    <div className="form-group">
-                                        <label className="form-label">{t('itemName')}</label>
-                                        <input
-                                            type="text"
-                                            className="form-input"
-                                            value={newItem.name}
-                                            onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="form-group-row">
-                                        <div className="form-group">
-                                            <label className="form-label">{t('targetQty')}</label>
-                                            <input
-                                                type="number"
-                                                className="form-input"
-                                                value={newItem.target_quantity}
-                                                onChange={(e) => setNewItem({ ...newItem, target_quantity: parseInt(e.target.value) })}
-                                            />
-                                        </div>
-                                        <div className="form-group">
-                                            <label className="form-label">{t('dailyRate')}</label>
-                                            <input
-                                                type="number"
-                                                className="form-input"
-                                                value={newItem.daily_rate}
-                                                onChange={(e) => setNewItem({ ...newItem, daily_rate: parseInt(e.target.value) })}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="form-group-row">
-                                        <div className="form-group">
-                                            <label className="form-label">{t('currentQty')}</label>
-                                            <input
-                                                type="number"
-                                                className="form-input"
-                                                value={newItem.current_quantity}
-                                                onChange={(e) => setNewItem({ ...newItem, current_quantity: parseInt(e.target.value) })}
-                                            />
-                                        </div>
-                                        <div className="form-group">
-                                            <label className="form-label">{t('moldCount')}</label>
-                                            <input
-                                                type="number"
-                                                className="form-input"
-                                                value={newItem.mold_count}
-                                                onChange={(e) => setNewItem({ ...newItem, mold_count: parseInt(e.target.value) })}
-                                            />
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-
-                            {modalType === 'iron' && (
-                                <div className="form-group">
-                                    <label className="form-label">{t('diameterType')}</label>
-                                    <input
-                                        type="text"
-                                        className="form-input"
-                                        value={newIronItem.diameter}
-                                        onChange={(e) => setNewIronItem({ ...newIronItem, diameter: e.target.value })}
-                                        placeholder="e.g. Φ32"
-                                        required
-                                    />
-                                    <div className="form-group" style={{ marginTop: '1rem' }}>
-                                        <label className="form-label">{t('initialQuantity')}</label>
-                                        <input
-                                            type="number"
-                                            className="form-input"
-                                            value={newIronItem.quantity}
-                                            onChange={(e) => setNewIronItem({ ...newIronItem, quantity: parseInt(e.target.value) })}
-                                        />
-                                    </div>
+            {
+                showAddModal && (
+                    <div className="modal-overlay">
+                        <div className="modal-card">
+                            <h3>
+                                {modalType === 'production' && (editingItem ? t('editProductionItem') : t('addProductionItem'))}
+                                {modalType === 'iron' && t('addIronType')}
+                                {modalType === 'cement_in' && t('incomingCementStock')}
+                                {modalType === 'cement_out' && t('outgoingCementStock')}
+                                {modalType === 'gasoline_in' && t('incomingGasoline')}
+                                {modalType === 'gasoline_out' && t('outgoingGasoline')}
+                            </h3>
+                            {formError && (
+                                <div className="modal-error">
+                                    <X size={16} />
+                                    <span>{formError}</span>
                                 </div>
                             )}
+                            <form onSubmit={handleAddItem}>
 
-                            {(modalType === 'cement_in' || modalType === 'cement_out') && (
-                                <>
+                                {modalType === 'production' && (
+                                    <>
+                                        <div className="form-group">
+                                            <label className="form-label">{t('itemName')}</label>
+                                            <input
+                                                type="text"
+                                                className="form-input"
+                                                value={newItem.name}
+                                                onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="form-group-row">
+                                            <div className="form-group">
+                                                <label className="form-label">{t('targetQty')}</label>
+                                                <input
+                                                    type="number"
+                                                    className="form-input"
+                                                    value={newItem.target_quantity}
+                                                    onChange={(e) => setNewItem({ ...newItem, target_quantity: parseInt(e.target.value) })}
+                                                    min="1"
+                                                />
+                                            </div>
+                                            <div className="form-group">
+                                                <label className="form-label">{t('dailyRate')}</label>
+                                                <input
+                                                    type="number"
+                                                    className="form-input"
+                                                    value={newItem.daily_rate}
+                                                    onChange={(e) => setNewItem({ ...newItem, daily_rate: parseInt(e.target.value) })}
+                                                    min="1"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="form-group-row">
+                                            <div className="form-group">
+                                                <label className="form-label">{t('currentQty')}</label>
+                                                <input
+                                                    type="number"
+                                                    className="form-input"
+                                                    value={newItem.current_quantity}
+                                                    onChange={(e) => setNewItem({ ...newItem, current_quantity: parseInt(e.target.value) })}
+                                                    min="0"
+                                                />
+                                            </div>
+                                            <div className="form-group">
+                                                <label className="form-label">{t('moldCount')}</label>
+                                                <input
+                                                    type="number"
+                                                    className="form-input"
+                                                    value={newItem.mold_count}
+                                                    onChange={(e) => setNewItem({ ...newItem, mold_count: parseInt(e.target.value) })}
+                                                    min="1"
+                                                />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {modalType === 'iron' && (
                                     <div className="form-group">
-                                        <label className="form-label">{t('quantityBags')}</label>
-                                        <input
-                                            type="number"
-                                            className="form-input"
-                                            value={transaction.quantity}
-                                            onChange={(e) => setTransaction({ ...transaction, quantity: parseInt(e.target.value) })}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="form-label">{t('description')}</label>
+                                        <label className="form-label">{t('diameterType')}</label>
                                         <input
                                             type="text"
                                             className="form-input"
-                                            value={transaction.description}
-                                            onChange={(e) => setTransaction({ ...transaction, description: e.target.value })}
-                                            placeholder={modalType === 'cement_in' ? t('truckPlate') : t('subcontractorName')}
+                                            value={newIronItem.diameter}
+                                            onChange={(e) => setNewIronItem({ ...newIronItem, diameter: e.target.value })}
+                                            placeholder="e.g. Φ32"
                                             required
                                         />
+                                        <div className="form-group" style={{ marginTop: '1rem' }}>
+                                            <label className="form-label">{t('initialQuantity')}</label>
+                                            <input
+                                                type="number"
+                                                className="form-input"
+                                                value={newIronItem.quantity}
+                                                onChange={(e) => setNewIronItem({ ...newIronItem, quantity: parseInt(e.target.value) })}
+                                                min="1"
+                                            />
+                                        </div>
                                     </div>
-                                </>
-                            )}
+                                )}
 
-                            <div className="modal-actions">
-                                <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>{t('cancel')}</button>
-                                <button type="submit" className="btn btn-primary">{t('save')}</button>
-                            </div>
-                        </form>
+                                {(modalType === 'cement_in' || modalType === 'cement_out') && (
+                                    <>
+                                        <div className="form-group">
+                                            <label className="form-label">{t('date')}</label>
+                                            <input
+                                                type="date"
+                                                className="form-input"
+                                                value={transaction.date}
+                                                onChange={(e) => setTransaction({ ...transaction, date: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">{t('quantityBags')}</label>
+                                            <input
+                                                type="number"
+                                                className="form-input"
+                                                value={transaction.quantity}
+                                                onChange={(e) => setTransaction({ ...transaction, quantity: parseInt(e.target.value) })}
+                                                required
+                                                min="1"
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">{t('description')}</label>
+                                            <input
+                                                type="text"
+                                                className="form-input"
+                                                value={transaction.description}
+                                                onChange={(e) => setTransaction({ ...transaction, description: e.target.value })}
+                                                placeholder={modalType === 'cement_in' ? t('truckPlate') : t('subcontractorName')}
+                                                required
+                                            />
+                                        </div>
+                                    </>
+                                )}
+
+                                {(modalType === 'gasoline_in' || modalType === 'gasoline_out') && (
+                                    <>
+                                        <div className="form-group">
+                                            <label className="form-label">{t('date')}</label>
+                                            <input
+                                                type="date"
+                                                className="form-input"
+                                                value={transaction.date}
+                                                onChange={(e) => setTransaction({ ...transaction, date: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">{t('quantityLiters')}</label>
+                                            <input
+                                                type="number"
+                                                className="form-input"
+                                                value={transaction.quantity}
+                                                onChange={(e) => setTransaction({ ...transaction, quantity: parseInt(e.target.value) })}
+                                                required
+                                                min="1"
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">{t('description')}</label>
+                                            <input
+                                                type="text"
+                                                className="form-input"
+                                                value={transaction.description}
+                                                onChange={(e) => setTransaction({ ...transaction, description: e.target.value })}
+                                                placeholder={modalType === 'gasoline_in' ? t('gasolineIn') : t('gasolineOut')}
+                                                required
+                                            />
+                                        </div>
+                                    </>
+                                )}
+
+                                <div className="modal-actions">
+                                    <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>{t('cancel')}</button>
+                                    <button type="submit" className="btn btn-primary">{t('save')}</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
+
+
 
             <style>{`
         .tabs {
@@ -1164,6 +1416,26 @@ const Storage = () => {
         .tab.active {
           background-color: var(--primary-light);
           color: white;
+        }
+
+        .modal-error {
+          background-color: #fef2f2;
+          border: 1px solid #fee2e2;
+          color: #b91c1c;
+          padding: 0.75rem;
+          border-radius: var(--radius-md);
+          margin-bottom: 1rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
 
         .progress-bar-bg {
@@ -1805,7 +2077,7 @@ const Storage = () => {
                     }
                 }
             `}</style>
-        </div>
+        </div >
     );
 };
 

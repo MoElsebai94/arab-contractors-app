@@ -405,7 +405,18 @@ app.delete("/api/storage/iron/:id", (req, res) => {
 
 // Cement Inventory
 app.get("/api/storage/cement", (req, res) => {
-    const sql = "SELECT * FROM cement_inventory";
+    const sql = `
+        SELECT 
+            i.id, 
+            i.type,
+            COALESCE(
+                (SELECT SUM(CASE WHEN t.type = 'IN' THEN t.quantity ELSE -t.quantity END)
+                 FROM cement_transactions t
+                 WHERE t.cement_id = i.id), 
+                0
+            ) as quantity
+        FROM cement_inventory i
+    `;
     db.all(sql, [], (err, rows) => {
         if (err) {
             res.status(400).json({ "error": err.message });
@@ -449,7 +460,7 @@ app.put("/api/storage/cement/:id", (req, res) => {
 });
 
 app.get("/api/storage/cement/:id/transactions", (req, res) => {
-    const sql = "SELECT * FROM cement_transactions WHERE cement_id = ? ORDER BY timestamp DESC";
+    const sql = "SELECT * FROM cement_transactions WHERE cement_id = ? ORDER BY transaction_date DESC, timestamp DESC";
     db.all(sql, [req.params.id], (err, rows) => {
         if (err) {
             res.status(400).json({ "error": err.message });
@@ -460,26 +471,23 @@ app.get("/api/storage/cement/:id/transactions", (req, res) => {
 });
 
 app.post("/api/storage/cement/transaction", (req, res) => {
-    const { cement_id, type, quantity, description } = req.body;
+    const { cement_id, type, quantity, description, date } = req.body;
     const timestamp = new Date().toISOString();
+    const transaction_date = date || timestamp.split('T')[0];
+
+    if (!quantity || quantity <= 0) {
+        return res.status(400).json({ "error": "Quantity must be greater than 0" });
+    }
 
     if (type === 'OUT') {
-        // Check for sufficient stock
-        db.get("SELECT quantity FROM cement_inventory WHERE id = ?", [cement_id], (err, row) => {
-            if (err) {
-                res.status(400).json({ "error": err.message });
-                return;
+        // Calculate current stock from transactions
+        const sumSql = "SELECT SUM(CASE WHEN type = 'IN' THEN quantity ELSE -quantity END) as total FROM cement_transactions WHERE cement_id = ?";
+        db.get(sumSql, [cement_id], (err, row) => {
+            if (err) return res.status(400).json({ "error": err.message });
+            const currentTotal = row.total || 0;
+            if (currentTotal < quantity) {
+                return res.status(400).json({ "error": "Insufficient stock" });
             }
-            if (!row) {
-                res.status(404).json({ "error": "Cement item not found" });
-                return;
-            }
-            if (row.quantity < quantity) {
-                res.status(400).json({ "error": "Insufficient stock" });
-                return;
-            }
-
-            // Proceed with transaction
             performTransaction();
         });
     } else {
@@ -487,28 +495,16 @@ app.post("/api/storage/cement/transaction", (req, res) => {
     }
 
     function performTransaction() {
-        const sql = `INSERT INTO cement_transactions (cement_id, type, quantity, description, timestamp) VALUES (?,?,?,?,?)`;
-        const params = [cement_id, type, quantity, description, timestamp];
-        db.run(sql, params, function (err, result) {
+        const sql = `INSERT INTO cement_transactions (cement_id, type, quantity, description, timestamp, transaction_date) VALUES (?,?,?,?,?,?)`;
+        const params = [cement_id, type, quantity, description, timestamp, transaction_date];
+        db.run(sql, params, function (err) {
             if (err) {
                 res.status(400).json({ "error": err.message });
                 return;
             }
-
-            // Update inventory quantity
-            const updateSql = type === 'IN'
-                ? `UPDATE cement_inventory SET quantity = quantity + ? WHERE id = ?`
-                : `UPDATE cement_inventory SET quantity = quantity - ? WHERE id = ?`;
-
-            db.run(updateSql, [quantity, cement_id], function (err) {
-                if (err) {
-                    console.error("Error updating inventory:", err);
-                }
-            });
-
             res.json({
                 "message": "success",
-                "data": { id: this.lastID, cement_id, type, quantity, description, timestamp }
+                "data": { id: this.lastID, cement_id, type, quantity, description, timestamp, transaction_date }
             });
         });
     }
@@ -517,39 +513,179 @@ app.post("/api/storage/cement/transaction", (req, res) => {
 app.delete("/api/storage/cement/transaction/:id", (req, res) => {
     const transId = req.params.id;
 
-    // 1. Get transaction details to reverse the effect
-    const sqlGet = "SELECT * FROM cement_transactions WHERE id = ?";
-    db.get(sqlGet, [transId], (err, transaction) => {
+    // 1. Get transaction details first
+    db.get("SELECT * FROM cement_transactions WHERE id = ?", [transId], (err, transaction) => {
+        if (err || !transaction) {
+            return res.status(400).json({ "error": err ? err.message : "Transaction not found" });
+        }
+
+        const cementId = transaction.cement_id;
+        const transQty = transaction.quantity;
+        const transType = transaction.type;
+
+        // 2. Validation for IN transaction cancellation
+        if (transType === 'IN') {
+            const sumSql = "SELECT SUM(CASE WHEN type = 'IN' THEN quantity ELSE -quantity END) as total FROM cement_transactions WHERE cement_id = ?";
+            db.get(sumSql, [cementId], (err, row) => {
+                if (err) return res.status(400).json({ "error": err.message });
+                const currentTotal = row.total || 0;
+                if (currentTotal < transQty) {
+                    return res.status(400).json({ "error": "Cannot cancel this 'IN' transaction: Insufficient stock would result in negative total." });
+                }
+                performDelete();
+            });
+        } else {
+            performDelete();
+        }
+
+        function performDelete() {
+            db.run("DELETE FROM cement_transactions WHERE id = ?", [transId], function (err) {
+                if (err) return res.status(400).json({ "error": err.message });
+                res.json({ "message": "deleted", "changes": this.changes });
+            });
+        }
+    });
+});
+
+// --- Gasoline API ---
+
+app.get("/api/storage/gasoline", (req, res) => {
+    const sql = `
+        SELECT 
+            i.id, 
+            i.type,
+            COALESCE(
+                (SELECT SUM(CASE WHEN t.type = 'IN' THEN t.quantity ELSE -t.quantity END)
+                 FROM gasoline_transactions t
+                 WHERE t.gasoline_id = i.id), 
+                0
+            ) as quantity
+        FROM gasoline_inventory i
+    `;
+    db.all(sql, [], (err, rows) => {
         if (err) {
             res.status(400).json({ "error": err.message });
             return;
         }
-        if (!transaction) {
-            res.status(404).json({ "error": "Transaction not found" });
+        res.json({ "message": "success", "data": rows });
+    });
+});
+
+app.post("/api/storage/gasoline", (req, res) => {
+    const { type, quantity } = req.body;
+    const sql = 'INSERT INTO gasoline_inventory (type, quantity) VALUES (?, ?)';
+    const params = [type, quantity || 0];
+    db.run(sql, params, function (err, result) {
+        if (err) {
+            res.status(400).json({ "error": err.message });
             return;
         }
+        res.json({ "message": "success", "data": req.body, "id": this.lastID });
+    });
+});
 
-        // 2. Reverse Inventory
-        // If it was IN, we now subtract. If OUT, we now add.
-        const operator = transaction.type === 'IN' ? '-' : '+';
-        const sqlUpdate = `UPDATE cement_inventory SET quantity = quantity ${operator} ? WHERE id = ?`;
+app.put("/api/storage/gasoline/:id", (req, res) => {
+    const { quantity } = req.body;
+    if (quantity < 0) {
+        res.status(400).json({ "error": "Quantity cannot be negative" });
+        return;
+    }
+    const sql = `UPDATE gasoline_inventory SET quantity = ? WHERE id = ?`;
+    const params = [quantity, req.params.id];
+    db.run(sql, params, function (err, result) {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "success", "changes": this.changes });
+    });
+});
 
-        db.run(sqlUpdate, [transaction.quantity, transaction.cement_id], function (err) {
+app.get("/api/storage/gasoline/:id/transactions", (req, res) => {
+    const sql = "SELECT * FROM gasoline_transactions WHERE gasoline_id = ? ORDER BY transaction_date DESC, timestamp DESC";
+    db.all(sql, [req.params.id], (err, rows) => {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "success", "data": rows });
+    });
+});
+
+app.post("/api/storage/gasoline/transaction", (req, res) => {
+    const { gasoline_id, type, quantity, description, date } = req.body;
+    const timestamp = new Date().toISOString();
+    const transaction_date = date || timestamp.split('T')[0];
+
+    if (!quantity || quantity <= 0) {
+        return res.status(400).json({ "error": "Quantity must be greater than 0" });
+    }
+
+    if (type === 'OUT') {
+        // Calculate current stock from transactions
+        const sumSql = "SELECT SUM(CASE WHEN type = 'IN' THEN quantity ELSE -quantity END) as total FROM gasoline_transactions WHERE gasoline_id = ?";
+        db.get(sumSql, [gasoline_id], (err, row) => {
+            if (err) return res.status(400).json({ "error": err.message });
+            const currentTotal = row.total || 0;
+            if (currentTotal < quantity) {
+                return res.status(400).json({ "error": "Insufficient stock" });
+            }
+            performTransaction();
+        });
+    } else {
+        performTransaction();
+    }
+
+    function performTransaction() {
+        const sql = `INSERT INTO gasoline_transactions (gasoline_id, type, quantity, description, timestamp, transaction_date) VALUES (?,?,?,?,?,?)`;
+        const params = [gasoline_id, type, quantity, description, timestamp, transaction_date];
+        db.run(sql, params, function (err) {
             if (err) {
                 res.status(400).json({ "error": err.message });
                 return;
             }
-
-            // 3. Delete Transaction
-            const sqlDelete = "DELETE FROM cement_transactions WHERE id = ?";
-            db.run(sqlDelete, [transId], function (err) {
-                if (err) {
-                    res.status(400).json({ "error": err.message });
-                    return;
-                }
-                res.json({ "message": "deleted", "changes": this.changes });
+            res.json({
+                "message": "success",
+                "data": { id: this.lastID, gasoline_id, type, quantity, description, timestamp, transaction_date }
             });
         });
+    }
+});
+
+app.delete("/api/storage/gasoline/transaction/:id", (req, res) => {
+    const transId = req.params.id;
+
+    // 1. Get transaction details first
+    db.get("SELECT * FROM gasoline_transactions WHERE id = ?", [transId], (err, transaction) => {
+        if (err || !transaction) {
+            return res.status(400).json({ "error": err ? err.message : "Transaction not found" });
+        }
+
+        const gasolineId = transaction.gasoline_id;
+        const transQty = transaction.quantity;
+        const transType = transaction.type;
+
+        // 2. Validation for IN transaction cancellation
+        if (transType === 'IN') {
+            const sumSql = "SELECT SUM(CASE WHEN type = 'IN' THEN quantity ELSE -quantity END) as total FROM gasoline_transactions WHERE gasoline_id = ?";
+            db.get(sumSql, [gasolineId], (err, row) => {
+                if (err) return res.status(400).json({ "error": err.message });
+                const currentTotal = row.total || 0;
+                if (currentTotal < transQty) {
+                    return res.status(400).json({ "error": "Cannot cancel this 'IN' transaction: Insufficient stock would result in negative total." });
+                }
+                performDelete();
+            });
+        } else {
+            performDelete();
+        }
+
+        function performDelete() {
+            db.run("DELETE FROM gasoline_transactions WHERE id = ?", [transId], function (err) {
+                if (err) return res.status(400).json({ "error": err.message });
+                res.json({ "message": "deleted", "changes": this.changes });
+            });
+        }
     });
 });
 
