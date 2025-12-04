@@ -125,7 +125,7 @@ const ModernIronCard = ({ item, updateQuantity, confirmDeleteIronItem }) => {
                 {/* if (loading) return <LoadingScreen />; */}
 
                 {/* Mobile Actions (Visible only on mobile) */}
-                <div className="mobile-actions">
+                <div className="storage-mobile-actions">
                     <button
                         className="btn-circle warning mobile-btn"
                         onClick={(e) => { e.stopPropagation(); setActionType('remove'); }}
@@ -832,7 +832,7 @@ const Storage = () => {
                                             </div>
                                         </div>
 
-                                        <div className="mobile-actions">
+                                        <div className="storage-mobile-actions">
                                             <div className="qty-control">
                                                 <button
                                                     className="btn-icon-action warning"
@@ -1603,7 +1603,7 @@ const Storage = () => {
                 font-size: 0.9rem;
             }
 
-            .mobile-actions {
+            .storage-mobile-actions {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -1731,7 +1731,7 @@ const Storage = () => {
                 .btn-delete-card:hover { opacity: 1; }
 
                 /* Mobile Styles */
-                .mobile-actions {
+                .storage-mobile-actions {
                     display: none;
                 }
                 .mobile-delete-btn {
@@ -1766,7 +1766,7 @@ const Storage = () => {
                     }
 
                     /* Show mobile actions */
-                    .mobile-actions {
+                    .storage-mobile-actions {
                         display: flex;
                         gap: 1rem;
                         margin-top: 0.5rem;

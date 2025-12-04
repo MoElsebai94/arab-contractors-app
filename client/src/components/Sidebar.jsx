@@ -31,9 +31,14 @@ const Sidebar = () => {
             <span className="logo-subtext">Genie Civil</span>
           </div>
         </Link>
-        <button className="menu-toggle" onClick={toggleMenu}>
-          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="mobile-actions">
+          <button onClick={toggleLanguage} className="mobile-lang-toggle">
+            <Globe size={20} />
+          </button>
+          <button className="menu-toggle" onClick={toggleMenu}>
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Backdrop */}
@@ -92,7 +97,6 @@ const Sidebar = () => {
 
         .logo-container {
           padding: 2rem 1.5rem;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -104,8 +108,27 @@ const Sidebar = () => {
             gap: 1rem;
         }
 
-        .menu-toggle {
+        .mobile-actions {
             display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .mobile-lang-toggle {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+
+
+        .menu-toggle {
+            display: block;
             background: none;
             border: none;
             color: white;
@@ -217,6 +240,12 @@ const Sidebar = () => {
             background: rgba(255, 255, 255, 0.2);
         }
 
+        @media (min-width: 769px) {
+          .logo-container {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          }
+        }
+
         @media (max-width: 768px) {
           .sidebar {
             width: 100%;
@@ -224,23 +253,40 @@ const Sidebar = () => {
             position: relative;
             flex-direction: column;
             z-index: 100;
+            box-shadow: none !important;
           }
 
           .logo-container {
-            padding: 0.75rem 1rem;
+            padding: 0.5rem 1rem;
             justify-content: space-between;
-            gap: 0;
+            align-items: center;
+            gap: 0.5rem;
             background-color: var(--primary-color);
             position: relative;
             z-index: 101;
+            height: auto;
+            min-height: auto;
+            border: none !important;
+            border-bottom: none !important;
+            border-top: none !important;
+            box-shadow: none !important;
+            width: 100%;
+            flex-wrap: nowrap;
+          }
+
+          .logo-container * {
+            border: none !important;
+            box-shadow: none !important;
           }
           
           .logo-content {
             gap: 0.75rem;
           }
 
-          .menu-toggle {
-            display: block;
+          .mobile-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
           }
 
           .logo-img {
@@ -309,7 +355,7 @@ const Sidebar = () => {
             align-items: center;
             margin-bottom: 2rem;
             padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: none;
           }
           
           .nav-title-mobile {
@@ -348,9 +394,23 @@ const Sidebar = () => {
           }
 
           .sidebar-footer {
-            display: block;
-            margin-top: auto;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: none !important;
+          }
+
+          .lang-toggle {
+            display: none;
+          }
+
+          /* RTL Overrides for Mobile Menu */
+          html[dir="rtl"] .nav-menu {
+            right: auto;
+            left: 0;
+            transform: translateX(-100%);
+            box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+          }
+
+          html[dir="rtl"] .nav-menu.open {
+            transform: translateX(0);
           }
         }
       `}</style>
