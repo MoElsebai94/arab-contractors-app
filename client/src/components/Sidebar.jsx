@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Rocket, Package, Calculator, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, Rocket, Package, Calculator, Menu, X, Globe } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 const Sidebar = () => {
   const location = useLocation();
+  const { t, language, toggleLanguage } = useLanguage();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const isActive = (path) => {
@@ -39,35 +41,39 @@ const Sidebar = () => {
 
       <nav className={`nav-menu ${isMenuOpen ? 'open' : ''}`}>
         <div className="nav-header-mobile">
-          <span className="nav-title-mobile">Menu</span>
+          <span className="nav-title-mobile">{t('menu')}</span>
           <button className="menu-close-btn" onClick={closeMenu}>
             <X size={24} />
           </button>
         </div>
         <Link to="/" className={`nav-item ${isActive('/')}`} onClick={closeMenu}>
           <LayoutDashboard className="nav-icon" size={24} />
-          Dashboard
+          {t('dashboard')}
         </Link>
         <Link to="/employees" className={`nav-item ${isActive('/employees')}`} onClick={closeMenu}>
           <Users className="nav-icon" size={24} />
-          Employees
+          {t('employees')}
         </Link>
         <Link to="/tasks" className={`nav-item ${isActive('/tasks')}`} onClick={closeMenu}>
           <Rocket className="nav-icon" size={24} />
-          Tasks
+          {t('tasks')}
         </Link>
         <Link to="/storage" className={`nav-item ${isActive('/storage')}`} onClick={closeMenu}>
           <Package className="nav-icon" size={24} />
-          Storage
+          {t('storage')}
         </Link>
         <Link to="/calculator" className={`nav-item ${isActive('/calculator')}`} onClick={closeMenu}>
           <Calculator className="nav-icon" size={24} />
-          Calculator
+          {t('calculator')}
         </Link>
       </nav>
 
       <div className="sidebar-footer">
-        <p>© 2025 Arab Contractors</p>
+        <button onClick={toggleLanguage} className="lang-toggle">
+          <Globe size={16} />
+          {t('toggleLanguage')}
+        </button>
+        <p>{t('copyright')}</p>
       </div>
 
       <style>{`
@@ -177,7 +183,7 @@ const Sidebar = () => {
         }
 
         .nav-icon {
-          margin-right: 0.75rem;
+          margin-inline-end: 0.75rem;
           font-size: 1.25rem;
         }
 
@@ -187,6 +193,28 @@ const Sidebar = () => {
           font-size: 0.75rem;
           color: #64748b;
           text-align: center;
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          align-items: center;
+        }
+
+        .lang-toggle {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            transition: background 0.2s;
+        }
+
+        .lang-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
 
         @media (max-width: 768px) {
@@ -315,7 +343,7 @@ const Sidebar = () => {
           }
           
           .nav-icon {
-            margin-right: 1rem;
+            margin-inline-end: 1rem;
             font-size: 1.5rem;
           }
 

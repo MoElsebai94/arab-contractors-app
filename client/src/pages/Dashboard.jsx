@@ -3,9 +3,11 @@ import axios from 'axios';
 import { Users, Briefcase, Factory, AlertTriangle, CheckCircle, Clock, Activity, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import LoadingScreen from '../components/LoadingScreen';
+import { useLanguage } from '../context/LanguageContext';
 
 const Dashboard = () => {
     const navigate = useNavigate();
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
         employees: 0,
@@ -122,7 +124,7 @@ const Dashboard = () => {
     return (
         <div className="dashboard-container">
             <div className="page-header">
-                <h1 className="page-title">Executive Dashboard</h1>
+                <h1 className="page-title">{t('executiveDashboard')}</h1>
             </div>
 
             {/* Key Metrics Grid */}
@@ -132,7 +134,7 @@ const Dashboard = () => {
                         <Users className="text-blue" size={24} />
                     </div>
                     <div>
-                        <p className="stat-label">Total Employees</p>
+                        <p className="stat-label">{t('totalEmployees')}</p>
                         <h3 className="stat-value">{stats.employees}</h3>
                     </div>
                 </div>
@@ -141,7 +143,7 @@ const Dashboard = () => {
                         <Briefcase className="text-purple" size={24} />
                     </div>
                     <div>
-                        <p className="stat-label">Active Tasks</p>
+                        <p className="stat-label">{t('activeTasks')}</p>
                         <h3 className="stat-value">{stats.projects}</h3>
                     </div>
                 </div>
@@ -150,7 +152,7 @@ const Dashboard = () => {
                         <Factory className="text-green" size={24} />
                     </div>
                     <div>
-                        <p className="stat-label">Production Items</p>
+                        <p className="stat-label">{t('productionItems')}</p>
                         <h3 className="stat-value">{stats.productionItems}</h3>
                     </div>
                 </div>
@@ -159,7 +161,7 @@ const Dashboard = () => {
                         <AlertTriangle className="text-orange" size={24} />
                     </div>
                     <div>
-                        <p className="stat-label">Low Stock Alerts</p>
+                        <p className="stat-label">{t('lowStockAlerts')}</p>
                         <h3 className="stat-value">{stats.lowStockCount}</h3>
                     </div>
                 </div>
@@ -168,7 +170,7 @@ const Dashboard = () => {
             <div className="charts-grid">
                 {/* Project Status Chart */}
                 <div className="card chart-card">
-                    <h3 className="card-title">Task Status Distribution</h3>
+                    <h3 className="card-title">{t('taskStatusDistribution')}</h3>
                     {projectStatus.length > 0 ? (
                         <PieChart data={projectStatus} />
                     ) : (
@@ -178,7 +180,7 @@ const Dashboard = () => {
 
                 {/* Employee Roles Chart */}
                 <div className="card chart-card">
-                    <h3 className="card-title">Employee Roles Breakdown</h3>
+                    <h3 className="card-title">{t('employeeRolesBreakdown')}</h3>
                     <div className="bar-chart">
                         {employeeRoles.map((role, index) => (
                             <div key={index} className="bar-row">
@@ -202,8 +204,8 @@ const Dashboard = () => {
                 {/* Recent Projects */}
                 <div className="card list-card">
                     <div className="card-header-row">
-                        <h3 className="card-title">Recent Tasks</h3>
-                        <button className="btn-link" onClick={() => navigate('/tasks')}>View All <ArrowRight size={16} /></button>
+                        <h3 className="card-title">{t('recentTasks')}</h3>
+                        <button className="btn-link" onClick={() => navigate('/tasks')}>{t('viewAll')} <ArrowRight size={16} /></button>
                     </div>
                     <div className="list-content">
                         {recentProjects.map(project => (
@@ -224,8 +226,8 @@ const Dashboard = () => {
                 {/* Low Stock Alerts */}
                 <div className="card list-card">
                     <div className="card-header-row">
-                        <h3 className="card-title">Inventory Alerts</h3>
-                        <button className="btn-link" onClick={() => navigate('/storage')}>Manage <ArrowRight size={16} /></button>
+                        <h3 className="card-title">{t('inventoryAlerts')}</h3>
+                        <button className="btn-link" onClick={() => navigate('/storage')}>{t('manage')} <ArrowRight size={16} /></button>
                     </div>
                     <div className="list-content">
                         {lowStockItems.length > 0 ? (
@@ -244,7 +246,7 @@ const Dashboard = () => {
                         ) : (
                             <div className="empty-state">
                                 <CheckCircle size={32} className="text-green mb-2" />
-                                <p>All inventory levels are healthy</p>
+                                <p>{t('inventoryHealthy')}</p>
                             </div>
                         )}
                     </div>
@@ -340,7 +342,7 @@ const Dashboard = () => {
                 }
                 .legend-value {
                     font-weight: 600;
-                    margin-left: auto;
+                    margin-inline-start: auto;
                 }
 
                 /* Bar Chart */
