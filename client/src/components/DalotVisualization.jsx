@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, Text } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Environment, ContactShadows, Text, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { MousePointer2, Hand, ZoomIn } from 'lucide-react';
 
@@ -431,6 +431,84 @@ const Puisard = ({ position, rotation, width, height, wallThickness, sectionType
         </group>
     );
 };
+class ErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.error("3D View Error:", error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100%',
+                    color: '#ef4444',
+                    flexDirection: 'column',
+                    gap: '1rem',
+                    padding: '1rem',
+                    textAlign: 'center'
+                }}>
+                    <p>Something went wrong loading the 3D view.</p>
+                    <button
+                        onClick={() => this.setState({ hasError: false })}
+                        style={{
+                            padding: '0.5rem 1rem',
+                            backgroundColor: '#e2e8f0',
+                            borderRadius: '0.375rem',
+                            fontSize: '0.875rem'
+                        }}
+                    >
+                        Try Again
+                    </button>
+                </div>
+            );
+        }
+
+        return this.props.children;
+    }
+}
+
+const Loader = () => (
+    <Html center>
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '10px',
+            color: '#64748b',
+            background: 'rgba(255,255,255,0.8)',
+            padding: '1rem',
+            borderRadius: '8px',
+            backdropFilter: 'blur(4px)'
+        }}>
+            <div className="spinner" style={{
+                width: '24px',
+                height: '24px',
+                border: '3px solid #cbd5e1',
+                borderTopColor: '#3b82f6',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+            }}></div>
+            <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Loading 3D View...</span>
+            <style>{`
+                @keyframes spin {
+                    to { transform: rotate(360deg); }
+                }
+            `}</style>
+        </div>
+    </Html>
+);
 
 const DalotVisualization = ({ params }) => {
     return (
@@ -487,42 +565,46 @@ const DalotVisualization = ({ params }) => {
                 </div>
             </div>
 
-            <Canvas shadows dpr={[1, 2]} camera={{ position: [8, 5, 8], fov: 45 }}>
-                <color attach="background" args={['#f8fafc']} />
-                <OrbitControls
-                    makeDefault
-                    enablePan={true}
-                    enableDamping={true}
-                    dampingFactor={0.05}
-                    minDistance={3}
-                    maxDistance={30}
-                />
+            <ErrorBoundary>
+                <Canvas shadows dpr={[1, 2]} camera={{ position: [8, 5, 8], fov: 45 }}>
+                    <Suspense fallback={<Loader />}>
+                        <color attach="background" args={['#f8fafc']} />
+                        <OrbitControls
+                            makeDefault
+                            enablePan={true}
+                            enableDamping={true}
+                            dampingFactor={0.05}
+                            minDistance={3}
+                            maxDistance={30}
+                        />
 
-                <Environment preset="city" />
-                <ambientLight intensity={0.5} />
-                <directionalLight
-                    position={[10, 10, 5]}
-                    intensity={1}
-                    castShadow
-                    shadow-mapSize={[1024, 1024]}
-                />
+                        <Environment preset="city" />
+                        <ambientLight intensity={0.5} />
+                        <directionalLight
+                            position={[10, 10, 5]}
+                            intensity={1}
+                            castShadow
+                            shadow-mapSize={[1024, 1024]}
+                        />
 
-                <group position={[0, -1, 0]}>
-                    <DalotGeometry
-                        sectionType={params.sectionType}
-                        length={params.dalotLength}
-                        tetes={params.tetes}
-                        puisard={params.puisard}
-                    />
-                    <ContactShadows
-                        position={[0, -0.01, 0]}
-                        opacity={0.4}
-                        scale={20}
-                        blur={2}
-                        far={4.5}
-                    />
-                </group>
-            </Canvas>
+                        <group position={[0, -1, 0]}>
+                            <DalotGeometry
+                                sectionType={params.sectionType}
+                                length={params.dalotLength}
+                                tetes={params.tetes}
+                                puisard={params.puisard}
+                            />
+                            <ContactShadows
+                                position={[0, -0.01, 0]}
+                                opacity={0.4}
+                                scale={20}
+                                blur={2}
+                                far={4.5}
+                            />
+                        </group>
+                    </Suspense>
+                </Canvas>
+            </ErrorBoundary>
         </div>
     );
 };
