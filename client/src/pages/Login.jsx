@@ -1,12 +1,15 @@
 import { useState } from 'react';
+import { useLanguage } from '../context/LanguageContext';
 
 const Login = ({ onLogin }) => {
   const [passcode, setPasscode] = useState('');
   const [error, setError] = useState('');
+  const { setLanguage } = useLanguage();
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (passcode === 'acgc') {
+      setLanguage('en');
       onLogin();
     } else {
       setError('Invalid passcode. Please try again.');
