@@ -1337,6 +1337,22 @@ const Storage = () => {
           -webkit-overflow-scrolling: touch;
         }
 
+        @media (max-width: 640px) {
+            .tabs {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.5rem;
+                padding-bottom: 0;
+                border-bottom: none;
+            }
+            .tab {
+                justify-content: center;
+                font-size: 0.9rem;
+                padding: 0.6rem 0.5rem;
+                width: 100%;
+            }
+        }
+
         .tab {
           background: none;
           border: none;
