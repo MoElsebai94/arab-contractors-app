@@ -1052,18 +1052,19 @@ const CalculatorPage = () => {
                 }
 
                 .tabs {
-                    display: flex;
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
                     gap: 1rem;
                     margin-bottom: 2rem;
-                    justify-content: center;
                     padding: 0.5rem;
                     background: white;
                     border-radius: var(--radius-md);
                     box-shadow: var(--shadow-sm);
-                    width: fit-content;
+                    width: calc(100% - 2rem);
+                    max-width: 600px;
                     margin-left: auto;
                     margin-right: auto;
-                    flex-wrap: wrap; /* Allow wrapping on very small screens */
+                    box-sizing: border-box;
                 }
 
                 .page-header {
@@ -1085,8 +1086,9 @@ const CalculatorPage = () => {
                 .tab {
                     display: flex;
                     align-items: center;
+                    justify-content: center;
                     gap: 0.5rem;
-                    padding: 0.75rem 1.5rem;
+                    padding: 0.75rem 0.5rem;
                     border: none;
                     background: transparent;
                     cursor: pointer;
@@ -1094,7 +1096,8 @@ const CalculatorPage = () => {
                     color: var(--text-secondary);
                     border-radius: var(--radius-md);
                     transition: all 0.2s;
-                    white-space: nowrap; /* Prevent text wrapping inside tab */
+                    text-align: center;
+                    line-height: 1.2;
                 }
 
                 .tab:hover {
