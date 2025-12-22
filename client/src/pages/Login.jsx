@@ -12,6 +12,7 @@ const Login = ({ onLogin }) => {
     try {
       const response = await axios.post('/api/auth/login', { passcode });
       if (response.data.success) {
+        localStorage.setItem('token', response.data.token);
         setLanguage('en');
         onLogin();
       }

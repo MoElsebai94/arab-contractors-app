@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const db = require('./database');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const app = express();
@@ -10,72 +11,36 @@ const PORT = 3001;
 app.use(cors());
 app.use(bodyParser.json());
 
+// Authentication Middleware
+const authenticateToken = (req, res, next) => {
+    // Skip auth for login
+    if (req.path === '/api/auth/login') return next();
+
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) return res.status(401).json({ error: 'Access denied' });
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if (err) return res.status(403).json({ error: 'Invalid token' });
+        req.user = user;
+        next();
+    });
+};
+
+// Login Route
 app.post('/api/auth/login', (req, res) => {
     const { passcode } = req.body;
     if (passcode === process.env.ADMIN_PASSCODE) {
-        res.json({ success: true });
+        const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        res.json({ success: true, token });
     } else {
         res.status(401).json({ success: false, error: 'Invalid passcode' });
     }
 });
 
-// ... (existing code)
-
-app.put("/api/storage/production/reorder", (req, res) => {
-    console.log("HIT /api/storage/production/reorder");
-    const { items } = req.body;
-
-    if (!items || !Array.isArray(items)) {
-        res.status(400).json({ "error": "Invalid input" });
-        return;
-    }
-
-    const sql = "UPDATE production_items SET display_order = ? WHERE id = ?";
-
-    db.serialize(() => {
-        db.run("BEGIN TRANSACTION");
-
-        items.forEach(item => {
-            db.run(sql, [item.display_order, item.id], function (err) {
-                if (err) {
-                    console.error("Error updating item:", item.id, err);
-                }
-            });
-        });
-
-        db.run("COMMIT", (err) => {
-            if (err) {
-                console.error("Error committing reorder:", err);
-                res.status(400).json({ "error": err.message });
-                return;
-            }
-            console.log("Reorder successful");
-            res.json({ "message": "success" });
-        });
-    });
-});
-
-app.put("/api/storage/production/:id", (req, res) => {
-    const { name, category, target_quantity, current_quantity, daily_rate, mold_count } = req.body;
-    const sql = `UPDATE production_items SET 
-               name = COALESCE(?, name), 
-               category = COALESCE(?, category), 
-               target_quantity = COALESCE(?, target_quantity), 
-               current_quantity = COALESCE(?, current_quantity), 
-               daily_rate = COALESCE(?, daily_rate), 
-               mold_count = COALESCE(?, mold_count) 
-               WHERE id = ?`;
-    const params = [name, category, target_quantity, current_quantity, daily_rate, mold_count, req.params.id];
-    db.run(sql, params, function (err, result) {
-        if (err) {
-            res.status(400).json({ "error": err.message });
-            return;
-        }
-        res.json({ "message": "success", "changes": this.changes });
-    });
-});
-
-
+// Protect all other API routes
+app.use('/api', authenticateToken);
 
 // --- API Routes ---
 
