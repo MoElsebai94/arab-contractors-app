@@ -223,6 +223,7 @@ const ModernAssigneeDropdown = ({ employees, onSelect, onSelectAll }) => {
 import { createPortal } from 'react-dom';
 
 const AssigneeListPopover = ({ assigneeString, employees }) => {
+    const { t } = useLanguage();
     const [isOpen, setIsOpen] = useState(false);
     const [position, setPosition] = useState({ top: 0, left: 0, isRTL: false });
     const buttonRef = useRef(null);
@@ -297,7 +298,7 @@ const AssigneeListPopover = ({ assigneeString, employees }) => {
                     textAlign: 'left'
                 }}
             >
-                {names.length === 1 ? names[0] : `View ${names.length} Assignees`}
+                {names.length === 1 ? names[0] : `${t('view')} ${names.length} ${t('assignees')}`}
             </button>
 
             {isOpen && createPortal(
@@ -662,7 +663,7 @@ const Projects = () => {
                                                 opt.value === 'Medium' ? 'var(--warning-color)' : 'var(--success-color)',
                                             fontWeight: 500
                                         }}>
-                                            {opt.label}
+                                            {t(opt.value.toLowerCase())}
                                         </span>
                                     )}
                                 />
@@ -680,7 +681,9 @@ const Projects = () => {
                                     onChange={(val) => setFormData({ ...formData, status: val })}
                                     renderOption={(opt) => (
                                         <span className={`badge ${getStatusBadgeClass(opt.value)}`}>
-                                            {opt.label}
+                                            {opt.value === 'In Progress' ? t('inProgress') :
+                                                opt.value === 'On Hold' ? t('onHold') :
+                                                    t(opt.value.toLowerCase())}
                                         </span>
                                     )}
                                 />
@@ -759,12 +762,14 @@ const Projects = () => {
                                                     fontWeight: 600,
                                                     fontSize: '0.85rem'
                                                 }}>
-                                                    {proj.priority || 'Medium'}
+                                                    {t(proj.priority ? proj.priority.toLowerCase() : 'medium')}
                                                 </span>
                                             </td>
                                             <td>
                                                 <span className={`badge ${getStatusBadgeClass(proj.status)}`}>
-                                                    {proj.status}
+                                                    {proj.status === 'In Progress' ? t('inProgress') :
+                                                        proj.status === 'On Hold' ? t('onHold') :
+                                                            t(proj.status.toLowerCase())}
                                                 </span>
                                             </td>
                                             <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

@@ -274,6 +274,27 @@ app.post("/api/storage/production", (req, res) => {
 });
 
 
+app.put("/api/storage/production/:id", (req, res) => {
+    const { name, category, target_quantity, current_quantity, daily_rate, mold_count } = req.body;
+    const sql = `UPDATE production_items SET 
+               name = COALESCE(?, name), 
+               category = COALESCE(?, category), 
+               target_quantity = COALESCE(?, target_quantity), 
+               current_quantity = COALESCE(?, current_quantity), 
+               daily_rate = COALESCE(?, daily_rate),
+               mold_count = COALESCE(?, mold_count)
+               WHERE id = ?`;
+    const params = [name, category, target_quantity, current_quantity, daily_rate, mold_count, req.params.id];
+    db.run(sql, params, function (err) {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "success", "changes": this.changes });
+    });
+});
+
+
 
 app.delete("/api/storage/production/:id", (req, res) => {
     const sql = 'DELETE FROM production_items WHERE id = ?';

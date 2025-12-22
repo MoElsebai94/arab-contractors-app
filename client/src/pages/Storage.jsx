@@ -162,7 +162,7 @@ const IronCard = ({ item, openModal, transactions, onDeleteTransaction, t, filte
     );
 };
 
-const SortableProductionRow = ({ item, updateProduction, confirmDeleteProductionItem, onEdit }) => {
+const SortableProductionRow = ({ item, openModal, confirmDeleteProductionItem }) => {
     const {
         attributes,
         listeners,
@@ -180,18 +180,6 @@ const SortableProductionRow = ({ item, updateProduction, confirmDeleteProduction
     };
 
     const percentage = Math.min(100, (item.current_quantity / item.target_quantity) * 100) || 0;
-    const [qtyInput, setQtyInput] = useState('');
-
-    const handleQtyChange = (val) => {
-        setQtyInput(val);
-    };
-
-    const handleQuickUpdate = (amount) => {
-        const change = parseInt(amount);
-        if (isNaN(change)) return;
-        updateProduction(item.id, 'current_quantity', Math.max(0, item.current_quantity + change));
-        setQtyInput('');
-    };
 
     const getProgressColor = (current, target) => {
         const percentage = (current / target) * 100;
@@ -207,7 +195,7 @@ const SortableProductionRow = ({ item, updateProduction, confirmDeleteProduction
         return Math.ceil(remaining / rate);
     };
 
-    const { language } = useLanguage();
+    const { language, t } = useLanguage();
     const alignStyle = { textAlign: language === 'ar' ? 'right' : 'left' };
 
     return (
@@ -234,12 +222,12 @@ const SortableProductionRow = ({ item, updateProduction, confirmDeleteProduction
                     ></div>
                 </div>
             </td>
-            <td style={{ padding: '8px 4px', ...alignStyle }}>{item.daily_rate} / day</td>
+            <td style={{ padding: '8px 4px', ...alignStyle }}>{item.daily_rate} / {t('day')}</td>
             <td style={{ padding: '8px 4px', ...alignStyle }}>{item.mold_count}</td>
             <td style={{ fontWeight: 600, color: 'var(--primary-color)', padding: '8px 4px', ...alignStyle }}>
                 {(() => {
                     const val = calculateDaysToFinish(item.current_quantity, item.target_quantity, item.daily_rate);
-                    return val === 'Done' || val === '∞' ? val : `${val} days`;
+                    return val === 'Done' ? t('done') : val === '∞' ? '∞' : `${val} ${t('days')}`;
                 })()}
             </td>
             <td style={{ padding: '8px 4px' }}>
@@ -248,15 +236,14 @@ const SortableProductionRow = ({ item, updateProduction, confirmDeleteProduction
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         <button
                             className="btn-icon-action warning"
-                            onClick={() => handleQuickUpdate(-qtyInput)}
-                            disabled={!qtyInput}
+                            onClick={() => openModal('production_out', item.id)}
                             title="Decrease Quantity"
                         >
                             <Minus size={16} />
                         </button>
                         <button
                             className="btn-icon-action"
-                            onClick={() => onEdit(item)}
+                            onClick={() => openModal('production', item.id)}
                             title="Edit Item"
                             style={{ color: 'var(--text-secondary)' }}
                         >
@@ -268,8 +255,7 @@ const SortableProductionRow = ({ item, updateProduction, confirmDeleteProduction
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         <button
                             className="btn-icon-action success"
-                            onClick={() => handleQuickUpdate(qtyInput)}
-                            disabled={!qtyInput}
+                            onClick={() => openModal('production_in', item.id)}
                             title="Add Quantity"
                         >
                             <Plus size={16} />
@@ -282,15 +268,6 @@ const SortableProductionRow = ({ item, updateProduction, confirmDeleteProduction
                             <Trash2 size={16} />
                         </button>
                     </div>
-
-                    {/* Column 3: Qty Input */}
-                    <input
-                        type="number"
-                        placeholder="Qty"
-                        value={qtyInput}
-                        onChange={(e) => handleQtyChange(e.target.value)}
-                        style={{ width: '60px', padding: '0.25rem', borderRadius: '4px', border: '1px solid #ddd', height: '32px' }}
-                    />
                 </div>
             </td>
         </tr>
@@ -406,6 +383,28 @@ const Storage = () => {
                 }
                 setNewItem({ name: '', category: 'Prefabrication', target_quantity: 0, current_quantity: 0, daily_rate: 0, mold_count: 0 });
                 setEditingItem(null);
+            } else if (modalType === 'production_in') {
+                if (transaction.quantity <= 0) {
+                    setFormError(t('quantityMustBePositive') || 'Quantity must be positive');
+                    return;
+                }
+                const newQty = editingItem.current_quantity + transaction.quantity;
+                await updateProduction(editingItem.id, 'current_quantity', newQty);
+                setShowAddModal(false);
+                setTransaction({ quantity: 0, description: '', date: new Date().toISOString().split('T')[0] });
+            } else if (modalType === 'production_out') {
+                if (transaction.quantity <= 0) {
+                    setFormError(t('quantityMustBePositive') || 'Quantity must be positive');
+                    return;
+                }
+                const newQty = editingItem.current_quantity - transaction.quantity;
+                if (newQty < 0) {
+                    setFormError(t('insufficientStock') || 'Insufficient stock');
+                    return;
+                }
+                await updateProduction(editingItem.id, 'current_quantity', newQty);
+                setShowAddModal(false);
+                setTransaction({ quantity: 0, description: '', date: new Date().toISOString().split('T')[0] });
             } else if (modalType === 'iron') {
                 await axios.post('/api/storage/iron', newIronItem);
                 setNewIronItem({ diameter: '', quantity: 0 });
@@ -667,6 +666,12 @@ const Storage = () => {
                     mold_count: itemToEdit.mold_count
                 });
             }
+        } else if ((type === 'production_in' || type === 'production_out') && id) {
+            const itemToEdit = productionItems.find(i => i.id === id);
+            if (itemToEdit) {
+                setEditingItem(itemToEdit);
+                setTransaction({ date: new Date().toISOString().split('T')[0], quantity: 0, description: '', type: 'IN' }); // Reset transaction
+            }
         } else {
             setEditingItem(null);
             setNewItem({ name: '', category: 'Prefabrication', target_quantity: 0, current_quantity: 0, daily_rate: 0, mold_count: 0 });
@@ -754,9 +759,8 @@ const Storage = () => {
                                             <SortableProductionRow
                                                 key={item.id}
                                                 item={item}
-                                                updateProduction={updateProduction}
+                                                openModal={openModal}
                                                 confirmDeleteProductionItem={confirmDeleteProductionItem}
-                                                onEdit={(item) => openModal('production', item.id)}
                                             />
                                         ))}
                                     </tbody>
@@ -817,14 +821,14 @@ const Storage = () => {
                                             <div className="qty-control">
                                                 <button
                                                     className="btn-icon-action warning"
-                                                    onClick={() => updateProduction(item.id, 'current_quantity', Math.max(0, item.current_quantity - 1))}
+                                                    onClick={() => openModal('production_out', item.id)}
                                                     title="Decrease"
                                                 >
                                                     <Minus size={20} />
                                                 </button>
                                                 <button
                                                     className="btn-icon-action success"
-                                                    onClick={() => updateProduction(item.id, 'current_quantity', item.current_quantity + 1)}
+                                                    onClick={() => openModal('production_in', item.id)}
                                                     title="Increase"
                                                 >
                                                     <Plus size={20} />
@@ -1139,6 +1143,23 @@ const Storage = () => {
                                             </div>
                                         </div>
                                     </>
+                                )}
+
+                                {(modalType === 'production_in' || modalType === 'production_out') && (
+                                    <div className="form-group">
+                                        <label className="form-label">
+                                            {modalType === 'production_in' ? (t('quantityToAdd') || 'Quantity to Add') : (t('quantityToRemove') || 'Quantity to Remove')}
+                                        </label>
+                                        <input
+                                            type="number"
+                                            className="form-input"
+                                            value={transaction.quantity}
+                                            onChange={(e) => setTransaction({ ...transaction, quantity: parseInt(e.target.value) })}
+                                            min="1"
+                                            required
+                                            autoFocus
+                                        />
+                                    </div>
                                 )}
 
                                 {modalType === 'iron' && (

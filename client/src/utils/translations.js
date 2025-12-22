@@ -198,7 +198,11 @@ export const translations = {
         incomingIronStock: "Incoming Iron Stock",
         outgoingIronStock: "Outgoing Iron Stock",
         supplier: "Supplier",
-        quantityUnits: "Quantity (Units)"
+        day: "day",
+        view: "View",
+        quantityUnits: "Quantity (Units)",
+        quantityToAdd: "Quantity to Add",
+        quantityToRemove: "Quantity to Remove"
     },
     ar: {
         dashboard: "لوحة التحكم",
@@ -397,6 +401,10 @@ export const translations = {
         incomingIronStock: "وارد حديد",
         outgoingIronStock: "صادر حديد",
         supplier: "المورد",
-        quantityUnits: "الكمية (وحدات)"
+        day: "يوم",
+        view: "عرض",
+        quantityUnits: "الكمية (وحدات)",
+        quantityToAdd: "الكمية المراد إضافتها",
+        quantityToRemove: "الكمية المراد خصمها"
     }
 };
