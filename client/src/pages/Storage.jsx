@@ -199,75 +199,92 @@ const SortableProductionRow = ({ item, openModal, confirmDeleteProductionItem })
     const alignStyle = { textAlign: language === 'ar' ? 'right' : 'left' };
 
     return (
-        <tr ref={setNodeRef} style={style}>
-            <td style={{ width: '50px', padding: '8px 4px' }}>
-                <button className="btn-drag-handle" {...attributes} {...listeners}>
+        <tr ref={setNodeRef} style={style} className="hover:bg-slate-50 transition-colors">
+            <td style={{ width: '40px' }}>
+                <button className="btn-drag-handle" {...attributes} {...listeners} style={{ color: '#cbd5e1' }}>
                     <GripVertical size={16} />
                 </button>
             </td>
-            <td style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '8px 4px', ...alignStyle }} title={item.name}>{item.name}</td>
-            <td style={{ padding: '8px 4px', ...alignStyle }}><span className="badge badge-planned">{item.category}</span></td>
-            <td style={{ padding: '8px 4px', ...alignStyle }}>
-                <div className="progress-label" style={{ justifyContent: language === 'ar' ? 'flex-start' : 'space-between' }}>
-                    <span>{item.current_quantity} / {item.target_quantity}</span>
-                    <span style={{ marginInlineStart: '10px' }}>{Math.round(percentage)}%</span>
-                </div>
-                <div className="progress-bar-bg">
-                    <div
-                        className="progress-bar-fill"
-                        style={{
-                            width: `${percentage}%`,
-                            backgroundColor: getProgressColor(item.current_quantity, item.target_quantity)
-                        }}
-                    ></div>
+            <td>
+                <div className="text-strong" title={item.name}>{item.name}</div>
+            </td>
+            <td>
+                <span className="badge badge-planned">{item.category}</span>
+            </td>
+            <td style={{ minWidth: '200px' }}>
+                <div className="progress-container">
+                    <div className="progress-stats">
+                        <span dir="ltr">{item.current_quantity} / {item.target_quantity}</span>
+                        <span>{Math.round(percentage)}%</span>
+                    </div>
+                    <div className="progress-track">
+                        <div
+                            className="progress-fill"
+                            style={{
+                                width: `${percentage}%`,
+                                backgroundColor: getProgressColor(item.current_quantity, item.target_quantity)
+                            }}
+                        ></div>
+                    </div>
                 </div>
             </td>
-            <td style={{ padding: '8px 4px', ...alignStyle }}>{item.daily_rate} / {t('day')}</td>
-            <td style={{ padding: '8px 4px', ...alignStyle }}>{item.mold_count}</td>
-            <td style={{ fontWeight: 600, color: 'var(--primary-color)', padding: '8px 4px', ...alignStyle }}>
+            <td>
+                <div className="text-muted">{item.daily_rate} / {t('day')}</div>
+            </td>
+            <td>
+                <div className="text-muted">{item.mold_count}</div>
+            </td>
+            <td>
                 {(() => {
                     const val = calculateDaysToFinish(item.current_quantity, item.target_quantity, item.daily_rate);
-                    return val === 'Done' ? t('done') : val === '∞' ? '∞' : `${val} ${t('days')}`;
+                    const isDone = val === 'Done';
+                    const isInfinite = val === '∞';
+
+                    let badgeClass = 'badge-time';
+                    if (isDone) badgeClass += ' done';
+                    if (isInfinite) badgeClass += ' infinite';
+
+                    return (
+                        <span className={badgeClass}>
+                            {isDone ? t('done') : isInfinite ? '∞' : `${val} ${t('days')}`}
+                        </span>
+                    );
                 })()}
             </td>
-            <td style={{ padding: '8px 4px' }}>
-                <div className="action-buttons" style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-                    {/* Column 1: Minus & Edit */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <button
-                            className="btn-icon-action warning"
-                            onClick={() => openModal('production_out', item.id)}
-                            title="Decrease Quantity"
-                        >
-                            <Minus size={16} />
-                        </button>
-                        <button
-                            className="btn-icon-action"
-                            onClick={() => openModal('production', item.id)}
-                            title="Edit Item"
-                            style={{ color: 'var(--text-secondary)' }}
-                        >
-                            <Pencil size={16} />
-                        </button>
-                    </div>
-
-                    {/* Column 2: Plus & Delete */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <button
-                            className="btn-icon-action success"
-                            onClick={() => openModal('production_in', item.id)}
-                            title="Add Quantity"
-                        >
-                            <Plus size={16} />
-                        </button>
-                        <button
-                            className="btn-icon-action delete"
-                            onClick={() => confirmDeleteProductionItem(item.id)}
-                            title="Delete Item"
-                        >
-                            <Trash2 size={16} />
-                        </button>
-                    </div>
+            <td>
+                <div className="action-group" style={{
+                    direction: 'ltr',
+                    justifyContent: language === 'ar' ? 'flex-end' : 'flex-start'
+                }}>
+                    <button
+                        className="btn-icon-action warning"
+                        onClick={() => openModal('production_out', item.id)}
+                        title="Decrease Quantity"
+                    >
+                        <Minus size={16} />
+                    </button>
+                    <button
+                        className="btn-icon-action success"
+                        onClick={() => openModal('production_in', item.id)}
+                        title="Increase Quantity"
+                        style={{ color: 'var(--success-color)' }}
+                    >
+                        <Plus size={16} />
+                    </button>
+                    <button
+                        className="btn-icon-action"
+                        onClick={() => openModal('production', item.id)}
+                        title="Edit Item"
+                    >
+                        <Pencil size={16} />
+                    </button>
+                    <button
+                        className="btn-icon-action danger"
+                        onClick={() => confirmDeleteProductionItem(item)}
+                        title="Delete Item"
+                    >
+                        <Trash2 size={16} />
+                    </button>
                 </div>
             </td>
         </tr>
