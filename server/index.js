@@ -315,7 +315,20 @@ app.delete("/api/storage/production/:id", (req, res) => {
 
 // Iron Inventory
 app.get("/api/storage/iron", (req, res) => {
-    const sql = "SELECT * FROM iron_inventory ORDER BY display_order ASC";
+    const sql = `
+        SELECT 
+            i.id, 
+            i.diameter, 
+            i.display_order,
+            COALESCE(
+                (SELECT SUM(CASE WHEN t.type = 'IN' THEN t.quantity ELSE -t.quantity END)
+                 FROM iron_transactions t
+                 WHERE t.iron_id = i.id), 
+                0
+            ) as quantity
+        FROM iron_inventory i 
+        ORDER BY i.display_order ASC
+    `;
     db.all(sql, [], (err, rows) => {
         if (err) {
             res.status(400).json({ "error": err.message });
@@ -338,7 +351,18 @@ app.post("/api/storage/iron", (req, res) => {
                 res.status(400).json({ "error": err.message });
                 return;
             }
-            res.json({ "message": "success", "data": req.body, "id": this.lastID });
+            const newItemId = this.lastID;
+
+            // If initial quantity > 0, create an IN transaction
+            if (quantity && quantity > 0) {
+                const transSql = `INSERT INTO iron_transactions (iron_id, type, quantity, description, transaction_date) VALUES (?, 'IN', ?, 'Initial Inventory', ?)`;
+                const date = new Date().toISOString().split('T')[0];
+                db.run(transSql, [newItemId, quantity, date], (err) => {
+                    if (err) console.error("Error creating initial transaction:", err);
+                });
+            }
+
+            res.json({ "message": "success", "data": req.body, "id": newItemId });
         });
     });
 });
@@ -392,6 +416,81 @@ app.put("/api/storage/iron/:id", (req, res) => {
 
 app.delete("/api/storage/iron/:id", (req, res) => {
     const sql = 'DELETE FROM iron_inventory WHERE id = ?';
+    db.run(sql, req.params.id, function (err, result) {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "deleted", "changes": this.changes });
+    });
+});
+
+// Iron Transactions
+app.get("/api/storage/iron/:id/transactions", (req, res) => {
+    const sql = "SELECT * FROM iron_transactions WHERE iron_id = ? ORDER BY transaction_date DESC, timestamp DESC";
+    db.all(sql, [req.params.id], (err, rows) => {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "success", "data": rows });
+    });
+});
+
+app.post("/api/storage/iron/transaction", (req, res) => {
+    console.log("Received Iron Transaction Request:", req.body);
+    const { iron_id, type, quantity, description, date } = req.body;
+
+    if (!iron_id) {
+        console.error("Missing iron_id in request");
+        res.status(400).json({ "error": "Missing item ID" });
+        return;
+    }
+
+    let transaction_date = date || new Date().toISOString().split('T')[0];
+
+    if (quantity <= 0) {
+        res.status(400).json({ "error": "Quantity must be greater than 0" });
+        return;
+    }
+
+    // Check stock for OUT transaction
+    if (type === 'OUT') {
+        const stockSql = `
+            SELECT COALESCE(SUM(CASE WHEN type = 'IN' THEN quantity ELSE -quantity END), 0) as current_stock 
+            FROM iron_transactions WHERE iron_id = ?
+        `;
+        db.get(stockSql, [iron_id], (err, row) => {
+            if (err) {
+                res.status(400).json({ "error": err.message });
+                return;
+            }
+            if (row.current_stock < quantity) {
+                res.status(400).json({ "error": "Insufficient stock" });
+                return;
+            }
+            insertTransaction();
+        });
+    } else {
+        insertTransaction();
+    }
+
+    function insertTransaction() {
+        const sql = `INSERT INTO iron_transactions (iron_id, type, quantity, description, transaction_date) VALUES (?, ?, ?, ?, ?)`;
+        db.run(sql, [iron_id, type, quantity, description, transaction_date], function (err) {
+            if (err) {
+                console.error("SQL Error in Iron Transaction:", err);
+                res.status(400).json({ "error": err.message });
+                return;
+            }
+            res.json({ "message": "success", "id": this.lastID });
+        });
+    }
+});
+
+app.delete("/api/storage/iron/transaction/:id", (req, res) => {
+    // For now, simpler delete without re-validating stock history
+    const sql = 'DELETE FROM iron_transactions WHERE id = ?';
     db.run(sql, req.params.id, function (err, result) {
         if (err) {
             res.status(400).json({ "error": err.message });

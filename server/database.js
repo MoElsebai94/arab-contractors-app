@@ -161,6 +161,24 @@ const db = new sqlite3.Database(dbPath, (err) => {
         }
       });
 
+      // Create Iron Transactions Table
+      db.run(`CREATE TABLE IF NOT EXISTS iron_transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        iron_id INTEGER,
+        type TEXT, -- 'IN' or 'OUT'
+        quantity INTEGER,
+        description TEXT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        transaction_date TEXT, -- Format: YYYY-MM-DD
+        FOREIGN KEY (iron_id) REFERENCES iron_inventory(id)
+      )`, (err) => {
+        if (!err) {
+          console.log("Iron transactions table checked/created");
+        } else {
+          console.error("Error creating iron transactions table", err);
+        }
+      });
+
       // Create Cement Inventory Table (Smart Storage)
       db.run(`CREATE TABLE IF NOT EXISTS cement_inventory (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

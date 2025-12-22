@@ -194,7 +194,11 @@ export const translations = {
         gasolineOut: "e.g. Generator #5",
         fuel: "Fuel",
         filterByMonth: "Filter by Month",
-        allTransactions: "All Transactions"
+        allTransactions: "All Transactions",
+        incomingIronStock: "Incoming Iron Stock",
+        outgoingIronStock: "Outgoing Iron Stock",
+        supplier: "Supplier",
+        quantityUnits: "Quantity (Units)"
     },
     ar: {
         dashboard: "لوحة التحكم",
@@ -389,6 +393,10 @@ export const translations = {
         liters: "لتر",
         fuel: "الوقود",
         filterByMonth: "تصفية حسب الشهر",
-        allTransactions: "كل المعاملات"
+        allTransactions: "كل المعاملات",
+        incomingIronStock: "وارد حديد",
+        outgoingIronStock: "صادر حديد",
+        supplier: "المورد",
+        quantityUnits: "الكمية (وحدات)"
     }
 };

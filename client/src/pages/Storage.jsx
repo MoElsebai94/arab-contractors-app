@@ -52,7 +52,7 @@ const CustomDropdown = ({ options, value, onChange, placeholder }) => {
     );
 };
 
-const ModernIronCard = ({ item, updateQuantity, confirmDeleteIronItem }) => {
+const IronCard = ({ item, openModal, transactions, onDeleteTransaction, t, filterMonth, getFilteredTransactions, CustomDropdown, language }) => {
     const {
         attributes,
         listeners,
@@ -62,11 +62,6 @@ const ModernIronCard = ({ item, updateQuantity, confirmDeleteIronItem }) => {
         isDragging,
     } = useSortable({ id: item.id });
 
-    const [isEditing, setIsEditing] = useState(false);
-    const [editValue, setEditValue] = useState(item.quantity);
-    const [actionType, setActionType] = useState(null); // 'add' or 'remove'
-    const [actionValue, setActionValue] = useState('');
-
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
@@ -74,269 +69,95 @@ const ModernIronCard = ({ item, updateQuantity, confirmDeleteIronItem }) => {
         position: 'relative',
     };
 
-    // Color coding based on quantity (example logic)
-    const getBorderColor = (qty) => {
-        if (qty === 0) return 'var(--text-secondary)'; // Grey
-        if (qty < 50) return 'var(--danger-color)'; // Red
-        if (qty > 500) return 'var(--success-color)'; // Green
-        return 'var(--primary-color)'; // Blue
-    };
-
-    const handleStartEdit = () => {
-        setEditValue(item.quantity);
-        setIsEditing(true);
-    };
-
-    const handleSave = () => {
-        const newVal = parseInt(editValue);
-        if (!isNaN(newVal) && newVal >= 0) {
-            updateQuantity('iron', item.id, newVal);
-        } else {
-            setEditValue(item.quantity); // Revert if invalid
-        }
-        setIsEditing(false);
-    };
-
-    const handleAction = () => {
-        const val = parseInt(actionValue);
-        if (!isNaN(val) && val > 0) {
-            const newQty = actionType === 'add'
-                ? item.quantity + val
-                : Math.max(0, item.quantity - val);
-            updateQuantity('iron', item.id, newQty);
-        }
-        setActionType(null);
-        setActionValue('');
-    };
-
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            handleSave();
-        } else if (e.key === 'Escape') {
-            setEditValue(item.quantity);
-            setIsEditing(false);
-        }
-    };
-
-    const handleActionKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            handleAction();
-        } else if (e.key === 'Escape') {
-            setActionType(null);
-            setActionValue('');
-        }
-    };
-
-    // Clean diameter string (remove existing non-numeric characters to avoid double Phi)
     const cleanDiameter = item.diameter.toString().replace(/[^0-9.]/g, '');
+    const filteredTransactions = getFilteredTransactions(transactions, filterMonth);
+
+    // Calculate dynamic border color based on stock levels (example heuristic)
+    const getBorderColor = (qty) => {
+        if (qty === 0) return 'var(--text-secondary)';
+        if (qty < 100) return 'var(--danger-color)';
+        return 'var(--primary-color)';
+    };
 
     return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            className="modern-iron-card"
-        >
-            <div className="card-content" style={{ borderBottom: `4px solid ${getBorderColor(item.quantity)}` }}>
-                <div className="card-header">
-                    <span className="diameter-label">Φ{cleanDiameter}</span>
-                </div>
-
-                {isEditing ? (
-                    <input
-                        type="number"
-                        className="card-value-input"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onBlur={handleSave}
-                        onKeyDown={handleKeyDown}
-                        autoFocus
-                        onClick={(e) => e.stopPropagation()} // Prevent drag
-                    />
-                ) : (
-                    <div
-                        className="card-value-container"
-                        onClick={handleStartEdit}
-                        title="Click to edit quantity"
-                    >
-                        <span className="card-value">{item.quantity}</span>
-                        <Pencil size={16} className="edit-icon" />
+        <div ref={setNodeRef} style={style} className="card cement-card">
+            <div className="card-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <button className="btn-drag-handle-card" {...attributes} {...listeners}>
+                        <GripVertical size={20} />
+                    </button>
+                    <div style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--text-primary)' }}>
+                        Φ{cleanDiameter}
                     </div>
-                )}
-
-                {/* The following line is syntactically incorrect within JSX.
-                    If 'loading' is a prop/state, it should be handled like:
-                    {loading && <LoadingScreen />}
-                    or as a conditional return at the top of the component function.
-                    However, following the instruction faithfully: */}
-                {/* if (loading) return <LoadingScreen />; */}
-
-                {/* Mobile Actions (Visible only on mobile) */}
-                <div className="storage-mobile-actions">
-                    <button
-                        className="btn-circle warning mobile-btn"
-                        onClick={(e) => { e.stopPropagation(); setActionType('remove'); }}
-                    >
-                        <Minus size={18} />
-                    </button>
-                    <button
-                        className="btn-circle success mobile-btn"
-                        onClick={(e) => { e.stopPropagation(); setActionType('add'); }}
-                    >
-                        <Plus size={18} />
-                    </button>
+                </div>
+                <div className="stock-badge" style={{
+                    background: item.quantity > 0 ? 'var(--bg-secondary)' : '#f3f4f6',
+                    color: item.quantity > 0 ? 'var(--primary-color)' : '#6b7280',
+                    padding: '0.25rem 0.75rem',
+                    borderRadius: '999px',
+                    fontWeight: 700,
+                    fontSize: '0.9rem'
+                }}>
+                    {item.quantity} Units
                 </div>
             </div>
 
-            {/* Smart Action Input Overlay (Visible when actionType is set) */}
-            {actionType && (
-                <div className="action-input-overlay" onClick={(e) => e.stopPropagation()}>
-                    <div className="action-label">{actionType === 'add' ? 'Add:' : 'Remove:'}</div>
-                    <input
-                        type="number"
-                        className="action-input"
-                        value={actionValue}
-                        onChange={(e) => setActionValue(e.target.value)}
-                        onKeyDown={handleActionKeyDown}
-                        autoFocus
-                        placeholder="#"
-                    />
-                    <div className="action-buttons-mini">
-                        <button className="btn-mini success" onClick={handleAction}><Check size={16} /></button>
-                        <button className="btn-mini danger" onClick={() => { setActionType(null); setActionValue(''); }}><X size={16} /></button>
-                    </div>
-                </div>
-            )}
-
-            {/* Mobile Delete Button */}
-            <button
-                className="mobile-delete-btn"
-                onClick={(e) => { e.stopPropagation(); confirmDeleteIronItem(item.id); }}
-            >
-                <Trash2 size={16} />
-            </button>
-
-            {/* Hover Actions Overlay (Desktop only) */}
-            <div className="card-overlay" style={{ pointerEvents: isEditing ? 'none' : 'auto', opacity: isEditing ? 0 : undefined }}>
-                <button className="btn-drag-handle-card" {...attributes} {...listeners}>
-                    <GripVertical size={20} />
-                </button>
-
-                <div className="overlay-actions">
-                    <button
-                        className="btn-circle warning"
-                        onClick={(e) => { e.stopPropagation(); setActionType('remove'); }}
-                        title="Remove amount..."
-                    >
-                        <Minus size={20} />
-                    </button>
-                    <button
-                        className="btn-circle success"
-                        onClick={(e) => { e.stopPropagation(); setActionType('add'); }}
-                        title="Add amount..."
-                    >
-                        <Plus size={20} />
-                    </button>
-                </div>
-
+            <div className="card-actions" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
                 <button
-                    className="btn-delete-card"
-                    onClick={(e) => { e.stopPropagation(); confirmDeleteIronItem(item.id); }}
+                    className="btn-action in"
+                    onClick={() => openModal('iron_in', item.id)}
+                    style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', padding: '0.75rem', borderRadius: '0.5rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', transition: 'all 0.2s' }}
                 >
-                    <Trash2 size={18} />
+                    <ArrowDown size={18} />
+                    {t('incoming') || 'Incoming'}
+                </button>
+                <button
+                    className="btn-action out"
+                    onClick={() => openModal('iron_out', item.id)}
+                    style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', padding: '0.75rem', borderRadius: '0.5rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', transition: 'all 0.2s' }}
+                >
+                    <ArrowUp size={18} />
+                    {t('outgoing') || 'Outgoing'}
                 </button>
             </div>
-            <style>{`
-                .card-value-container {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 0.5rem;
-                    cursor: pointer;
-                }
-                .card-value {
-                    transition: color 0.2s;
-                }
-                .edit-icon {
-                    color: var(--text-secondary);
-                    opacity: 0;
-                    transition: opacity 0.2s;
-                }
-                .card-value-container:hover .card-value {
-                    color: var(--primary-color);
-                }
-                .card-value-container:hover .edit-icon {
-                    opacity: 1;
-                }
-                .card-value-input {
-                    font-size: 4rem;
-                    font-weight: 800;
-                    color: var(--text-primary);
-                    width: 180px;
-                    text-align: center;
-                    border: none;
-                    border-bottom: 3px solid var(--primary-color);
-                    outline: none;
-                    background: transparent;
-                    padding: 0;
-                    margin-bottom: 0.5rem;
-                    line-height: 1;
-                }
-                /* Hide arrows in number input */
-                .card-value-input::-webkit-outer-spin-button,
-                .card-value-input::-webkit-inner-spin-button {
-                    -webkit-appearance: none;
-                    margin: 0;
-                }
-                
-                .action-input-overlay {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(255, 255, 255, 0.98);
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 0.5rem;
-                    z-index: 10;
-                    padding: 1rem;
-                }
-                .action-label {
-                    font-weight: 600;
-                    color: var(--text-secondary);
-                    font-size: 0.9rem;
-                }
-                .action-input {
-                    width: 80%;
-                    padding: 0.5rem;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
-                    text-align: center;
-                    font-size: 1.1rem;
-                    font-weight: 600;
-                }
-                .action-buttons-mini {
-                    display: flex;
-                    gap: 0.5rem;
-                    width: 100%;
-                    justify-content: center;
-                }
-                .btn-mini {
-                    width: 30px;
-                    height: 30px;
-                    border-radius: 4px;
-                    border: none;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    color: white;
-                }
-                .btn-mini.success { background: var(--success-color); }
-                .btn-mini.danger { background: var(--danger-color); }
-            `}</style>
+
+            <div className="transaction-history">
+                <div className="history-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', fontSize: '0.85rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <span>{t('recentActivity') || 'Recent Activity'}</span>
+                </div>
+
+                <div className="history-list" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                    {filteredTransactions.length === 0 ? (
+                        <div className="empty-state" style={{ textAlign: 'center', padding: '1.5rem', color: '#94a3b8', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                            {t('noTransactions') || 'No transactions yet'}
+                        </div>
+                    ) : (
+                        filteredTransactions.slice(0, 5).map(tx => (
+                            <div key={tx.id} className="history-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', borderBottom: '1px solid #f1f5f9' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', fontWeight: 600, color: tx.type === 'IN' ? '#059669' : '#dc2626' }}>
+                                        {tx.type === 'IN' ? <Plus size={12} /> : <Minus size={12} />}
+                                        {tx.quantity}
+                                    </div>
+                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{tx.description || '-'}</div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <span style={{ fontSize: '0.75rem', color: '#64748b', background: '#f8fafc', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                                        {tx.transaction_date || (tx.timestamp ? tx.timestamp.split('T')[0] : '')}
+                                    </span>
+                                    <button
+                                        onClick={() => onDeleteTransaction(tx.id, 'iron', item.id)}
+                                        className="btn-delete-mini"
+                                        style={{ border: 'none', background: 'transparent', color: '#cbd5e1', cursor: 'pointer', padding: '4px', display: 'flex' }}
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
         </div>
     );
 };
@@ -485,9 +306,11 @@ const Storage = () => {
     const [cementTransactions, setCementTransactions] = useState({}); // Map of cement_id -> transactions[]
     const [gasolineInventory, setGasolineInventory] = useState([]);
     const [gasolineTransactions, setGasolineTransactions] = useState({}); // Map of gasoline_id -> transactions[]
+    const [ironTransactions, setIronTransactions] = useState({}); // Map of iron_id -> transactions[]
 
     const [showAddModal, setShowAddModal] = useState(false);
-    const [modalType, setModalType] = useState('production'); // 'production', 'iron', 'cement_in', 'cement_out', 'gasoline_in', 'gasoline_out'
+    const [modalType, setModalType] = useState('production'); // 'production', 'iron', 'iron_in', 'iron_out', 'cement_in', 'cement_out', 'gasoline_in', 'gasoline_out'
+    const [selectedIronId, setSelectedIronId] = useState(null);
     const [selectedCementId, setSelectedCementId] = useState(null);
     const [selectedGasolineId, setSelectedGasolineId] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -558,6 +381,14 @@ const Storage = () => {
             }
             setGasolineTransactions(gasTransactionsMap);
 
+            // Fetch transactions for each iron item
+            const ironTransactionsMap = {};
+            for (const item of ironRes.data.data) {
+                const transRes = await axios.get(`/api/storage/iron/${item.id}/transactions`);
+                ironTransactionsMap[item.id] = transRes.data.data;
+            }
+            setIronTransactions(ironTransactionsMap);
+
         } catch (error) {
             console.error('Error fetching storage data:', error);
         }
@@ -600,6 +431,21 @@ const Storage = () => {
                 const type = modalType === 'gasoline_in' ? 'IN' : 'OUT';
                 await axios.post('/api/storage/gasoline/transaction', {
                     gasoline_id: selectedGasolineId,
+                    type,
+                    quantity: transaction.quantity,
+                    description: transaction.description,
+                    date: transaction.date
+                });
+                setTransaction({ quantity: 0, description: '', date: new Date().toISOString().split('T')[0] });
+            } else if (modalType === 'iron_in' || modalType === 'iron_out') {
+                if (!transaction.quantity || transaction.quantity <= 0) {
+                    setFormError('Quantity must be greater than 0');
+                    return;
+                }
+                const type = modalType === 'iron_in' ? 'IN' : 'OUT';
+                console.log('Sending Iron Transaction:', { iron_id: selectedIronId, type, quantity: transaction.quantity });
+                await axios.post('/api/storage/iron/transaction', {
+                    iron_id: selectedIronId,
                     type,
                     quantity: transaction.quantity,
                     description: transaction.description,
@@ -652,29 +498,28 @@ const Storage = () => {
         });
     };
 
-    const confirmDeleteTransaction = (transId) => {
-        setTransactionToDelete(transId);
-        setShowDeleteModal(true);
-    };
-
     const handleDeleteTransaction = async () => {
         if (!transactionToDelete) return;
         try {
-            const endpoint = activeTab === 'cement' ? 'cement' : 'gasoline';
-            await axios.delete(`/api/storage/${endpoint}/transaction/${transactionToDelete}`);
+            await axios.delete(`/api/storage/${transactionToDelete.type}/transaction/${transactionToDelete.id}`);
             setShowDeleteModal(false);
             setTransactionToDelete(null);
             fetchData();
         } catch (error) {
             console.error('Error deleting transaction:', error);
-            const errorMsg = error.response?.data?.error || 'Failed to delete transaction';
-            alert(errorMsg);
+            setFormError(t('errorDeletingTransaction') || 'Error deleting transaction');
         }
     };
 
-    const confirmDeleteIronItem = (id) => {
-        setIronItemToDelete(id);
-        setShowDeleteIronModal(true);
+    const confirmDeleteTransaction = (id, type = 'cement') => { // 'cement', 'gasoline', or 'iron'
+        // If type is iron, use the new structure
+        if (type === 'iron') {
+            setTransactionToDelete({ id, type: 'iron' });
+        } else {
+            // Heuristic to detect type if not passed explicitly (legacy)
+            setTransactionToDelete({ id, type });
+        }
+        setShowDeleteModal(true);
     };
 
     const handleDeleteIronItem = async () => {
@@ -829,6 +674,7 @@ const Storage = () => {
 
         if (id && type.startsWith('cement')) setSelectedCementId(id);
         if (id && type.startsWith('gasoline')) setSelectedGasolineId(id);
+        if (id && type.startsWith('iron')) setSelectedIronId(id);
         setShowAddModal(true);
     };
 
@@ -1002,32 +848,49 @@ const Storage = () => {
             )}
 
             {activeTab === 'iron' && (
-                <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                >
-                    <SortableContext
-                        items={ironInventory.map(item => item.id)}
-                        strategy={rectSortingStrategy}
+                <div className="cement-container">
+                    <div className="filter-bar" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+                        <CustomDropdown
+                            options={getAvailableMonths(ironTransactions)}
+                            value={filterMonth}
+                            onChange={(e) => setFilterMonth(e.target.value)}
+                            placeholder={t('allTransactions')}
+                        />
+                    </div>
+
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
                     >
-                        <div className="modern-iron-grid">
-                            {ironInventory.map((item) => (
-                                <ModernIronCard
-                                    key={item.id}
-                                    item={item}
-                                    updateQuantity={updateQuantity}
-                                    confirmDeleteIronItem={confirmDeleteIronItem}
-                                />
-                            ))}
-                        </div>
-                        {ironInventory.length === 0 && (
-                            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
-                                <p>No iron items found. Add one above.</p>
+                        <SortableContext
+                            items={ironInventory.map(item => item.id)}
+                            strategy={rectSortingStrategy}
+                        >
+                            <div className="modern-iron-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+                                {ironInventory.map((item) => (
+                                    <IronCard
+                                        key={item.id}
+                                        item={item}
+                                        openModal={openModal}
+                                        transactions={ironTransactions[item.id] || []}
+                                        onDeleteTransaction={confirmDeleteTransaction}
+                                        t={t}
+                                        filterMonth={filterMonth}
+                                        getFilteredTransactions={getFilteredTransactions}
+                                        CustomDropdown={CustomDropdown}
+                                        language={language}
+                                    />
+                                ))}
                             </div>
-                        )}
-                    </SortableContext>
-                </DndContext>
+                            {ironInventory.length === 0 && (
+                                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+                                    <p>No iron items found. Add one above.</p>
+                                </div>
+                            )}
+                        </SortableContext>
+                    </DndContext>
+                </div>
             )}
 
             {activeTab === 'cement' && (
@@ -1208,6 +1071,8 @@ const Storage = () => {
                                 {modalType === 'cement_out' && t('outgoingCementStock')}
                                 {modalType === 'gasoline_in' && t('incomingGasoline')}
                                 {modalType === 'gasoline_out' && t('outgoingGasoline')}
+                                {modalType === 'iron_in' && t('incomingIronStock')}
+                                {modalType === 'iron_out' && t('outgoingIronStock')}
                             </h3>
                             {formError && (
                                 <div className="modal-error">
@@ -1368,6 +1233,43 @@ const Storage = () => {
                                                 value={transaction.description}
                                                 onChange={(e) => setTransaction({ ...transaction, description: e.target.value })}
                                                 placeholder={modalType === 'gasoline_in' ? t('gasolineIn') : t('gasolineOut')}
+                                                required
+                                            />
+                                        </div>
+                                    </>
+                                )}
+
+                                {(modalType === 'iron_in' || modalType === 'iron_out') && (
+                                    <>
+                                        <div className="form-group">
+                                            <label className="form-label">{t('date')}</label>
+                                            <input
+                                                type="date"
+                                                className="form-input"
+                                                value={transaction.date}
+                                                onChange={(e) => setTransaction({ ...transaction, date: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">{t('quantityUnits') || 'Quantity (Units)'}</label>
+                                            <input
+                                                type="number"
+                                                className="form-input"
+                                                value={transaction.quantity}
+                                                onChange={(e) => setTransaction({ ...transaction, quantity: parseInt(e.target.value) })}
+                                                required
+                                                min="1"
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">{t('description')}</label>
+                                            <input
+                                                type="text"
+                                                className="form-input"
+                                                value={transaction.description}
+                                                onChange={(e) => setTransaction({ ...transaction, description: e.target.value })}
+                                                placeholder={modalType === 'iron_in' ? t('supplier') : t('subcontractor')}
                                                 required
                                             />
                                         </div>
