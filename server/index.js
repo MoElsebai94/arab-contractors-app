@@ -2,12 +2,22 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const db = require('./database');
+require('dotenv').config();
 
 const app = express();
 const PORT = 3001;
 
 app.use(cors());
 app.use(bodyParser.json());
+
+app.post('/api/auth/login', (req, res) => {
+    const { passcode } = req.body;
+    if (passcode === process.env.ADMIN_PASSCODE) {
+        res.json({ success: true });
+    } else {
+        res.status(401).json({ success: false, error: 'Invalid passcode' });
+    }
+});
 
 // ... (existing code)
 

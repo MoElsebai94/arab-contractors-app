@@ -1,17 +1,21 @@
 import { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import axios from 'axios';
 
 const Login = ({ onLogin }) => {
   const [passcode, setPasscode] = useState('');
   const [error, setError] = useState('');
   const { setLanguage } = useLanguage();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (passcode === 'acgc') {
-      setLanguage('en');
-      onLogin();
-    } else {
+    try {
+      const response = await axios.post('/api/auth/login', { passcode });
+      if (response.data.success) {
+        setLanguage('en');
+        onLogin();
+      }
+    } catch (err) {
       setError('Invalid passcode. Please try again.');
       setPasscode('');
     }
