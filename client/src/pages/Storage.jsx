@@ -246,7 +246,7 @@ const SortableProductionRow = ({ item, openModal, confirmDeleteProductionItem })
 
                     return (
                         <span className={badgeClass}>
-                            {isDone ? t('done') : isInfinite ? '∞' : `${val} ${t('days')}`}
+                            {isDone ? t('done') : isInfinite ? '∞' : val}
                         </span>
                     );
                 })()}
@@ -828,7 +828,7 @@ const Storage = () => {
                                                 <span style={{ color: 'var(--primary-color)', fontWeight: 600 }}>
                                                     {(() => {
                                                         const val = calculateDaysToFinish(item.current_quantity, item.target_quantity, item.daily_rate);
-                                                        return val === 'Done' || val === '∞' ? t('done') : `${val} ${t('days')}`;
+                                                        return val;
                                                     })()}
                                                 </span>
                                             </div>
