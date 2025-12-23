@@ -852,116 +852,148 @@ const Employees = () => {
             const endStr = endDate.toISOString().split('T')[0];
 
             const response = await axios.get(`/api/attendance/${employee.id}?startDate=${startStr}&endDate=${endStr}`);
-            const attendanceData = response.data.data || [];
+            const attendanceDataRaw = response.data.data || [];
+
+            // Convert fetched data to Map for easy lookup
+            const attendanceMap = new Map();
+            attendanceDataRaw.forEach(record => {
+                // Ensure we just compare YYYY-MM-DD
+                const d = new Date(record.date).toISOString().split('T')[0];
+                attendanceMap.set(d, record);
+            });
 
             const doc = new jsPDF();
 
             // --- LOGO Handling ---
             try {
-                // Fetch logo image
                 const logoImg = await new Promise((resolve, reject) => {
                     const img = new Image();
-                    img.src = '/logo.png'; // Assuming Vite handles public asset imports
+                    img.src = '/logo_circular.png';
                     img.onload = () => resolve(img);
                     img.onerror = (e) => reject(e);
                 });
-
-                // Add logo to PDF (x, y, w, h)
-                doc.addImage(logoImg, 'PNG', 14, 10, 25, 25 * (logoImg.height / logoImg.width));
+                // Compact Logo: Slightly smaller
+                doc.addImage(logoImg, 'PNG', 14, 8, 20, 20 * (logoImg.height / logoImg.width));
             } catch (err) {
                 console.warn("Logo load failed:", err);
             }
 
-            // --- Header Section ---
-            doc.setFontSize(22);
-            doc.setTextColor(0, 51, 102); // Dark Blue (#003366)
+            // --- Header Section (Compacted) ---
+            doc.setFontSize(18); // Reduced from 22
+            doc.setTextColor(0, 51, 102);
             doc.setFont("helvetica", "bold");
-            doc.text("Arab Contractors Cameroon", 105, 25, { align: "center" });
+            doc.text("Arab Contractors Cameroon", 105, 18, { align: "center" });
 
             // Report Title
-            doc.setFontSize(14);
-            doc.setTextColor(100); // Gray
+            doc.setFontSize(12); // Reduced from 14
+            doc.setTextColor(100);
             doc.setFont("helvetica", "normal");
-            doc.text(title || "Employee Attendance Report", 105, 35, { align: "center" });
+            doc.text(title || "Employee Attendance Report", 105, 26, { align: "center" });
 
             // Line Separator
             doc.setDrawColor(200);
-            doc.line(14, 45, 196, 45);
+            doc.line(14, 32, 196, 32); // Moved up
 
-            // --- Employee Details Box ---
-            doc.setFontSize(11);
+            // --- Employee Details (Compacted) ---
+            doc.setFontSize(10); // Reduced from 11
             doc.setTextColor(50);
 
-            const startY = 55;
+            const startY = 38; // Moved up significantly
             doc.text(`Name:`, 14, startY);
             doc.setFont("helvetica", "bold");
-            doc.text(`${employee.name}`, 35, startY);
+            doc.text(`${employee.name}`, 30, startY);
             doc.setFont("helvetica", "normal");
 
-            doc.text(`Role:`, 14, startY + 7);
+            doc.text(`Role:`, 14, startY + 5);
             doc.setFont("helvetica", "bold");
-            doc.text(`${employee.role || 'N/A'}`, 35, startY + 7);
+            doc.text(`${employee.role || 'N/A'}`, 30, startY + 5);
             doc.setFont("helvetica", "normal");
 
-            // Status Indicator (Right aligned)
+            // Status Indicator
             if (employee.is_active === 0) {
-                doc.setTextColor(231, 76, 60); // Red
+                doc.setTextColor(231, 76, 60);
                 doc.setFont("helvetica", "bold");
                 doc.text("STATUS: INACTIVE", 196, startY, { align: "right" });
             } else {
-                doc.setTextColor(39, 174, 96); // Green
+                doc.setTextColor(39, 174, 96);
                 doc.setFont("helvetica", "bold");
                 doc.text("STATUS: ACTIVE", 196, startY, { align: "right" });
             }
 
             doc.setFont("helvetica", "normal");
             doc.setTextColor(100);
-            doc.setFontSize(10);
+            doc.setFontSize(9);
             const rangeText = `Period: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
-            doc.text(rangeText, 196, startY + 7, { align: "right" });
+            doc.text(rangeText, 196, startY + 5, { align: "right" });
 
-            // --- Attendance Table ---
+            // --- Attendance Table with Full Date Range ---
             const tableColumn = ["Date", "Status", "Time In", "Time Out", "Notes"];
             const tableRows = [];
 
-            attendanceData.sort((a, b) => new Date(b.date) - new Date(a.date));
+            // Generate all dates from startDate to endDate
+            let loopDate = new Date(startDate);
+            const stopDate = new Date(endDate);
 
-            attendanceData.forEach(record => {
-                const dateClicked = new Date(record.date).toLocaleDateString();
-                const status = (record.status || 'Present').toUpperCase();
-                const timeIn = record.start_time || '-';
-                const timeOut = record.end_time || '-';
-                const notes = record.notes || '';
+            while (loopDate <= stopDate) {
+                const dayStr = loopDate.toISOString().split('T')[0]; // YYYY-MM-DD
+                const record = attendanceMap.get(dayStr);
 
-                tableRows.push([dateClicked, status, timeIn, timeOut, notes]);
-            });
+                // Format for display: "Samedi 22/11/2025"
+                const dateOptions = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+                let dateDisplay = loopDate.toLocaleDateString('fr-FR', dateOptions);
+                // Capitalize first letter
+                dateDisplay = dateDisplay.charAt(0).toUpperCase() + dateDisplay.slice(1);
+                // Determine row data
+                const status = record ? (record.status || 'Present').toUpperCase() : '';
+                const timeIn = record ? (record.start_time || '-') : '';
+                const timeOut = record ? (record.end_time || '-') : '';
+                const notes = record ? (record.notes || '') : '';
+
+                tableRows.push([dateDisplay, status, timeIn, timeOut, notes]);
+
+                // Next day
+                loopDate.setDate(loopDate.getDate() + 1);
+            }
 
             autoTable(doc, {
                 head: [tableColumn],
                 body: tableRows,
-                startY: startY + 20,
-                theme: 'striped', // Professional look
+                startY: startY + 12, // Compact spacing
+                theme: 'striped',
                 headStyles: {
-                    fillColor: [44, 62, 80], // Dark Slate
+                    fillColor: [44, 62, 80],
                     textColor: 255,
-                    fontSize: 10,
+                    fontSize: 9, // Reduced font
                     fontStyle: 'bold',
-                    halign: 'center'
+                    halign: 'center',
+                    cellPadding: 1.5 // Reduced padding
                 },
                 bodyStyles: {
                     textColor: 50,
-                    fontSize: 9,
-                    halign: 'center'
+                    fontSize: 8, // Reduced font
+                    halign: 'center',
+                    cellPadding: 1.5 // Reduced padding
                 },
                 columnStyles: {
-                    0: { halign: 'left' }, // Date
-                    4: { halign: 'left' }  // Notes
+                    0: { halign: 'left' },
+                    4: { halign: 'left' }
                 },
                 alternateRowStyles: { fillColor: [245, 245, 245] },
-                margin: { top: 20 }
+                margin: { top: 10, bottom: 10 }, // Reduced margins
+                // Weekend Coloring Logic
+                didParseCell: function (data) {
+                    if (data.section === 'body') {
+                        // The raw dateDisplay string (e.g. "Samedi 22/11/2025")
+                        // Easier: Check if string starts with "Samedi" or "Dimanche".
+                        const dateStr = data.row.raw[0].toLowerCase();
+                        if (dateStr.startsWith('samedi') || dateStr.startsWith('dimanche')) {
+                            data.cell.styles.fillColor = [255, 248, 220]; // Cornsilk
+                        }
+                    }
+                }
             });
 
-            // Footer / Generation Date
+            // Footer
             const pageCount = doc.internal.getNumberOfPages();
             for (let i = 1; i <= pageCount; i++) {
                 doc.setPage(i);
