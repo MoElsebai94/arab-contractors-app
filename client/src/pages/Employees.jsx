@@ -615,6 +615,7 @@ const BulkAttendanceModal = ({ employees, onClose, onSave }) => {
 
 const Employees = () => {
     const { t } = useLanguage();
+    const [loading, setLoading] = useState(true);
     const [employees, setEmployees] = useState([]);
 
     // Calculate Role Counts
@@ -814,6 +815,8 @@ const Employees = () => {
             setEmployees((response.data.data || []).filter(e => e && e.id));
         } catch (error) {
             console.error('Error fetching employees:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -1123,6 +1126,8 @@ const Employees = () => {
             });
         }
     };
+
+    if (loading) return <LoadingScreen />;
 
     return (
         <div>

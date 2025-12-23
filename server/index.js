@@ -433,6 +433,17 @@ app.get("/api/storage/iron/:id/transactions", (req, res) => {
     });
 });
 
+app.get("/api/storage/iron/transactions/all", (req, res) => {
+    const sql = "SELECT * FROM iron_transactions ORDER BY transaction_date DESC, timestamp DESC";
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "success", "data": rows });
+    });
+});
+
 app.post("/api/storage/iron/transaction", (req, res) => {
     console.log("Received Iron Transaction Request:", req.body);
     const { iron_id, type, quantity, description, date } = req.body;
@@ -557,6 +568,17 @@ app.put("/api/storage/cement/:id", (req, res) => {
 app.get("/api/storage/cement/:id/transactions", (req, res) => {
     const sql = "SELECT * FROM cement_transactions WHERE cement_id = ? ORDER BY transaction_date DESC, timestamp DESC";
     db.all(sql, [req.params.id], (err, rows) => {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "success", "data": rows });
+    });
+});
+
+app.get("/api/storage/cement/transactions/all", (req, res) => {
+    const sql = "SELECT * FROM cement_transactions ORDER BY transaction_date DESC, timestamp DESC";
+    db.all(sql, [], (err, rows) => {
         if (err) {
             res.status(400).json({ "error": err.message });
             return;
@@ -699,6 +721,17 @@ app.put("/api/storage/gasoline/:id", (req, res) => {
 app.get("/api/storage/gasoline/:id/transactions", (req, res) => {
     const sql = "SELECT * FROM gasoline_transactions WHERE gasoline_id = ? ORDER BY transaction_date DESC, timestamp DESC";
     db.all(sql, [req.params.id], (err, rows) => {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "success", "data": rows });
+    });
+});
+
+app.get("/api/storage/gasoline/transactions/all", (req, res) => {
+    const sql = "SELECT * FROM gasoline_transactions ORDER BY transaction_date DESC, timestamp DESC";
+    db.all(sql, [], (err, rows) => {
         if (err) {
             res.status(400).json({ "error": err.message });
             return;

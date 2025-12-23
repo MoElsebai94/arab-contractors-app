@@ -604,6 +604,8 @@ const StorageReportModal = ({ type, data, transactions, onClose, t, language, se
 
 const Storage = () => {
     const { t, language } = useLanguage();
+    const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [activeTab, setActiveTab] = useState('production');
     const [productionItems, setProductionItems] = useState([]);
     const [ironInventory, setIronInventory] = useState([]);
@@ -659,49 +661,55 @@ const Storage = () => {
 
     const fetchData = async () => {
         try {
-            const [prodRes, ironRes, cementRes, gasRes] = await Promise.all([
+            const [prodRes, ironRes, cementRes, gasRes, allCementTrans, allGasTrans, allIronTrans] = await Promise.all([
                 axios.get('/api/storage/production'),
                 axios.get('/api/storage/iron'),
                 axios.get('/api/storage/cement'),
-                axios.get('/api/storage/gasoline')
+                axios.get('/api/storage/gasoline'),
+                axios.get('/api/storage/cement/transactions/all'),
+                axios.get('/api/storage/gasoline/transactions/all'),
+                axios.get('/api/storage/iron/transactions/all')
             ]);
             setProductionItems(prodRes.data.data);
             setIronInventory(ironRes.data.data);
             setCementInventory(cementRes.data.data);
             setGasolineInventory(gasRes.data.data);
 
-            // Fetch transactions for each cement item
+            // Process Cement Transactions
             const transactionsMap = {};
-            for (const item of cementRes.data.data) {
-                const transRes = await axios.get(`/api/storage/cement/${item.id}/transactions`);
-                transactionsMap[item.id] = transRes.data.data;
-            }
+            (allCementTrans.data.data || []).forEach(t => {
+                if (!transactionsMap[t.cement_id]) transactionsMap[t.cement_id] = [];
+                transactionsMap[t.cement_id].push(t);
+            });
             setCementTransactions(transactionsMap);
 
-            // Fetch transactions for each gasoline item
+            // Process Gasoline Transactions
             const gasTransactionsMap = {};
-            for (const item of gasRes.data.data) {
-                const transRes = await axios.get(`/api/storage/gasoline/${item.id}/transactions`);
-                gasTransactionsMap[item.id] = transRes.data.data;
-            }
+            (allGasTrans.data.data || []).forEach(t => {
+                if (!gasTransactionsMap[t.gasoline_id]) gasTransactionsMap[t.gasoline_id] = [];
+                gasTransactionsMap[t.gasoline_id].push(t);
+            });
             setGasolineTransactions(gasTransactionsMap);
 
-            // Fetch transactions for each iron item
+            // Process Iron Transactions
             const ironTransactionsMap = {};
-            for (const item of ironRes.data.data) {
-                const transRes = await axios.get(`/api/storage/iron/${item.id}/transactions`);
-                ironTransactionsMap[item.id] = transRes.data.data;
-            }
+            (allIronTrans.data.data || []).forEach(t => {
+                if (!ironTransactionsMap[t.iron_id]) ironTransactionsMap[t.iron_id] = [];
+                ironTransactionsMap[t.iron_id].push(t);
+            });
             setIronTransactions(ironTransactionsMap);
 
         } catch (error) {
             console.error('Error fetching storage data:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleAddItem = async (e) => {
         e.preventDefault();
         setFormError(null);
+        setSubmitting(true);
         try {
             if (modalType === 'production') {
                 if (editingItem) {
@@ -786,6 +794,8 @@ const Storage = () => {
             console.error('Error adding/updating item:', error);
             const msg = error.response?.data?.error || 'Error processing request';
             setFormError(msg);
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -1021,6 +1031,8 @@ const Storage = () => {
         if (id && type.startsWith('iron')) setSelectedIronId(id);
         setShowAddModal(true);
     };
+
+    if (loading) return <LoadingScreen />;
 
     return (
         <div>
@@ -1657,8 +1669,14 @@ const Storage = () => {
                                 )}
 
                                 <div className="modal-actions">
-                                    <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>{t('cancel')}</button>
-                                    <button type="submit" className="btn btn-primary">{t('save')}</button>
+                                    <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)} disabled={submitting}>{t('cancel')}</button>
+                                    <button type="submit" className="btn btn-primary" disabled={submitting}>
+                                        {submitting ? (
+                                            <>
+                                                <span className="spinner-small"></span> {t('saving') || 'Saving...'}
+                                            </>
+                                        ) : t('save')}
+                                    </button>
                                 </div>
                             </form>
                         </div>
