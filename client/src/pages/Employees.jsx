@@ -691,6 +691,7 @@ const Employees = () => {
         const { t } = useLanguage();
         const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
         const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+        const [progress, setProgress] = useState({ current: 0, total: 0 });
         const [loading, setLoading] = useState(false);
 
         const months = [
@@ -700,6 +701,7 @@ const Employees = () => {
 
         const handleGenerate = async () => {
             setLoading(true);
+            setProgress({ current: 0, total: 0 });
             try {
                 // Logic: 22nd of Previous Month to 21st of Selected Month
                 let startMonth = selectedMonth - 1;
@@ -717,7 +719,9 @@ const Employees = () => {
                 const title = `Monthly Attendance Report - ${monthName} ${selectedYear}`;
 
                 if (isGlobal) {
-                    await generateGlobalAttendancePDF(startDate, endDate, title);
+                    await generateGlobalAttendancePDF(startDate, endDate, title, (current, total) => {
+                        setProgress({ current, total });
+                    });
                 } else {
                     await generateAttendancePDF(employee, startDate, endDate, title);
                 }
@@ -727,12 +731,43 @@ const Employees = () => {
                 alert("Failed to generate report.");
             } finally {
                 setLoading(false);
+                setProgress({ current: 0, total: 0 });
             }
         };
 
         return (
             <div className="modal-overlay">
-                <div className="modal-card" style={{ maxWidth: '400px' }}>
+                <div className="modal-card" style={{ maxWidth: '400px', position: 'relative' }}>
+
+                    {loading && (
+                        <div style={{
+                            position: 'absolute',
+                            top: 0, left: 0, right: 0, bottom: 0,
+                            background: 'rgba(255, 255, 255, 0.95)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            zIndex: 10,
+                            borderRadius: '12px'
+                        }}>
+                            <div className="spinner" style={{
+                                width: '40px', height: '40px',
+                                border: '4px solid #f3f3f3',
+                                borderTop: '4px solid var(--primary-color)',
+                                borderRadius: '50%',
+                                animation: 'spin 1s linear infinite',
+                                marginBottom: '1rem'
+                            }}></div>
+                            <h4 style={{ margin: 0, color: 'var(--text-primary)' }}>{t('loading')}</h4>
+                            {isGlobal && progress.total > 0 && (
+                                <p style={{ margin: '0.5rem 0 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                    {progress.current} / {progress.total}
+                                </p>
+                            )}
+                        </div>
+                    )}
+
                     <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                         <h3>{t('attendance')}</h3>
                         <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
@@ -751,9 +786,9 @@ const Employees = () => {
                     </div>
 
                     <div className="modal-actions">
-                        <button className="btn btn-secondary" onClick={onClose}>{t('cancel')}</button>
+                        <button className="btn btn-secondary" onClick={onClose} disabled={loading}>{t('cancel')}</button>
                         <button className="btn btn-primary" onClick={handleGenerate} disabled={loading}>
-                            {loading ? t('loading') : t('generatePDF')}
+                            {t('generatePDF')}
                         </button>
                     </div>
                 </div>
@@ -1026,7 +1061,7 @@ const Employees = () => {
         }
     };
 
-    const generateGlobalAttendancePDF = async (startDate, endDate, title) => {
+    const generateGlobalAttendancePDF = async (startDate, endDate, title, onProgress) => {
         try {
             const doc = new jsPDF();
 
@@ -1041,10 +1076,16 @@ const Employees = () => {
             } catch (err) { console.warn("Logo load failed", err); }
 
             // Iterate all employees
-            for (let i = 0; i < employees.length; i++) {
+            const total = employees.length;
+            for (let i = 0; i < total; i++) {
+                if (onProgress) onProgress(i + 1, total);
+
                 const emp = employees[i];
                 if (i > 0) doc.addPage();
                 await renderEmployeeReport(doc, emp, startDate, endDate, title, logoImg);
+
+                // Small delay to allow UI to update
+                await new Promise(resolve => setTimeout(resolve, 10));
             }
 
             const sanitizedMonth = title ? title.replace(/[^a-z0-9]/gi, '_') : 'global_report';
