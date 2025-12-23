@@ -188,15 +188,15 @@ const SortableProductionRow = ({ item, openModal, confirmDeleteProductionItem })
         return 'var(--danger-color)';
     };
 
-    const calculateDaysToFinish = (current, target, rate) => {
-        if (rate <= 0) return '∞';
-        const remaining = target - current;
-        if (remaining <= 0) return 'Done';
-        return Math.ceil(remaining / rate);
-    };
-
     const { language, t } = useLanguage();
     const alignStyle = { textAlign: language === 'ar' ? 'right' : 'left' };
+
+    const calculateDaysToFinish = (current, target, rate) => {
+        if (current >= target) return t('done');
+        if (rate <= 0) return '∞';
+        const remaining = target - current;
+        return Math.ceil(remaining / rate) + ` ${t('days')}`;
+    };
 
     return (
         <tr ref={setNodeRef} style={style} className="hover:bg-slate-50 transition-colors">
@@ -653,10 +653,10 @@ const Storage = () => {
     };
 
     const calculateDaysToFinish = (current, target, rate) => {
+        if (current >= target) return t('done');
         if (rate <= 0) return '∞';
         const remaining = target - current;
-        if (remaining <= 0) return 'Done';
-        return Math.ceil(remaining / rate);
+        return Math.ceil(remaining / rate) + ` ${t('days')}`;
     };
 
     const getProgressColor = (current, target) => {
