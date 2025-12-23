@@ -608,7 +608,16 @@ const CalculatorPage = () => {
                                     <input
                                         type="number"
                                         value={calculatorParams.dalotLength}
-                                        onChange={(e) => setCalculatorParams({ ...calculatorParams, dalotLength: parseFloat(e.target.value) || 0 })}
+                                        min="0"
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            const num = parseFloat(val);
+                                            if (val === '') {
+                                                setCalculatorParams({ ...calculatorParams, dalotLength: '' });
+                                            } else if (!isNaN(num) && num >= 0) {
+                                                setCalculatorParams({ ...calculatorParams, dalotLength: num });
+                                            }
+                                        }}
                                     />
                                 </div>
                             </div>
@@ -716,7 +725,13 @@ const CalculatorPage = () => {
                                     <input
                                         type="number"
                                         value={calculatorParams.dalotLength}
-                                        onChange={(e) => setCalculatorParams({ ...calculatorParams, dalotLength: parseFloat(e.target.value) || 0 })}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setCalculatorParams({
+                                                ...calculatorParams,
+                                                dalotLength: val === '' ? '' : parseFloat(val)
+                                            });
+                                        }}
                                     />
                                 </div>
                             </div>
@@ -847,7 +862,13 @@ const CalculatorPage = () => {
                                     <input
                                         type="number"
                                         value={calculatorParams.dalotLength}
-                                        onChange={(e) => setCalculatorParams({ ...calculatorParams, dalotLength: parseFloat(e.target.value) || 0 })}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setCalculatorParams({
+                                                ...calculatorParams,
+                                                dalotLength: val === '' ? '' : parseFloat(val)
+                                            });
+                                        }}
                                     />
                                 </div>
                             </div>
@@ -954,7 +975,13 @@ const CalculatorPage = () => {
                                     <input
                                         type="number"
                                         value={calculatorParams.dalotLength}
-                                        onChange={(e) => setCalculatorParams({ ...calculatorParams, dalotLength: parseFloat(e.target.value) || 0 })}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setCalculatorParams({
+                                                ...calculatorParams,
+                                                dalotLength: val === '' ? '' : parseFloat(val)
+                                            });
+                                        }}
                                     />
                                 </div>
                             </div>
