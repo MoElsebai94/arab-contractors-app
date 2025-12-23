@@ -831,6 +831,60 @@ app.post('/api/attendance', (req, res) => {
     });
 });
 
+// Bulk attendance update for multiple employees
+app.post('/api/attendance/bulk', (req, res) => {
+    const { employeeIds, date, status, start_time, end_time, notes } = req.body;
+
+    if (!employeeIds || !Array.isArray(employeeIds) || employeeIds.length === 0) {
+        return res.status(400).json({ error: 'employeeIds array is required' });
+    }
+
+    if (!date || !status) {
+        return res.status(400).json({ error: 'date and status are required' });
+    }
+
+    const sql = `INSERT INTO attendance (employee_id, date, status, start_time, end_time, notes) 
+                 VALUES (?, ?, ?, ?, ?, ?) 
+                 ON CONFLICT(employee_id, date) 
+                 DO UPDATE SET status=excluded.status, start_time=excluded.start_time, end_time=excluded.end_time, notes=excluded.notes`;
+
+    db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
+
+        let completed = 0;
+        let hasError = false;
+
+        employeeIds.forEach((employeeId, index) => {
+            if (hasError) return;
+
+            const params = [employeeId, date, status, start_time || null, end_time || null, notes || ''];
+
+            db.run(sql, params, function (err) {
+                if (err && !hasError) {
+                    hasError = true;
+                    db.run('ROLLBACK');
+                    return res.status(400).json({ error: err.message });
+                }
+
+                completed++;
+
+                if (completed === employeeIds.length && !hasError) {
+                    db.run('COMMIT', (commitErr) => {
+                        if (commitErr) {
+                            return res.status(400).json({ error: commitErr.message });
+                        }
+                        res.json({
+                            message: 'success',
+                            count: employeeIds.length,
+                            data: { date, status, start_time, end_time, notes }
+                        });
+                    });
+                }
+            });
+        });
+    });
+});
+
 // --- Deployment Configuration ---
 const path = require('path');
 

@@ -123,6 +123,11 @@ export const translations = {
         attendance: "Attendance",
         prevMonth: "Prev Month",
         nextMonth: "Next Month",
+        bulkAttendance: "Bulk Attendance",
+        applyingTo: "Applying to",
+        activeEmployees: "active employees",
+        optionalNotes: "Optional notes...",
+        saving: "Saving...",
         editDetails: "Edit Details",
         // Calculator
         ironCalculator: "Iron Calculator",
@@ -328,6 +333,11 @@ export const translations = {
         attendance: "الحضور",
         prevMonth: "الشهر السابق",
         nextMonth: "الشهر التالي",
+        bulkAttendance: "تسجيل حضور جماعي",
+        applyingTo: "تطبيق على",
+        activeEmployees: "موظف نشط",
+        optionalNotes: "ملاحظات اختيارية...",
+        saving: "جاري الحفظ...",
         editDetails: "تعديل التفاصيل",
         // Calculator
         ironCalculator: "حاسبة الحديد",
