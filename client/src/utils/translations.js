@@ -221,7 +221,11 @@ export const translations = {
         closingBalance: "Closing Balance",
         totalIn: "Total In",
         totalOut: "Total Out",
-        runningBalance: "Running Balance"
+        runningBalance: "Running Balance",
+        diameter: "Diameter",
+        report: "Report",
+        itemId: "Item ID",
+        noTransactionsInPeriod: "No transactions in this period"
     },
     ar: {
         dashboard: "لوحة التحكم",
@@ -443,6 +447,10 @@ export const translations = {
         closingBalance: "الرصيد الختامي",
         totalIn: "إجمالي الوارد",
         totalOut: "إجمالي الصادر",
-        runningBalance: "الرصيد الحالي"
+        runningBalance: "الرصيد الحالي",
+        diameter: "قطر",
+        report: "تقرير",
+        itemId: "رقم العنصر",
+        noTransactionsInPeriod: "لا توجد معاملات في هذه الفترة"
     }
 };

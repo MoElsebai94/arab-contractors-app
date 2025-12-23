@@ -54,7 +54,7 @@ const CustomDropdown = ({ options, value, onChange, placeholder }) => {
     );
 };
 
-const IronCard = ({ item, openModal, transactions, onDeleteTransaction, t, filterMonth, getFilteredTransactions, CustomDropdown, language }) => {
+const IronCard = ({ item, openModal, openReportModal, transactions, onDeleteTransaction, t, filterMonth, getFilteredTransactions, CustomDropdown, language }) => {
     const {
         attributes,
         listeners,
@@ -92,15 +92,25 @@ const IronCard = ({ item, openModal, transactions, onDeleteTransaction, t, filte
                         Φ{cleanDiameter}
                     </div>
                 </div>
-                <div className="stock-badge" style={{
-                    background: item.quantity > 0 ? 'var(--bg-secondary)' : '#f3f4f6',
-                    color: item.quantity > 0 ? 'var(--primary-color)' : '#6b7280',
-                    padding: '0.25rem 0.75rem',
-                    borderRadius: '999px',
-                    fontWeight: 700,
-                    fontSize: '0.9rem'
-                }}>
-                    {item.quantity} Units
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <button
+                        className="btn-icon-action"
+                        onClick={() => openReportModal('iron', item.id)}
+                        title={t('monthReport')}
+                        style={{ background: '#f1f5f9', color: '#64748b', border: 'none', padding: '0.4rem', borderRadius: '50%', cursor: 'pointer', display: 'flex' }}
+                    >
+                        <FileText size={16} />
+                    </button>
+                    <div className="stock-badge" style={{
+                        background: item.quantity > 0 ? 'var(--bg-secondary)' : '#f3f4f6',
+                        color: item.quantity > 0 ? 'var(--primary-color)' : '#6b7280',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '999px',
+                        fontWeight: 700,
+                        fontSize: '0.9rem'
+                    }}>
+                        {item.quantity} Units
+                    </div>
                 </div>
             </div>
 
@@ -293,10 +303,43 @@ const SortableProductionRow = ({ item, openModal, confirmDeleteProductionItem })
     );
 };
 
-const StorageReportModal = ({ type, data, transactions, onClose, t }) => {
+const StorageReportModal = ({ type, data, transactions, onClose, t, language, selectedItemId = null }) => {
+    // ... (lines 307-534 remain same, only title logic updates below)
+
+    // Determine correct Modal Title
+    const isAr = language === 'ar';
+    let modalTitle = "";
+
+    // Helper for formatting
+    const formatTitle = (typeTrans, monthRepTrans) => {
+        return isAr ? `${monthRepTrans} ${typeTrans}` : `${typeTrans} ${monthRepTrans}`;
+    };
+
+    if (type === 'cement') modalTitle = formatTitle(t('cement'), t('monthReport'));
+    else if (type === 'iron') {
+        // Check if individual item selected
+        if (selectedItemId) {
+            const selectedItem = data.find(i => i.id === selectedItemId);
+            // Sanitize diameter for display
+            const d = selectedItem ? String(selectedItem.diameter).replace(/[^0-9.]/g, '') : '';
+
+            if (isAr) {
+                // Arabic: "Report Diameter 6" -> "تقرير قطر 6"
+                modalTitle = selectedItem ? `${t('report')} ${t('diameter')} ${d}` : formatTitle(t('iron'), t('monthReport'));
+            } else {
+                // English: "Diameter 6 Report"
+                modalTitle = selectedItem ? `${t('diameter')} ${d} ${t('report')}` : formatTitle(t('iron'), t('monthReport'));
+            }
+        } else {
+            modalTitle = formatTitle(t('iron'), t('monthReport'));
+        }
+    }
+    else modalTitle = formatTitle(t('fuel'), t('monthReport'));
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [loading, setLoading] = useState(false);
+
+    console.log("StorageReportModal type:", type, "selectedItemId:", selectedItemId);
 
     const months = [
         "January", "February", "March", "April", "May", "June",
@@ -318,6 +361,12 @@ const StorageReportModal = ({ type, data, transactions, onClose, t }) => {
         try {
             const doc = new jsPDF();
 
+            // Filter Data if selectedItemId is present
+            let reportData = data;
+            if (selectedItemId) {
+                reportData = data.filter(item => item.id === selectedItemId);
+            }
+
             // Load Logo
             let logoImg = null;
             try {
@@ -331,7 +380,23 @@ const StorageReportModal = ({ type, data, transactions, onClose, t }) => {
 
             // Title
             const monthName = months[selectedMonth];
-            const title = `${type === 'cement' ? 'Cement' : 'Fuel'} Month Report - ${monthName} ${selectedYear}`;
+
+            let reportTitle = "";
+            if (type === 'cement') {
+                reportTitle = "Cement Month Report";
+            } else if (type === 'iron') {
+                reportTitle = "Iron Month Report";
+            } else {
+                reportTitle = "Fuel Month Report";
+            }
+
+            if (selectedItemId && reportData.length > 0) {
+                const item = reportData[0];
+                const cleanDiameter = item.diameter ? String(item.diameter).replace(/[^0-9.]/g, '') : '';
+                const itemName = item.type || item.name || (cleanDiameter ? `Diameter ${cleanDiameter}` : 'Item');
+                reportTitle = `${itemName} Report`;
+            }
+            const title = `${reportTitle} - ${monthName} ${selectedYear}`;
 
             // Dates
             // Report covers 1st to Last Day of the selected month
@@ -375,8 +440,8 @@ const StorageReportModal = ({ type, data, transactions, onClose, t }) => {
             let yPos = 45;
 
             // Iterate Items
-            for (let i = 0; i < data.length; i++) {
-                const item = data[i];
+            for (let i = 0; i < reportData.length; i++) {
+                const item = reportData[i];
                 const itemTrans = transactions[item.id] || [];
 
                 // 1. Calculate Opening Balance
@@ -435,7 +500,11 @@ const StorageReportModal = ({ type, data, transactions, onClose, t }) => {
                 doc.setFontSize(14);
                 doc.setTextColor(0, 51, 102);
                 doc.setFont("helvetica", "bold");
-                doc.text(`${item.type || item.name}`, 14, yPos);
+
+                // Fix Item Title (Handle Iron diameter)
+                const cleanDiameter = item.diameter ? String(item.diameter).replace(/[^0-9.]/g, '') : '';
+                const itemDisplayName = item.type || item.name || (cleanDiameter ? `Diameter ${cleanDiameter}` : `Item ID: ${item.id}`);
+                doc.text(itemDisplayName, 14, yPos);
 
                 yPos += 8;
                 doc.setFillColor(248, 250, 252);
@@ -511,7 +580,7 @@ const StorageReportModal = ({ type, data, transactions, onClose, t }) => {
                     </div>
                 )}
                 <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h3>{type === 'cement' ? t('cement') : t('fuel')} {t('monthReport')}</h3>
+                    <h3>{modalTitle}</h3>
                     <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer' }}><X size={24} /></button>
                 </div>
                 <div className="form-group">
@@ -797,10 +866,12 @@ const Storage = () => {
 
     // Report Modal State
     const [showReportModal, setShowReportModal] = useState(false);
-    const [reportType, setReportType] = useState('cement'); // 'cement' or 'gasoline'
+    const [reportType, setReportType] = useState('cement'); // 'cement' or 'gasoline' or 'iron'
+    const [reportItemId, setReportItemId] = useState(null);
 
-    const openReportModal = (type) => {
+    const openReportModal = (type, itemId = null) => {
         setReportType(type);
+        setReportItemId(itemId);
         setShowReportModal(true);
     };
 
@@ -962,9 +1033,14 @@ const Storage = () => {
                         </button>
                     )}
                     {activeTab === 'iron' && (
-                        <button className="btn btn-primary" onClick={() => openModal('iron')}>
-                            <Plus size={20} /> {t('addIronType')}
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button className="btn btn-secondary" onClick={() => openReportModal('iron')}>
+                                <FileText size={20} /> {t('monthReport')}
+                            </button>
+                            <button className="btn btn-primary" onClick={() => openModal('iron')}>
+                                <Plus size={20} /> {t('addIronType')}
+                            </button>
+                        </div>
                     )}
                     {activeTab === 'cement' && (
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -1159,6 +1235,7 @@ const Storage = () => {
                                         key={item.id}
                                         item={item}
                                         openModal={openModal}
+                                        openReportModal={openReportModal}
                                         transactions={ironTransactions[item.id] || []}
                                         onDeleteTransaction={confirmDeleteTransaction}
                                         t={t}
@@ -2301,10 +2378,12 @@ const Storage = () => {
             {showReportModal && (
                 <StorageReportModal
                     type={reportType}
-                    data={reportType === 'cement' ? cementInventory : gasolineInventory}
-                    transactions={reportType === 'cement' ? cementTransactions : gasolineTransactions}
+                    data={reportType === 'cement' ? cementInventory : reportType === 'iron' ? ironInventory : gasolineInventory}
+                    transactions={reportType === 'cement' ? cementTransactions : reportType === 'iron' ? ironTransactions : gasolineTransactions}
                     onClose={() => setShowReportModal(false)}
                     t={t}
+                    language={language}
+                    selectedItemId={reportItemId}
                 />
             )}
         </div >
