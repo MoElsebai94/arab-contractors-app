@@ -215,7 +215,13 @@ export const translations = {
         view: "View",
         quantityUnits: "Quantity (Units)",
         quantityToAdd: "Quantity to Add",
-        quantityToRemove: "Quantity to Remove"
+        quantityToRemove: "Quantity to Remove",
+        monthReport: "Month Report",
+        openingBalance: "Opening Balance",
+        closingBalance: "Closing Balance",
+        totalIn: "Total In",
+        totalOut: "Total Out",
+        runningBalance: "Running Balance"
     },
     ar: {
         dashboard: "لوحة التحكم",
@@ -431,6 +437,12 @@ export const translations = {
         view: "عرض",
         quantityUnits: "الكمية (وحدات)",
         quantityToAdd: "الكمية المراد إضافتها",
-        quantityToRemove: "الكمية المراد خصمها"
+        quantityToRemove: "الكمية المراد خصمها",
+        monthReport: "تقرير شهري",
+        openingBalance: "الرصيد الافتتاحي",
+        closingBalance: "الرصيد الختامي",
+        totalIn: "إجمالي الوارد",
+        totalOut: "إجمالي الصادر",
+        runningBalance: "الرصيد الحالي"
     }
 };
