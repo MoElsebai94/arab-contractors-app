@@ -927,7 +927,8 @@ const Employees = () => {
             doc.text(rangeText, 196, startY + 5, { align: "right" });
 
             // --- Attendance Table with Full Date Range ---
-            const tableColumn = ["Date", "Status", "Time In", "Time Out", "Notes"];
+            // Premium Headers: Uppercase
+            const tableColumn = ["DATE", "STATUS", "TIME IN", "TIME OUT", "NOTES"];
             const tableRows = [];
 
             // Generate all dates from startDate to endDate
@@ -959,35 +960,55 @@ const Employees = () => {
                 head: [tableColumn],
                 body: tableRows,
                 startY: startY + 12, // Compact spacing
-                theme: 'striped',
+                theme: 'grid', // 'grid' for fuller borders, manually controlled
                 headStyles: {
-                    fillColor: [44, 62, 80],
+                    fillColor: [21, 67, 96], // Deep Navy
                     textColor: 255,
-                    fontSize: 9, // Reduced font
+                    fontSize: 9,
                     fontStyle: 'bold',
                     halign: 'center',
-                    cellPadding: 1.5 // Reduced padding
+                    cellPadding: 1.5,
+                    lineWidth: 0.1,
+                    lineColor: [200, 200, 200]
                 },
                 bodyStyles: {
-                    textColor: 50,
-                    fontSize: 8, // Reduced font
+                    textColor: 40, // Darker gray for contrast
+                    fontSize: 8,
                     halign: 'center',
-                    cellPadding: 1.5 // Reduced padding
+                    cellPadding: 1.5,
+                    lineWidth: 0.1, // Thin borders
+                    lineColor: [220, 220, 220]
                 },
                 columnStyles: {
                     0: { halign: 'left' },
                     4: { halign: 'left' }
                 },
-                alternateRowStyles: { fillColor: [245, 245, 245] },
-                margin: { top: 10, bottom: 10 }, // Reduced margins
-                // Weekend Coloring Logic
+                alternateRowStyles: {
+                    fillColor: [248, 249, 250] // Whisper Gray
+                },
+                margin: { top: 10, bottom: 10 },
+                // Weekend & Status Coloring Logic
                 didParseCell: function (data) {
                     if (data.section === 'body') {
-                        // The raw dateDisplay string (e.g. "Samedi 22/11/2025")
-                        // Easier: Check if string starts with "Samedi" or "Dimanche".
+                        // 1. Weekend Background Coloring
                         const dateStr = data.row.raw[0].toLowerCase();
                         if (dateStr.startsWith('samedi') || dateStr.startsWith('dimanche')) {
-                            data.cell.styles.fillColor = [255, 248, 220]; // Cornsilk
+                            data.cell.styles.fillColor = [252, 248, 227]; // Soft Beige
+                        }
+
+                        // 2. Status Text Coloring (Column Index 1)
+                        if (data.column.index === 1) {
+                            const statusText = (data.cell.raw || '').toString().toUpperCase();
+                            if (statusText === 'PRESENT') {
+                                data.cell.styles.textColor = [39, 174, 96]; // Green
+                                data.cell.styles.fontStyle = 'bold';
+                            } else if (statusText === 'ABSENT' || statusText.includes('ABSENT')) {
+                                data.cell.styles.textColor = [231, 76, 60]; // Red
+                                data.cell.styles.fontStyle = 'bold';
+                            } else if (statusText === 'LATE') {
+                                data.cell.styles.textColor = [243, 156, 18]; // Orange
+                                data.cell.styles.fontStyle = 'bold';
+                            }
                         }
                     }
                 }
