@@ -331,7 +331,7 @@ const StorageReportModal = ({ type, data, transactions, onClose, t }) => {
 
             // Title
             const monthName = months[selectedMonth];
-            const title = `${type === 'cement' ? t('cement') : t('fuel')} ${t('monthReport')} - ${monthName} ${selectedYear}`;
+            const title = `${type === 'cement' ? 'Cement' : 'Fuel'} Month Report - ${monthName} ${selectedYear}`;
 
             // Dates
             // Report covers 1st to Last Day of the selected month
@@ -417,7 +417,7 @@ const StorageReportModal = ({ type, data, transactions, onClose, t }) => {
                     return [
                         formatDisplayDate(tx.transaction_date || tx.timestamp),
                         tx.description || '-',
-                        tx.type === 'IN' ? t('incoming') : t('outgoing'),
+                        tx.type === 'IN' ? 'Incoming' : 'Outgoing',
                         tx.quantity,
                         running
                     ];
@@ -445,17 +445,17 @@ const StorageReportModal = ({ type, data, transactions, onClose, t }) => {
                 doc.setTextColor(50);
 
                 // Adjust text positions for cleanliness
-                doc.text(`${t('openingBalance')}: ${openingBalance}`, 18, yPos + 2);
-                doc.text(`${t('totalIn')}: ${totalIn}`, 70, yPos + 2);
-                doc.text(`${t('totalOut')}: ${totalOut}`, 110, yPos + 2);
-                doc.text(`${t('closingBalance')}: ${closingBalance}`, 190, yPos + 2, { align: 'right' });
+                doc.text(`Opening Balance: ${openingBalance}`, 18, yPos + 2);
+                doc.text(`Total In: ${totalIn}`, 70, yPos + 2);
+                doc.text(`Total Out: ${totalOut}`, 110, yPos + 2);
+                doc.text(`Closing Balance: ${closingBalance}`, 190, yPos + 2, { align: 'right' });
 
                 yPos += 10;
 
                 if (periodTrans.length > 0) {
                     autoTable(doc, {
                         startY: yPos,
-                        head: [[t('date'), t('description'), t('type'), t('quantity'), t('runningBalance')]],
+                        head: [['Date', 'Description', 'Type', 'Quantity', 'Running Balance']],
                         body: tableRows,
                         theme: 'grid',
                         headStyles: { fillColor: [51, 65, 85], fontSize: 9, halign: 'center' },
@@ -463,7 +463,7 @@ const StorageReportModal = ({ type, data, transactions, onClose, t }) => {
                         margin: { left: 14, right: 14 },
                         didParseCell: function (data) {
                             if (data.section === 'body' && data.column.index === 2) {
-                                if (data.cell.raw === t('incoming')) {
+                                if (data.cell.raw === 'Incoming') {
                                     data.cell.styles.textColor = [22, 163, 74];
                                     data.cell.styles.fontStyle = 'bold';
                                 } else {
@@ -478,7 +478,7 @@ const StorageReportModal = ({ type, data, transactions, onClose, t }) => {
                     doc.setFontSize(9);
                     doc.setFont("helvetica", "italic");
                     doc.setTextColor(150);
-                    doc.text(t('noTransactions') || "No transactions in this period", 14, yPos + 5);
+                    doc.text("No transactions in this period", 14, yPos + 5);
                     yPos += 15;
                 }
             }
