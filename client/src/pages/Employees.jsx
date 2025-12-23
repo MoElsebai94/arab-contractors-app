@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
 import { GripVertical, Pencil, Trash2, X, Check, ToggleLeft, ToggleRight, Calendar, ChevronDown, Search, Eye, EyeOff, FileText, Download } from 'lucide-react';
@@ -9,6 +10,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import { useLanguage } from '../context/LanguageContext';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+
 
 const SortableEmployeeRow = ({ emp, index, onEdit, onDelete, onToggleStatus, onOpenAttendance, onDownloadReport }) => {
     const { t } = useLanguage();
@@ -680,6 +682,86 @@ const Employees = () => {
     // Bulk Attendance State
     const [showBulkAttendanceModal, setShowBulkAttendanceModal] = useState(false);
 
+    // Generate PDF State
+    const [reportEmployee, setReportEmployee] = useState(null);
+    const [showReportModal, setShowReportModal] = useState(false);
+
+    const AttendanceReportModal = ({ employee, onClose }) => {
+        const { t } = useLanguage();
+        const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+        const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+        const [loading, setLoading] = useState(false);
+
+        const months = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+
+        const handleGenerate = async () => {
+            setLoading(true);
+            try {
+                // Logic: 22nd of Previous Month to 21st of Selected Month
+                // If selected is January (0), prev is December (11) of Year-1
+                let startMonth = selectedMonth - 1;
+                let startYear = selectedYear;
+
+                if (startMonth < 0) {
+                    startMonth = 11;
+                    startYear -= 1;
+                }
+
+                const startDate = new Date(startYear, startMonth, 22);
+                const endDate = new Date(selectedYear, selectedMonth, 21);
+
+                const monthName = months[selectedMonth];
+                const title = `Monthly Attendance Report - ${monthName} ${selectedYear}`;
+
+                await generateAttendancePDF(employee, startDate, endDate, title);
+                onClose();
+            } catch (error) {
+                console.error("PDF Gen Error:", error);
+                alert("Failed to generate report.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        return (
+            <div className="modal-overlay">
+                <div className="modal-card" style={{ maxWidth: '400px' }}>
+                    <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <h3>Attendance Report</h3>
+                        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">Month</label>
+                        <select value={selectedMonth} onChange={(e) => setSelectedMonth(parseInt(e.target.value))} className="form-input">
+                            {months.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">Year</label>
+                        <input type="number" value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="form-input" />
+                    </div>
+
+                    <div className="modal-actions">
+                        <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+                        <button className="btn btn-primary" onClick={handleGenerate} disabled={loading}>
+                            {loading ? 'Generating...' : 'Generate PDF'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const handleDownloadReportClick = (emp) => {
+        setReportEmployee(emp);
+        setShowReportModal(true);
+    };
+
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
@@ -764,52 +846,84 @@ const Employees = () => {
         }
     };
 
-    const generateAttendancePDF = async (employee) => {
+    const generateAttendancePDF = async (employee, startDate, endDate, title) => {
         try {
-            // Fetch full attendance history
-            const response = await axios.get(`/api/attendance/${employee.id}`);
+            const startStr = startDate.toISOString().split('T')[0];
+            const endStr = endDate.toISOString().split('T')[0];
+
+            const response = await axios.get(`/api/attendance/${employee.id}?startDate=${startStr}&endDate=${endStr}`);
             const attendanceData = response.data.data || [];
 
             const doc = new jsPDF();
 
+            // --- LOGO Handling ---
+            try {
+                // Fetch logo image
+                const logoImg = await new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.src = '/logo.png'; // Assuming Vite handles public asset imports
+                    img.onload = () => resolve(img);
+                    img.onerror = (e) => reject(e);
+                });
+
+                // Add logo to PDF (x, y, w, h)
+                doc.addImage(logoImg, 'PNG', 14, 10, 25, 25 * (logoImg.height / logoImg.width));
+            } catch (err) {
+                console.warn("Logo load failed:", err);
+            }
+
             // --- Header Section ---
-            // Company Name
             doc.setFontSize(22);
-            doc.setTextColor(41, 128, 185); // Primary Blue
-            doc.text("Arab Contractors Cameroon", 105, 20, { align: "center" });
+            doc.setTextColor(0, 51, 102); // Dark Blue (#003366)
+            doc.setFont("helvetica", "bold");
+            doc.text("Arab Contractors Cameroon", 105, 25, { align: "center" });
 
             // Report Title
-            doc.setFontSize(16);
-            doc.setTextColor(44, 62, 80); // Dark Gray
-            doc.text("Employee Attendance Report", 105, 30, { align: "center" });
+            doc.setFontSize(14);
+            doc.setTextColor(100); // Gray
+            doc.setFont("helvetica", "normal");
+            doc.text(title || "Employee Attendance Report", 105, 35, { align: "center" });
 
-            // Logo (Optional - placeholder if no image data)
-            // doc.addImage(logoData, 'PNG', 10, 10, 30, 30);
+            // Line Separator
+            doc.setDrawColor(200);
+            doc.line(14, 45, 196, 45);
 
-            // --- Employee Details ---
-            doc.setFontSize(12);
-            doc.setTextColor(0, 0, 0);
+            // --- Employee Details Box ---
+            doc.setFontSize(11);
+            doc.setTextColor(50);
 
-            doc.text(`Name: ${employee.name}`, 14, 45);
-            doc.text(`Role: ${employee.role || 'N/A'}`, 14, 52);
-            doc.text(`Contact: ${employee.contact_info || 'N/A'}`, 14, 59);
+            const startY = 55;
+            doc.text(`Name:`, 14, startY);
+            doc.setFont("helvetica", "bold");
+            doc.text(`${employee.name}`, 35, startY);
+            doc.setFont("helvetica", "normal");
 
-            // Status Indicator
+            doc.text(`Role:`, 14, startY + 7);
+            doc.setFont("helvetica", "bold");
+            doc.text(`${employee.role || 'N/A'}`, 35, startY + 7);
+            doc.setFont("helvetica", "normal");
+
+            // Status Indicator (Right aligned)
             if (employee.is_active === 0) {
                 doc.setTextColor(231, 76, 60); // Red
                 doc.setFont("helvetica", "bold");
-                doc.text("STATUS: INACTIVE", 150, 45);
+                doc.text("STATUS: INACTIVE", 196, startY, { align: "right" });
             } else {
                 doc.setTextColor(39, 174, 96); // Green
                 doc.setFont("helvetica", "bold");
-                doc.text("STATUS: ACTIVE", 150, 45);
+                doc.text("STATUS: ACTIVE", 196, startY, { align: "right" });
             }
+
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(100);
+            doc.setFontSize(10);
+            const rangeText = `Period: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
+            doc.text(rangeText, 196, startY + 7, { align: "right" });
 
             // --- Attendance Table ---
             const tableColumn = ["Date", "Status", "Time In", "Time Out", "Notes"];
             const tableRows = [];
 
-            // Sort by date descending
             attendanceData.sort((a, b) => new Date(b.date) - new Date(a.date));
 
             attendanceData.forEach(record => {
@@ -825,18 +939,33 @@ const Employees = () => {
             autoTable(doc, {
                 head: [tableColumn],
                 body: tableRows,
-                startY: 70,
-                theme: 'grid',
-                headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-                styles: { fontSize: 10 },
-                alternateRowStyles: { fillColor: [240, 240, 240] }
+                startY: startY + 20,
+                theme: 'striped', // Professional look
+                headStyles: {
+                    fillColor: [44, 62, 80], // Dark Slate
+                    textColor: 255,
+                    fontSize: 10,
+                    fontStyle: 'bold',
+                    halign: 'center'
+                },
+                bodyStyles: {
+                    textColor: 50,
+                    fontSize: 9,
+                    halign: 'center'
+                },
+                columnStyles: {
+                    0: { halign: 'left' }, // Date
+                    4: { halign: 'left' }  // Notes
+                },
+                alternateRowStyles: { fillColor: [245, 245, 245] },
+                margin: { top: 20 }
             });
 
             // Footer / Generation Date
             const pageCount = doc.internal.getNumberOfPages();
             for (let i = 1; i <= pageCount; i++) {
                 doc.setPage(i);
-                doc.setFontSize(10);
+                doc.setFontSize(9);
                 doc.setTextColor(150);
                 doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, doc.internal.pageSize.height - 10);
                 doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width - 20, doc.internal.pageSize.height - 10, { align: 'right' });
@@ -844,11 +973,12 @@ const Employees = () => {
 
             // Save PDF
             const sanitizedName = employee.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-            doc.save(`Attendance_Report_${sanitizedName}.pdf`);
+            const sanitizedMonth = title ? title.replace(/[^a-z0-9]/gi, '_') : 'report';
+            doc.save(`Attendance_${sanitizedName}_${sanitizedMonth}.pdf`);
 
         } catch (error) {
             console.error("Error generating PDF:", error);
-            alert("Failed to generate attendance report. Please try again.");
+            alert("Failed to generate report. Please try again.");
         }
     };
 
@@ -1036,7 +1166,7 @@ const Employees = () => {
                                                     onDelete={handleDeleteClick}
                                                     onToggleStatus={handleToggleStatus}
                                                     onOpenAttendance={handleOpenAttendance}
-                                                    onDownloadReport={generateAttendancePDF}
+                                                    onDownloadReport={handleDownloadReportClick}
                                                 />
                                             ))}
                                             {filteredEmployees.length === 0 && (
@@ -1072,7 +1202,7 @@ const Employees = () => {
                                         </button>
                                         <button
                                             className="btn-icon-action"
-                                            onClick={() => generateAttendancePDF(emp)}
+                                            onClick={() => handleDownloadReportClick(emp)}
                                             style={{ color: '#007bff' }}
                                         >
                                             <Download size={16} />
@@ -1383,6 +1513,16 @@ const Employees = () => {
             }
         }
       `}</style>
+
+            {showReportModal && reportEmployee && (
+                <AttendanceReportModal
+                    employee={reportEmployee}
+                    onClose={() => {
+                        setShowReportModal(false);
+                        setReportEmployee(null);
+                    }}
+                />
+            )}
 
             {/* Bulk Attendance Modal */}
             {showBulkAttendanceModal && (
