@@ -685,8 +685,9 @@ const Employees = () => {
     // Generate PDF State
     const [reportEmployee, setReportEmployee] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
+    const [showGlobalReportModal, setShowGlobalReportModal] = useState(false);
 
-    const AttendanceReportModal = ({ employee, onClose }) => {
+    const AttendanceReportModal = ({ employee, onClose, isGlobal }) => {
         const { t } = useLanguage();
         const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
         const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -701,7 +702,6 @@ const Employees = () => {
             setLoading(true);
             try {
                 // Logic: 22nd of Previous Month to 21st of Selected Month
-                // If selected is January (0), prev is December (11) of Year-1
                 let startMonth = selectedMonth - 1;
                 let startYear = selectedYear;
 
@@ -716,7 +716,11 @@ const Employees = () => {
                 const monthName = months[selectedMonth];
                 const title = `Monthly Attendance Report - ${monthName} ${selectedYear}`;
 
-                await generateAttendancePDF(employee, startDate, endDate, title);
+                if (isGlobal) {
+                    await generateGlobalAttendancePDF(startDate, endDate, title);
+                } else {
+                    await generateAttendancePDF(employee, startDate, endDate, title);
+                }
                 onClose();
             } catch (error) {
                 console.error("PDF Gen Error:", error);
@@ -730,26 +734,26 @@ const Employees = () => {
             <div className="modal-overlay">
                 <div className="modal-card" style={{ maxWidth: '400px' }}>
                     <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                        <h3>Attendance Report</h3>
+                        <h3>{t('attendance')}</h3>
                         <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label">Month</label>
+                        <label className="form-label">{t('month')}</label>
                         <select value={selectedMonth} onChange={(e) => setSelectedMonth(parseInt(e.target.value))} className="form-input">
-                            {months.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                            {months.map((m, i) => <option key={i} value={i}>{t(m.toLowerCase()) !== m.toLowerCase() ? t(m.toLowerCase()) : m}</option>)}
                         </select>
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label">Year</label>
+                        <label className="form-label">{t('year')}</label>
                         <input type="number" value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="form-input" />
                     </div>
 
                     <div className="modal-actions">
-                        <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+                        <button className="btn btn-secondary" onClick={onClose}>{t('cancel')}</button>
                         <button className="btn btn-primary" onClick={handleGenerate} disabled={loading}>
-                            {loading ? 'Generating...' : 'Generate PDF'}
+                            {loading ? t('loading') : t('generatePDF')}
                         </button>
                     </div>
                 </div>
@@ -846,192 +850,208 @@ const Employees = () => {
         }
     };
 
+    const renderEmployeeReport = async (doc, employee, startDate, endDate, title, logoImg) => {
+        const startStr = startDate.toISOString().split('T')[0];
+        const endStr = endDate.toISOString().split('T')[0];
+
+        // Fetch data
+        const response = await axios.get(`/api/attendance/${employee.id}?startDate=${startStr}&endDate=${endStr}`);
+        const attendanceDataRaw = response.data.data || [];
+
+        const attendanceMap = new Map();
+        attendanceDataRaw.forEach(record => {
+            const d = new Date(record.date).toISOString().split('T')[0];
+            attendanceMap.set(d, record);
+        });
+
+        // Add Logo
+        if (logoImg) {
+            doc.addImage(logoImg, 'PNG', 14, 8, 20, 20 * (logoImg.height / logoImg.width));
+        }
+
+        // --- Header Section ---
+        doc.setFontSize(18);
+        doc.setTextColor(0, 51, 102);
+        doc.setFont("helvetica", "bold");
+        doc.text("Arab Contractors Cameroon", 105, 18, { align: "center" });
+
+        // Report Title
+        doc.setFontSize(12);
+        doc.setTextColor(100);
+        doc.setFont("helvetica", "normal");
+        doc.text(title || "Employee Attendance Report", 105, 26, { align: "center" });
+
+        // Line Separator
+        doc.setDrawColor(200);
+        doc.line(14, 32, 196, 32);
+
+        // --- Employee Details ---
+        doc.setFontSize(10);
+        doc.setTextColor(50);
+
+        const startY = 38;
+        doc.text(`Name:`, 14, startY);
+        doc.setFont("helvetica", "bold");
+        doc.text(`${employee.name}`, 30, startY);
+        doc.setFont("helvetica", "normal");
+
+        doc.text(`Role:`, 14, startY + 5);
+        doc.setFont("helvetica", "bold");
+        doc.text(`${employee.role || 'N/A'}`, 30, startY + 5);
+        doc.setFont("helvetica", "normal");
+
+        // Status
+        if (employee.is_active === 0) {
+            doc.setTextColor(231, 76, 60);
+            doc.setFont("helvetica", "bold");
+            doc.text("STATUS: INACTIVE", 196, startY, { align: "right" });
+        } else {
+            doc.setTextColor(39, 174, 96);
+            doc.setFont("helvetica", "bold");
+            doc.text("STATUS: ACTIVE", 196, startY, { align: "right" });
+        }
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(100);
+        doc.setFontSize(9);
+        const rangeText = `Period: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
+        doc.text(rangeText, 196, startY + 5, { align: "right" });
+
+        // --- Attendance Table ---
+        const tableColumn = ["DATE", "STATUS", "TIME IN", "TIME OUT", "NOTES"];
+        const tableRows = [];
+
+        let loopDate = new Date(startDate);
+        const stopDate = new Date(endDate);
+
+        while (loopDate <= stopDate) {
+            const dayStr = loopDate.toISOString().split('T')[0];
+            const record = attendanceMap.get(dayStr);
+
+            const dateOptions = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+            let dateDisplay = loopDate.toLocaleDateString('fr-FR', dateOptions);
+            dateDisplay = dateDisplay.charAt(0).toUpperCase() + dateDisplay.slice(1);
+
+            const status = record ? (record.status || 'Present').toUpperCase() : '';
+            const timeIn = record ? (record.start_time || '-') : '';
+            const timeOut = record ? (record.end_time || '-') : '';
+            const notes = record ? (record.notes || '') : '';
+
+            tableRows.push([dateDisplay, status, timeIn, timeOut, notes]);
+            loopDate.setDate(loopDate.getDate() + 1);
+        }
+
+        autoTable(doc, {
+            head: [tableColumn],
+            body: tableRows,
+            startY: startY + 12,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [21, 67, 96],
+                textColor: 255,
+                fontSize: 9,
+                fontStyle: 'bold',
+                halign: 'center',
+                cellPadding: 1.5,
+                lineWidth: 0.1,
+                lineColor: [200, 200, 200]
+            },
+            bodyStyles: {
+                textColor: 40,
+                fontSize: 8,
+                halign: 'center',
+                cellPadding: 1.5,
+                lineWidth: 0.1,
+                lineColor: [220, 220, 220]
+            },
+            columnStyles: {
+                0: { halign: 'left' },
+                4: { halign: 'left' }
+            },
+            alternateRowStyles: {
+                fillColor: [248, 249, 250]
+            },
+            margin: { top: 10, bottom: 10 },
+            didParseCell: function (data) {
+                if (data.section === 'body') {
+                    const dateStr = data.row.raw[0].toLowerCase();
+                    if (dateStr.startsWith('samedi') || dateStr.startsWith('dimanche')) {
+                        data.cell.styles.fillColor = [252, 248, 227];
+                    }
+                    if (data.column.index === 1) {
+                        const statusText = (data.cell.raw || '').toString().toUpperCase();
+                        if (statusText === 'PRESENT') {
+                            data.cell.styles.textColor = [39, 174, 96];
+                            data.cell.styles.fontStyle = 'bold';
+                        } else if (statusText === 'ABSENT' || statusText.includes('ABSENT')) {
+                            data.cell.styles.textColor = [231, 76, 60];
+                            data.cell.styles.fontStyle = 'bold';
+                        } else if (statusText === 'LATE') {
+                            data.cell.styles.textColor = [243, 156, 18];
+                            data.cell.styles.fontStyle = 'bold';
+                        }
+                    }
+                }
+            }
+        });
+
+        // Footer
+        doc.setFontSize(9);
+        doc.setTextColor(150);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, doc.internal.pageSize.height - 10);
+    };
+
     const generateAttendancePDF = async (employee, startDate, endDate, title) => {
         try {
-            const startStr = startDate.toISOString().split('T')[0];
-            const endStr = endDate.toISOString().split('T')[0];
-
-            const response = await axios.get(`/api/attendance/${employee.id}?startDate=${startStr}&endDate=${endStr}`);
-            const attendanceDataRaw = response.data.data || [];
-
-            // Convert fetched data to Map for easy lookup
-            const attendanceMap = new Map();
-            attendanceDataRaw.forEach(record => {
-                // Ensure we just compare YYYY-MM-DD
-                const d = new Date(record.date).toISOString().split('T')[0];
-                attendanceMap.set(d, record);
-            });
-
             const doc = new jsPDF();
 
-            // --- LOGO Handling ---
+            let logoImg = null;
             try {
-                const logoImg = await new Promise((resolve, reject) => {
+                logoImg = await new Promise((resolve, reject) => {
                     const img = new Image();
                     img.src = '/logo_circular.png';
                     img.onload = () => resolve(img);
                     img.onerror = (e) => reject(e);
                 });
-                // Compact Logo: Slightly smaller
-                doc.addImage(logoImg, 'PNG', 14, 8, 20, 20 * (logoImg.height / logoImg.width));
-            } catch (err) {
-                console.warn("Logo load failed:", err);
-            }
+            } catch (err) { console.warn("Logo load failed", err); }
 
-            // --- Header Section (Compacted) ---
-            doc.setFontSize(18); // Reduced from 22
-            doc.setTextColor(0, 51, 102);
-            doc.setFont("helvetica", "bold");
-            doc.text("Arab Contractors Cameroon", 105, 18, { align: "center" });
+            await renderEmployeeReport(doc, employee, startDate, endDate, title, logoImg);
 
-            // Report Title
-            doc.setFontSize(12); // Reduced from 14
-            doc.setTextColor(100);
-            doc.setFont("helvetica", "normal");
-            doc.text(title || "Employee Attendance Report", 105, 26, { align: "center" });
-
-            // Line Separator
-            doc.setDrawColor(200);
-            doc.line(14, 32, 196, 32); // Moved up
-
-            // --- Employee Details (Compacted) ---
-            doc.setFontSize(10); // Reduced from 11
-            doc.setTextColor(50);
-
-            const startY = 38; // Moved up significantly
-            doc.text(`Name:`, 14, startY);
-            doc.setFont("helvetica", "bold");
-            doc.text(`${employee.name}`, 30, startY);
-            doc.setFont("helvetica", "normal");
-
-            doc.text(`Role:`, 14, startY + 5);
-            doc.setFont("helvetica", "bold");
-            doc.text(`${employee.role || 'N/A'}`, 30, startY + 5);
-            doc.setFont("helvetica", "normal");
-
-            // Status Indicator
-            if (employee.is_active === 0) {
-                doc.setTextColor(231, 76, 60);
-                doc.setFont("helvetica", "bold");
-                doc.text("STATUS: INACTIVE", 196, startY, { align: "right" });
-            } else {
-                doc.setTextColor(39, 174, 96);
-                doc.setFont("helvetica", "bold");
-                doc.text("STATUS: ACTIVE", 196, startY, { align: "right" });
-            }
-
-            doc.setFont("helvetica", "normal");
-            doc.setTextColor(100);
-            doc.setFontSize(9);
-            const rangeText = `Period: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
-            doc.text(rangeText, 196, startY + 5, { align: "right" });
-
-            // --- Attendance Table with Full Date Range ---
-            // Premium Headers: Uppercase
-            const tableColumn = ["DATE", "STATUS", "TIME IN", "TIME OUT", "NOTES"];
-            const tableRows = [];
-
-            // Generate all dates from startDate to endDate
-            let loopDate = new Date(startDate);
-            const stopDate = new Date(endDate);
-
-            while (loopDate <= stopDate) {
-                const dayStr = loopDate.toISOString().split('T')[0]; // YYYY-MM-DD
-                const record = attendanceMap.get(dayStr);
-
-                // Format for display: "Samedi 22/11/2025"
-                const dateOptions = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
-                let dateDisplay = loopDate.toLocaleDateString('fr-FR', dateOptions);
-                // Capitalize first letter
-                dateDisplay = dateDisplay.charAt(0).toUpperCase() + dateDisplay.slice(1);
-                // Determine row data
-                const status = record ? (record.status || 'Present').toUpperCase() : '';
-                const timeIn = record ? (record.start_time || '-') : '';
-                const timeOut = record ? (record.end_time || '-') : '';
-                const notes = record ? (record.notes || '') : '';
-
-                tableRows.push([dateDisplay, status, timeIn, timeOut, notes]);
-
-                // Next day
-                loopDate.setDate(loopDate.getDate() + 1);
-            }
-
-            autoTable(doc, {
-                head: [tableColumn],
-                body: tableRows,
-                startY: startY + 12, // Compact spacing
-                theme: 'grid', // 'grid' for fuller borders, manually controlled
-                headStyles: {
-                    fillColor: [21, 67, 96], // Deep Navy
-                    textColor: 255,
-                    fontSize: 9,
-                    fontStyle: 'bold',
-                    halign: 'center',
-                    cellPadding: 1.5,
-                    lineWidth: 0.1,
-                    lineColor: [200, 200, 200]
-                },
-                bodyStyles: {
-                    textColor: 40, // Darker gray for contrast
-                    fontSize: 8,
-                    halign: 'center',
-                    cellPadding: 1.5,
-                    lineWidth: 0.1, // Thin borders
-                    lineColor: [220, 220, 220]
-                },
-                columnStyles: {
-                    0: { halign: 'left' },
-                    4: { halign: 'left' }
-                },
-                alternateRowStyles: {
-                    fillColor: [248, 249, 250] // Whisper Gray
-                },
-                margin: { top: 10, bottom: 10 },
-                // Weekend & Status Coloring Logic
-                didParseCell: function (data) {
-                    if (data.section === 'body') {
-                        // 1. Weekend Background Coloring
-                        const dateStr = data.row.raw[0].toLowerCase();
-                        if (dateStr.startsWith('samedi') || dateStr.startsWith('dimanche')) {
-                            data.cell.styles.fillColor = [252, 248, 227]; // Soft Beige
-                        }
-
-                        // 2. Status Text Coloring (Column Index 1)
-                        if (data.column.index === 1) {
-                            const statusText = (data.cell.raw || '').toString().toUpperCase();
-                            if (statusText === 'PRESENT') {
-                                data.cell.styles.textColor = [39, 174, 96]; // Green
-                                data.cell.styles.fontStyle = 'bold';
-                            } else if (statusText === 'ABSENT' || statusText.includes('ABSENT')) {
-                                data.cell.styles.textColor = [231, 76, 60]; // Red
-                                data.cell.styles.fontStyle = 'bold';
-                            } else if (statusText === 'LATE') {
-                                data.cell.styles.textColor = [243, 156, 18]; // Orange
-                                data.cell.styles.fontStyle = 'bold';
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Footer
-            const pageCount = doc.internal.getNumberOfPages();
-            for (let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(9);
-                doc.setTextColor(150);
-                doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, doc.internal.pageSize.height - 10);
-                doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width - 20, doc.internal.pageSize.height - 10, { align: 'right' });
-            }
-
-            // Save PDF
             const sanitizedName = employee.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
             const sanitizedMonth = title ? title.replace(/[^a-z0-9]/gi, '_') : 'report';
             doc.save(`Attendance_${sanitizedName}_${sanitizedMonth}.pdf`);
-
         } catch (error) {
             console.error("Error generating PDF:", error);
             alert("Failed to generate report. Please try again.");
+        }
+    };
+
+    const generateGlobalAttendancePDF = async (startDate, endDate, title) => {
+        try {
+            const doc = new jsPDF();
+
+            let logoImg = null;
+            try {
+                logoImg = await new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.src = '/logo_circular.png';
+                    img.onload = () => resolve(img);
+                    img.onerror = (e) => reject(e);
+                });
+            } catch (err) { console.warn("Logo load failed", err); }
+
+            // Iterate all employees
+            for (let i = 0; i < employees.length; i++) {
+                const emp = employees[i];
+                if (i > 0) doc.addPage();
+                await renderEmployeeReport(doc, emp, startDate, endDate, title, logoImg);
+            }
+
+            const sanitizedMonth = title ? title.replace(/[^a-z0-9]/gi, '_') : 'global_report';
+            doc.save(`Global_Attendance_${sanitizedMonth}.pdf`);
+        } catch (error) {
+            console.error("Error generating Global PDF:", error);
+            alert("Failed to generate global report.");
         }
     };
 
@@ -1067,14 +1087,31 @@ const Employees = () => {
         <div>
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h1 className="page-title">{t('employees')}</h1>
-                <button
-                    className="btn btn-primary"
-                    onClick={() => setShowBulkAttendanceModal(true)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                >
-                    <Calendar size={18} />
-                    {t('bulkAttendance')}
-                </button>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button
+                        className="btn btn-secondary btn-icon-mobile"
+                        onClick={() => setShowGlobalReportModal(true)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            backgroundColor: '#6c757d',
+                            color: 'white',
+                            border: 'none',
+                        }}
+                    >
+                        <Download size={18} />
+                        <span className="btn-text">{t('globalReport') !== 'globalReport' ? t('globalReport') : "Global Report"}</span>
+                    </button>
+                    <button
+                        className="btn btn-primary"
+                        onClick={() => setShowBulkAttendanceModal(true)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                        <Calendar size={18} />
+                        <span className="btn-text-mobile-hide">{t('bulkAttendance')}</span>
+                    </button>
+                </div>
             </div>
 
             <div className="content-grid">
@@ -1564,6 +1601,14 @@ const Employees = () => {
             .page-title {
                 font-size: 1.5rem;
             }
+
+            .btn-text, .btn-text-mobile-hide {
+                display: none;
+            }
+
+            .btn-icon-mobile, .btn-primary {
+                 padding: 0.6rem !important;
+            }
         }
       `}</style>
 
@@ -1586,6 +1631,15 @@ const Employees = () => {
                         // Optionally refresh data or show success message
                         setShowBulkAttendanceModal(false);
                     }}
+                />
+            )}
+
+            {/* Global Report Modal */}
+            {showGlobalReportModal && (
+                <AttendanceReportModal
+                    employee={null}
+                    isGlobal={true}
+                    onClose={() => setShowGlobalReportModal(false)}
                 />
             )}
         </div >
