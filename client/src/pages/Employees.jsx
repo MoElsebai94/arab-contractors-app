@@ -1,14 +1,16 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
-import { GripVertical, Pencil, Trash2, X, Check, ToggleLeft, ToggleRight, Calendar, ChevronDown, Search, Eye, EyeOff } from 'lucide-react';
+import { GripVertical, Pencil, Trash2, X, Check, ToggleLeft, ToggleRight, Calendar, ChevronDown, Search, Eye, EyeOff, FileText, Download } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import LoadingScreen from '../components/LoadingScreen';
 
 import { useLanguage } from '../context/LanguageContext';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
-const SortableEmployeeRow = ({ emp, index, onEdit, onDelete, onToggleStatus, onOpenAttendance }) => {
+const SortableEmployeeRow = ({ emp, index, onEdit, onDelete, onToggleStatus, onOpenAttendance, onDownloadReport }) => {
     const { t } = useLanguage();
     const {
         attributes,
@@ -52,6 +54,14 @@ const SortableEmployeeRow = ({ emp, index, onEdit, onDelete, onToggleStatus, onO
                     </button>
                     <button className="btn-icon-action" onClick={() => onOpenAttendance(emp)} title={t('attendance')}>
                         <Calendar size={16} />
+                    </button>
+                    <button
+                        className="btn-icon-action"
+                        onClick={() => onDownloadReport(emp)}
+                        title={t('downloadReport') || "Download Report"}
+                        style={{ color: '#007bff' }}
+                    >
+                        <Download size={16} />
                     </button>
                     <button className="btn-icon-action edit" onClick={() => onEdit(emp)} title={t('editEmployee')}>
                         <Pencil size={16} />
@@ -754,6 +764,94 @@ const Employees = () => {
         }
     };
 
+    const generateAttendancePDF = async (employee) => {
+        try {
+            // Fetch full attendance history
+            const response = await axios.get(`/api/attendance/${employee.id}`);
+            const attendanceData = response.data.data || [];
+
+            const doc = new jsPDF();
+
+            // --- Header Section ---
+            // Company Name
+            doc.setFontSize(22);
+            doc.setTextColor(41, 128, 185); // Primary Blue
+            doc.text("Arab Contractors Cameroon", 105, 20, { align: "center" });
+
+            // Report Title
+            doc.setFontSize(16);
+            doc.setTextColor(44, 62, 80); // Dark Gray
+            doc.text("Employee Attendance Report", 105, 30, { align: "center" });
+
+            // Logo (Optional - placeholder if no image data)
+            // doc.addImage(logoData, 'PNG', 10, 10, 30, 30);
+
+            // --- Employee Details ---
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+
+            doc.text(`Name: ${employee.name}`, 14, 45);
+            doc.text(`Role: ${employee.role || 'N/A'}`, 14, 52);
+            doc.text(`Contact: ${employee.contact_info || 'N/A'}`, 14, 59);
+
+            // Status Indicator
+            if (employee.is_active === 0) {
+                doc.setTextColor(231, 76, 60); // Red
+                doc.setFont("helvetica", "bold");
+                doc.text("STATUS: INACTIVE", 150, 45);
+            } else {
+                doc.setTextColor(39, 174, 96); // Green
+                doc.setFont("helvetica", "bold");
+                doc.text("STATUS: ACTIVE", 150, 45);
+            }
+
+            // --- Attendance Table ---
+            const tableColumn = ["Date", "Status", "Time In", "Time Out", "Notes"];
+            const tableRows = [];
+
+            // Sort by date descending
+            attendanceData.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            attendanceData.forEach(record => {
+                const dateClicked = new Date(record.date).toLocaleDateString();
+                const status = (record.status || 'Present').toUpperCase();
+                const timeIn = record.start_time || '-';
+                const timeOut = record.end_time || '-';
+                const notes = record.notes || '';
+
+                tableRows.push([dateClicked, status, timeIn, timeOut, notes]);
+            });
+
+            autoTable(doc, {
+                head: [tableColumn],
+                body: tableRows,
+                startY: 70,
+                theme: 'grid',
+                headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+                styles: { fontSize: 10 },
+                alternateRowStyles: { fillColor: [240, 240, 240] }
+            });
+
+            // Footer / Generation Date
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(10);
+                doc.setTextColor(150);
+                doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, doc.internal.pageSize.height - 10);
+                doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width - 20, doc.internal.pageSize.height - 10, { align: 'right' });
+            }
+
+            // Save PDF
+            const sanitizedName = employee.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            doc.save(`Attendance_Report_${sanitizedName}.pdf`);
+
+        } catch (error) {
+            console.error("Error generating PDF:", error);
+            alert("Failed to generate attendance report. Please try again.");
+        }
+    };
+
     const handleOpenAttendance = (emp) => {
         setAttendanceEmployee(emp);
         setShowAttendanceModal(true);
@@ -938,6 +1036,7 @@ const Employees = () => {
                                                     onDelete={handleDeleteClick}
                                                     onToggleStatus={handleToggleStatus}
                                                     onOpenAttendance={handleOpenAttendance}
+                                                    onDownloadReport={generateAttendancePDF}
                                                 />
                                             ))}
                                             {filteredEmployees.length === 0 && (
@@ -970,6 +1069,13 @@ const Employees = () => {
                                         </button>
                                         <button className="btn-icon-action" onClick={() => handleOpenAttendance(emp)}>
                                             <Calendar size={16} />
+                                        </button>
+                                        <button
+                                            className="btn-icon-action"
+                                            onClick={() => generateAttendancePDF(emp)}
+                                            style={{ color: '#007bff' }}
+                                        >
+                                            <Download size={16} />
                                         </button>
                                         <button className="btn-icon-action edit" onClick={() => handleEditClick(emp)}>
                                             <Pencil size={16} />
