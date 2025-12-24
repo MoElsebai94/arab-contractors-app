@@ -531,34 +531,34 @@ const Storage = () => {
                 <div className="header-actions">
                     {activeTab === 'production' && (
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button className="btn btn-secondary" onClick={() => setShowProductionReportModal(true)}>
+                            <button className="btn btn-secondary" onClick={() => setShowProductionReportModal(true)} style={{ whiteSpace: 'nowrap' }}>
                                 <FileText size={20} /> {t('report')}
                             </button>
-                            <button className="btn btn-primary" onClick={() => openModal('production')}>
+                            <button className="btn btn-primary" onClick={() => openModal('production')} style={{ whiteSpace: 'nowrap' }}>
                                 <Plus size={20} /> {t('addProductionItem')}
                             </button>
                         </div>
                     )}
                     {activeTab === 'iron' && (
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button className="btn btn-secondary" onClick={() => openReportModal('iron')}>
+                            <button className="btn btn-secondary" onClick={() => openReportModal('iron')} style={{ whiteSpace: 'nowrap' }}>
                                 <FileText size={20} /> {t('monthReport')}
                             </button>
-                            <button className="btn btn-primary" onClick={() => openModal('iron')}>
+                            <button className="btn btn-primary" onClick={() => openModal('iron')} style={{ whiteSpace: 'nowrap' }}>
                                 <Plus size={20} /> {t('addIronType')}
                             </button>
                         </div>
                     )}
                     {activeTab === 'cement' && (
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button className="btn btn-secondary" onClick={() => openReportModal('cement')}>
+                            <button className="btn btn-secondary" onClick={() => openReportModal('cement')} style={{ whiteSpace: 'nowrap' }}>
                                 <FileText size={20} /> {t('monthReport')}
                             </button>
                         </div>
                     )}
                     {activeTab === 'gasoline' && (
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button className="btn btn-secondary" onClick={() => openReportModal('gasoline')}>
+                            <button className="btn btn-secondary" onClick={() => openReportModal('gasoline')} style={{ whiteSpace: 'nowrap' }}>
                                 <FileText size={20} /> {t('monthReport')}
                             </button>
                         </div>
