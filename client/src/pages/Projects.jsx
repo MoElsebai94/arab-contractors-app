@@ -772,8 +772,14 @@ const Projects = () => {
                                                             t(proj.status.toLowerCase())}
                                                 </span>
                                             </td>
-                                            <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                {proj.start_date} <ArrowRight size={14} /> {proj.end_date}
+                                            <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    {proj.start_date && proj.end_date ? (
+                                                        <>{proj.start_date} <ArrowRight size={14} /> {proj.end_date}</>
+                                                    ) : (
+                                                        <span>{proj.start_date || proj.end_date || '-'}</span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td>
                                                 <div style={{ display: 'flex', gap: '0.5rem' }}>
