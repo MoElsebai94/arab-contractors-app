@@ -12,6 +12,7 @@ import CustomDropdown from '../components/Storage/CustomDropdown';
 import IronCard from '../components/Storage/IronCard';
 import SortableProductionRow from '../components/Storage/SortableProductionRow';
 import StorageReportModal from '../components/Storage/StorageReportModal';
+import ProductionReportModal from '../components/Storage/ProductionReportModal';
 
 const Storage = () => {
     const { t, language } = useLanguage();
@@ -59,16 +60,122 @@ const Storage = () => {
         date: new Date().toISOString().split('T')[0]
     });
 
+    const [productionInventory, setTransactionHistory] = useState([]);
+
+
+    // Category Management State
+    const [categories, setCategories] = useState([]);
+    const [showManageCategoriesModal, setShowManageCategoriesModal] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [showDeleteCategoryModal, setShowDeleteCategoryModal] = useState(false);
+    const [categoryToDelete, setCategoryToDelete] = useState(null);
+
+    useEffect(() => {
+        fetchProductionData();
+        fetchCategories();
+    }, []);
+
+    const fetchCategories = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get('/api/storage/production-categories', {
+                headers: { authorization: `Bearer ${token}` }
+            });
+            if (response.data.data) {
+                setCategories(response.data.data);
+            }
+        } catch (error) {
+            console.error("Error fetching categories:", error);
+        }
+    };
+
+    const handleAddCategory = async (e) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.post('/api/storage/production-categories', { name: newCategoryName }, {
+                headers: { authorization: `Bearer ${token}` }
+            });
+            setCategories([...categories, response.data.data]);
+            setNewCategoryName('');
+        } catch (error) {
+            console.error("Error adding category:", error);
+        }
+    };
+
+    const handleDeleteCategory = (id) => {
+        setCategoryToDelete(id);
+        setShowDeleteCategoryModal(true);
+    };
+
+    const confirmDeleteCategoryAction = async () => {
+        if (!categoryToDelete) return;
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`/api/storage/production-categories/${categoryToDelete}`, {
+                headers: { authorization: `Bearer ${token}` }
+            });
+            setCategories(categories.filter(c => c.id !== categoryToDelete));
+            setShowDeleteCategoryModal(false);
+            setCategoryToDelete(null);
+        } catch (error) {
+            console.error("Error deleting category:", error);
+        }
+    };
+
+    const fetchProductionData = async () => {
+        try {
+            const [prodRes, ironRes, cementRes, gasRes, allCementTrans, allGasTrans, allIronTrans] = await Promise.all([
+                axios.get('/api/storage/production'),
+                axios.get('/api/storage/iron'),
+                axios.get('/api/storage/cement'),
+                axios.get('/api/storage/gasoline'),
+                axios.get('/api/storage/cement/transactions/all'),
+                axios.get('/api/storage/gasoline/transactions/all'),
+                axios.get('/api/storage/iron/transactions/all')
+            ]);
+            setProductionItems(prodRes.data.data);
+            setIronInventory(ironRes.data.data);
+            setCementInventory(cementRes.data.data);
+            setGasolineInventory(gasRes.data.data);
+
+            // Process Cement Transactions
+            const transactionsMap = {};
+            (allCementTrans.data.data || []).forEach(t => {
+                if (!transactionsMap[t.cement_id]) transactionsMap[t.cement_id] = [];
+                transactionsMap[t.cement_id].push(t);
+            });
+            setCementTransactions(transactionsMap);
+
+            // Process Gasoline Transactions
+            const gasTransactionsMap = {};
+            (allGasTrans.data.data || []).forEach(t => {
+                if (!gasTransactionsMap[t.gasoline_id]) gasTransactionsMap[t.gasoline_id] = [];
+                gasTransactionsMap[t.gasoline_id].push(t);
+            });
+            setGasolineTransactions(gasTransactionsMap);
+
+            // Process Iron Transactions
+            const ironTransactionsMap = {};
+            (allIronTrans.data.data || []).forEach(t => {
+                if (!ironTransactionsMap[t.iron_id]) ironTransactionsMap[t.iron_id] = [];
+                ironTransactionsMap[t.iron_id].push(t);
+            });
+            setIronTransactions(ironTransactionsMap);
+
+        } catch (error) {
+            console.error('Error fetching storage data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
             coordinateGetter: sortableKeyboardCoordinates,
         })
     );
-
-    useEffect(() => {
-        fetchData();
-    }, []);
 
     const fetchData = async () => {
         try {
@@ -285,6 +392,7 @@ const Storage = () => {
 
     // Report Modal State
     const [showReportModal, setShowReportModal] = useState(false);
+    const [showProductionReportModal, setShowProductionReportModal] = useState(false);
     const [reportType, setReportType] = useState('cement'); // 'cement' or 'gasoline' or 'iron'
     const [reportItemId, setReportItemId] = useState(null);
 
@@ -422,9 +530,14 @@ const Storage = () => {
                 <h1 className="page-title">{t('storageManagement')}</h1>
                 <div className="header-actions">
                     {activeTab === 'production' && (
-                        <button className="btn btn-primary" onClick={() => openModal('production')}>
-                            <Plus size={20} /> {t('addProductionItem')}
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button className="btn btn-secondary" onClick={() => setShowProductionReportModal(true)}>
+                                <FileText size={20} /> {t('report')}
+                            </button>
+                            <button className="btn btn-primary" onClick={() => openModal('production')}>
+                                <Plus size={20} /> {t('addProductionItem')}
+                            </button>
+                        </div>
                     )}
                     {activeTab === 'iron' && (
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -811,6 +924,8 @@ const Storage = () => {
                 </div>
             )}
 
+
+
             {showAddModal && (
                 <div className="modal-overlay">
                     <div className="modal-card">
@@ -844,6 +959,28 @@ const Storage = () => {
                                             required
                                         />
                                     </div>
+
+                                    <div className="form-group">
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                            <label className="form-label" style={{ margin: 0 }}>{t('category')}</label>
+                                            <button
+                                                type="button"
+                                                className="btn btn-sm btn-secondary"
+                                                onClick={() => setShowManageCategoriesModal(true)}
+                                                style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem', height: 'auto', minHeight: 'unset' }}
+                                            >
+                                                {t('manageCategories') || "Manage Categories"}
+                                            </button>
+                                        </div>
+                                        <CustomDropdown
+                                            options={categories.map(cat => cat.name)}
+                                            value={newItem.category}
+                                            onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
+                                            placeholder={t('selectCategory') || "Select Category"}
+                                            allowAll={false}
+                                        />
+                                    </div>
+
                                     <div className="form-group-row">
                                         <div className="form-group">
                                             <label className="form-label">{t('targetQty')}</label>
@@ -884,7 +1021,7 @@ const Storage = () => {
                                                 className="form-input"
                                                 value={newItem.mold_count}
                                                 onChange={(e) => setNewItem({ ...newItem, mold_count: parseInt(e.target.value) })}
-                                                min="1"
+                                                min="0"
                                             />
                                         </div>
                                     </div>
@@ -1062,6 +1199,67 @@ const Storage = () => {
                     language={language}
                     selectedItemId={reportItemId}
                 />
+            )}
+            {showProductionReportModal && (
+                <ProductionReportModal
+                    data={productionItems}
+                    onClose={() => setShowProductionReportModal(false)}
+                    t={t}
+                    language={language}
+                />
+            )}
+
+            {showManageCategoriesModal && (
+                <div className="modal-overlay" style={{ zIndex: 1100 }}>
+                    <div className="modal-card">
+                        <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h3>{t('manageCategories') || "Manage Categories"}</h3>
+                            <button className="btn-icon" onClick={() => setShowManageCategoriesModal(false)}><X size={20} /></button>
+                        </div>
+
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <form onSubmit={handleAddCategory} style={{ display: 'flex', gap: '0.5rem' }}>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    placeholder={t('newCategoryName') || "New Category Name"}
+                                    value={newCategoryName}
+                                    onChange={(e) => setNewCategoryName(e.target.value)}
+                                    required
+                                />
+                                <button type="submit" className="btn btn-primary" style={{ padding: '0.5rem' }}><Plus size={24} /></button>
+                            </form>
+                        </div>
+
+                        <div className="category-list">
+                            {categories.map(cat => (
+                                <div key={cat.id} className="category-item">
+                                    <span>{cat.name}</span>
+                                    <button
+                                        className="btn-icon-action delete"
+                                        onClick={() => handleDeleteCategory(cat.id)}
+                                        title={t('delete') || "Delete"}
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showDeleteCategoryModal && (
+                <div className="modal-overlay" style={{ zIndex: 1200 }}>
+                    <div className="modal-card">
+                        <h3>{t('delete') || "Delete"}</h3>
+                        <p>{t('confirmDeleteCategory') || "Are you sure you want to delete this category?"}</p>
+                        <div className="modal-actions">
+                            <button className="btn btn-secondary" onClick={() => setShowDeleteCategoryModal(false)}>{t('cancel') || "Cancel"}</button>
+                            <button className="btn btn-danger" onClick={confirmDeleteCategoryAction}>{t('delete') || "Delete"}</button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

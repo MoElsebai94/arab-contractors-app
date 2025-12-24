@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 
-const CustomDropdown = ({ options, value, onChange, placeholder }) => {
+const CustomDropdown = ({ options, value, onChange, placeholder, allowAll = true }) => {
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef(null);
 
@@ -18,19 +18,21 @@ const CustomDropdown = ({ options, value, onChange, placeholder }) => {
     }, [wrapperRef]);
 
     return (
-        <div className="custom-dropdown-container" ref={wrapperRef}>
+        <div className="custom-dropdown-container" ref={wrapperRef} style={{ width: '100%' }}>
             <div className="custom-dropdown-trigger" onClick={() => setIsOpen(!isOpen)}>
-                <span>{value === 'all' ? placeholder : value}</span>
+                <span>{allowAll && value === 'all' ? placeholder : (value || placeholder)}</span>
                 <ChevronDown size={16} className={`dropdown-arrow ${isOpen ? 'open' : ''}`} />
             </div>
             {isOpen && (
                 <div className="custom-dropdown-menu">
-                    <div
-                        className={`custom-dropdown-item ${value === 'all' ? 'selected' : ''}`}
-                        onClick={() => { onChange({ target: { value: 'all' } }); setIsOpen(false); }}
-                    >
-                        {placeholder}
-                    </div>
+                    {allowAll && (
+                        <div
+                            className={`custom-dropdown-item ${value === 'all' ? 'selected' : ''}`}
+                            onClick={() => { onChange({ target: { value: 'all' } }); setIsOpen(false); }}
+                        >
+                            {placeholder}
+                        </div>
+                    )}
                     {options.map(option => (
                         <div
                             key={option}

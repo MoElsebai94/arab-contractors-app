@@ -129,6 +129,26 @@ const db = new sqlite3.Database(dbPath, (err) => {
         }
       });
 
+      // Production Categories Table
+      db.run(`CREATE TABLE IF NOT EXISTS production_categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL
+        )`, (err) => {
+        if (err) {
+          console.error("Error creating production_categories table:", err);
+        } else {
+          // Insert default categories if empty
+          db.get("SELECT COUNT(*) as count FROM production_categories", (err, row) => {
+            if (row && row.count === 0) {
+              const defaults = ['Prefabrication', 'Steel', 'Concrete', 'General'];
+              const stmt = db.prepare("INSERT INTO production_categories (name) VALUES (?)");
+              defaults.forEach(cat => stmt.run(cat));
+              stmt.finalize();
+            }
+          });
+        }
+      });
+
       // Create Iron Inventory Table (Smart Storage)
       db.run(`CREATE TABLE IF NOT EXISTS iron_inventory (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

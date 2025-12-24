@@ -307,6 +307,41 @@ app.delete("/api/storage/production/:id", (req, res) => {
     });
 });
 
+// Production Categories API
+app.get("/api/storage/production-categories", (req, res) => {
+    const sql = "SELECT * FROM production_categories ORDER BY name ASC";
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "success", "data": rows });
+    });
+});
+
+app.post("/api/storage/production-categories", (req, res) => {
+    const { name } = req.body;
+    const sql = 'INSERT INTO production_categories (name) VALUES (?)';
+    db.run(sql, [name], function (err) {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "success", "data": { id: this.lastID, name } });
+    });
+});
+
+app.delete("/api/storage/production-categories/:id", (req, res) => {
+    const sql = 'DELETE FROM production_categories WHERE id = ?';
+    db.run(sql, req.params.id, function (err) {
+        if (err) {
+            res.status(400).json({ "error": err.message });
+            return;
+        }
+        res.json({ "message": "deleted", "changes": this.changes });
+    });
+});
+
 
 
 // Iron Inventory
