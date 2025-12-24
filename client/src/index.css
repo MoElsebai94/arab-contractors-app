@@ -263,6 +263,10 @@ input[type="time"] {
   padding: 0.4rem 0.6rem;
   display: block;
   width: 100%;
+  color: var(--text-primary);
+  opacity: 1;
+  -webkit-text-fill-color: var(--text-primary);
+  text-align: left;
 }
 
 input[type="date"]::-webkit-date-and-time-value,
