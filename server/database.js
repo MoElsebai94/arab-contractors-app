@@ -257,7 +257,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
           // Initialize default gasoline types if empty
           db.get("SELECT count(*) as count FROM gasoline_inventory", (err, row) => {
             if (!err && row.count === 0) {
-              const types = ["Gasoil"];
+              const types = ["Fuel"];
               const insert = 'INSERT INTO gasoline_inventory (type, quantity) VALUES (?, 0)';
               types.forEach(t => db.run(insert, [t]));
               console.log("Initialized Gasoline Inventory");
