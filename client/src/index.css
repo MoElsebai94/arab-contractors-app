@@ -201,21 +201,79 @@ textarea:focus {
   box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1);
 }
 
-/* Fix for iOS Input Styles */
-input[type="date"],
-input[type="time"],
-.form-input {
+/* =========================================
+   Mobile & Cross-Device Normalization
+   ========================================= */
+
+/* Prevent iOS text size adjust on orientation change */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  /* Remove gray tap highlight */
+}
+
+/* Force standardized font rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Strip ALL native OS styling from interactive elements */
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 100%;
+  line-height: 1.15;
+  margin: 0;
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
-  background-color: var(--surface-color);
+  border-radius: 0;
+  /* Reset default rounded corners on iOS */
 }
 
-/* Ensure date/time inputs have consistent height and padding on iOS */
+/* Re-apply standard styling for our app's specific inputs */
+.form-input,
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+input[type="time"],
+select,
+textarea {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: var(--surface-color);
+  border-radius: var(--radius-md);
+  /* Enforce our radius */
+  box-shadow: none;
+  /* Remove native shadows */
+}
+
+/* iOS Date/Time Input Fixes */
 input[type="date"],
 input[type="time"] {
   min-height: 38px;
-  line-height: 1.5;
+  line-height: normal;
+  /* Fix alignment */
+  padding: 0.4rem 0.6rem;
+  display: block;
+  width: 100%;
+}
+
+/* Custom Select Arrow (since we removed the native one) */
+select {
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%231e293b%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem top 50%;
+  background-size: 0.65rem auto;
+  padding-right: 2.5rem;
+  /* Make room for the arrow */
 }
 
 /* App Layout */
