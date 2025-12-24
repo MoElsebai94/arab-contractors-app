@@ -256,19 +256,18 @@ const AttendanceModal = ({ employee, onClose }) => {
                         <div className="day-details-card" onClick={e => e.stopPropagation()}>
                             <h4>{t('editDetails')}: {selectedDay}</h4>
                             <div className="form-group">
-                                <label>{t('status')}</label>
-                                <select
+                                <label className="form-label">{t('status')}</label>
+                                <ModernDropdown
                                     value={dayDetails.status}
-                                    onChange={e => setDayDetails({ ...dayDetails, status: e.target.value })}
-                                    className="form-input"
-                                >
-                                    <option value="">{t('selectStatus')}</option>
-                                    <option value="present">{t('present')}</option>
-                                    <option value="absent">{t('absent')}</option>
-                                    <option value="late">{t('late')}</option>
-                                    <option value="vacation">{t('vacation')}</option>
-                                    <option value="sick">{t('sick')}</option>
-                                </select>
+                                    onChange={(val) => setDayDetails({ ...dayDetails, status: val })}
+                                    options={[
+                                        { value: 'present', label: t('present') },
+                                        { value: 'absent', label: t('absent') },
+                                        { value: 'late', label: t('late') },
+                                        { value: 'vacation', label: t('vacation') },
+                                        { value: 'sick', label: t('sick') }
+                                    ]}
+                                />
                             </div>
                             {(dayDetails.status === 'present' || dayDetails.status === 'late') && (
                                 <div className="time-inputs" style={{ display: 'flex', gap: '1rem' }}>
@@ -375,6 +374,8 @@ const AttendanceModal = ({ employee, onClose }) => {
     );
 };
 
+
+
 const ModernDropdown = ({ options, value, onChange, placeholder = "Select..." }) => {
     const { t } = useLanguage();
     const [isOpen, setIsOpen] = useState(false);
@@ -391,9 +392,17 @@ const ModernDropdown = ({ options, value, onChange, placeholder = "Select..." })
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Helper to get label consistently
+    const getLabel = (option) => typeof option === 'object' ? option.label : option;
+    const getValue = (option) => typeof option === 'object' ? option.value : option;
+
+    const currentLabel = value === 'All' ? t('allRoles') :
+        (options.find(o => getValue(o) === value) ? getLabel(options.find(o => getValue(o) === value)) : value);
+
     return (
-        <div className="modern-dropdown" ref={dropdownRef} style={{ position: 'relative', minWidth: '200px' }}>
+        <div className="modern-dropdown" ref={dropdownRef} style={{ position: 'relative', minWidth: '200px', width: '100%' }}>
             <button
+                type="button"
                 className="dropdown-trigger"
                 onClick={() => setIsOpen(!isOpen)}
                 style={{
@@ -410,10 +419,11 @@ const ModernDropdown = ({ options, value, onChange, placeholder = "Select..." })
                     color: 'var(--text-primary)',
                     transition: 'all 0.2s',
                     boxShadow: isOpen ? '0 0 0 2px var(--primary-color-light)' : 'none',
-                    borderColor: isOpen ? 'var(--primary-color)' : 'var(--border-color)'
+                    borderColor: isOpen ? 'var(--primary-color)' : 'var(--border-color)',
+                    minHeight: '42px'
                 }}
             >
-                <span style={{ fontWeight: 500 }}>{value === 'All' ? t('allRoles') : value}</span>
+                <span style={{ fontWeight: 500 }}>{currentLabel}</span>
                 <ChevronDown size={16} style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
             </button>
 
@@ -450,27 +460,31 @@ const ModernDropdown = ({ options, value, onChange, placeholder = "Select..." })
                         <span>{t('allRoles')}</span>
                         {value === 'All' && <Check size={16} />}
                     </div>
-                    {options.map(option => (
-                        <div
-                            key={option}
-                            className="dropdown-item"
-                            onClick={() => { onChange(option); setIsOpen(false); }}
-                            style={{
-                                padding: '0.75rem 1rem',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                color: value === option ? 'var(--primary-color)' : 'var(--text-primary)',
-                                background: value === option ? 'var(--bg-secondary)' : 'transparent',
-                                fontSize: '0.9rem',
-                                borderTop: '1px solid var(--border-color-light)'
-                            }}
-                        >
-                            <span>{option}</span>
-                            {value === option && <Check size={16} />}
-                        </div>
-                    ))}
+                    {options.map((option, idx) => {
+                        const optValue = getValue(option);
+                        const optLabel = getLabel(option);
+                        return (
+                            <div
+                                key={idx}
+                                className="dropdown-item"
+                                onClick={() => { onChange(optValue); setIsOpen(false); }}
+                                style={{
+                                    padding: '0.75rem 1rem',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    color: value === optValue ? 'var(--primary-color)' : 'var(--text-primary)',
+                                    background: value === optValue ? 'var(--bg-secondary)' : 'transparent',
+                                    fontSize: '0.9rem',
+                                    borderTop: '1px solid var(--border-color-light)'
+                                }}
+                            >
+                                <span>{optLabel}</span>
+                                {value === optValue && <Check size={16} />}
+                            </div>
+                        );
+                    })}
                 </div>
             )}
             <style>{`
@@ -551,18 +565,17 @@ const BulkAttendanceModal = ({ employees, onClose, onSave }) => {
 
                     <div className="form-group">
                         <label className="form-label">{t('status')}</label>
-                        <select
+                        <ModernDropdown
                             value={status}
-                            onChange={(e) => setStatus(e.target.value)}
-                            className="form-input"
-                            required
-                        >
-                            <option value="present">{t('present')}</option>
-                            <option value="absent">{t('absent')}</option>
-                            <option value="late">{t('late')}</option>
-                            <option value="vacation">{t('vacation')}</option>
-                            <option value="sick">{t('sick')}</option>
-                        </select>
+                            onChange={setStatus}
+                            options={[
+                                { value: 'present', label: t('present') },
+                                { value: 'absent', label: t('absent') },
+                                { value: 'late', label: t('late') },
+                                { value: 'vacation', label: t('vacation') },
+                                { value: 'sick', label: t('sick') }
+                            ]}
+                        />
                     </div>
 
                     {(status === 'present' || status === 'late') && (
