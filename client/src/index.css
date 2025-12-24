@@ -697,7 +697,8 @@ tr:last-child td {
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   z-index: 50;
-  overflow: hidden;
+  max-height: 250px;
+  overflow-y: auto;
   animation: slideDown 0.2s ease-out;
 }
 

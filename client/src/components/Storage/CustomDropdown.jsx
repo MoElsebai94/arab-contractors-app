@@ -17,10 +17,16 @@ const CustomDropdown = ({ options, value, onChange, placeholder, allowAll = true
         };
     }, [wrapperRef]);
 
+    const getLabel = (option) => typeof option === 'object' ? option.label : option;
+    const getValue = (option) => typeof option === 'object' ? option.value : option;
+
+    const selectedOption = options.find(o => getValue(o) === value);
+    const displayValue = value === 'all' && allowAll ? placeholder : (selectedOption ? getLabel(selectedOption) : value);
+
     return (
         <div className="custom-dropdown-container" ref={wrapperRef} style={{ width: '100%' }}>
             <div className="custom-dropdown-trigger" onClick={() => setIsOpen(!isOpen)}>
-                <span>{allowAll && value === 'all' ? placeholder : (value || placeholder)}</span>
+                <span>{displayValue || placeholder}</span>
                 <ChevronDown size={16} className={`dropdown-arrow ${isOpen ? 'open' : ''}`} />
             </div>
             {isOpen && (
@@ -33,15 +39,19 @@ const CustomDropdown = ({ options, value, onChange, placeholder, allowAll = true
                             {placeholder}
                         </div>
                     )}
-                    {options.map(option => (
-                        <div
-                            key={option}
-                            className={`custom-dropdown-item ${value === option ? 'selected' : ''}`}
-                            onClick={() => { onChange({ target: { value: option } }); setIsOpen(false); }}
-                        >
-                            {option}
-                        </div>
-                    ))}
+                    {options.map((option, idx) => {
+                        const optValue = getValue(option);
+                        const optLabel = getLabel(option);
+                        return (
+                            <div
+                                key={idx}
+                                className={`custom-dropdown-item ${value === optValue ? 'selected' : ''}`}
+                                onClick={() => { onChange({ target: { value: optValue } }); setIsOpen(false); }}
+                            >
+                                {optLabel}
+                            </div>
+                        );
+                    })}
                 </div>
             )}
         </div>

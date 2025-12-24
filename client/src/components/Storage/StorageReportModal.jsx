@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import CustomDropdown from './CustomDropdown';
+
+// ... (keep existing imports)
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { X } from 'lucide-react';
@@ -283,9 +286,12 @@ const StorageReportModal = ({ type, data, transactions, onClose, t, language, se
                 </div>
                 <div className="form-group">
                     <label className="form-label">{t('month')}</label>
-                    <select className="form-input" value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))}>
-                        {months.map((m, i) => <option key={i} value={i}>{t(m.toLowerCase()) !== m.toLowerCase() ? t(m.toLowerCase()) : m}</option>)}
-                    </select>
+                    <CustomDropdown
+                        options={months.map((m, i) => ({ value: i, label: t(m.toLowerCase()) !== m.toLowerCase() ? t(m.toLowerCase()) : m }))}
+                        value={selectedMonth}
+                        onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                        placeholder={t('selectMonth')}
+                    />
                 </div>
                 <div className="form-group">
                     <label className="form-label">{t('year')}</label>
