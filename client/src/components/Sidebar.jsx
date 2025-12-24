@@ -2,11 +2,14 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, Rocket, Package, Calculator, Menu, X, Globe } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import useScrollLock from '../hooks/useScrollLock';
 
 const Sidebar = () => {
   const location = useLocation();
   const { t, language, toggleLanguage } = useLanguage();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  useScrollLock(isMenuOpen);
 
   const isActive = (path) => {
     return location.pathname === path ? 'active' : '';
@@ -240,13 +243,13 @@ const Sidebar = () => {
             background: rgba(255, 255, 255, 0.2);
         }
 
-        @media (min-width: 769px) {
+        @media (min-width: 1025px) {
           .logo-container {
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
           }
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
           .sidebar {
             width: 100%;
             height: auto;

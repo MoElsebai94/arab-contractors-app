@@ -10,6 +10,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import { useLanguage } from '../context/LanguageContext';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import useScrollLock from '../hooks/useScrollLock';
 
 
 const SortableEmployeeRow = ({ emp, index, onEdit, onDelete, onToggleStatus, onOpenAttendance, onDownloadReport }) => {
@@ -700,6 +701,10 @@ const Employees = () => {
     const [reportEmployee, setReportEmployee] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
     const [showGlobalReportModal, setShowGlobalReportModal] = useState(false);
+
+    // Lock scroll when any modal is open
+    const isAnyModalOpen = showEditModal || showDeleteModal || showAttendanceModal || showBulkAttendanceModal || showReportModal || showGlobalReportModal;
+    useScrollLock(isAnyModalOpen);
 
     const AttendanceReportModal = ({ employee, onClose, isGlobal }) => {
         const { t } = useLanguage();

@@ -13,6 +13,7 @@ import IronCard from '../components/Storage/IronCard';
 import SortableProductionRow from '../components/Storage/SortableProductionRow';
 import StorageReportModal from '../components/Storage/StorageReportModal';
 import ProductionReportModal from '../components/Storage/ProductionReportModal';
+import useScrollLock from '../hooks/useScrollLock';
 
 const Storage = () => {
     const { t, language } = useLanguage();
@@ -395,6 +396,13 @@ const Storage = () => {
     const [showProductionReportModal, setShowProductionReportModal] = useState(false);
     const [reportType, setReportType] = useState('cement'); // 'cement' or 'gasoline' or 'iron'
     const [reportItemId, setReportItemId] = useState(null);
+
+    // Lock scroll when any modal is open
+    const isAnyModalOpen = showAddModal || showDeleteModal || showDeleteIronModal ||
+        showReportModal || showProductionReportModal || showDeleteProductionModal ||
+        showManageCategoriesModal || showDeleteCategoryModal;
+
+    useScrollLock(isAnyModalOpen);
 
     const openReportModal = (type, itemId = null) => {
         setReportType(type);

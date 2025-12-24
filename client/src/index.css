@@ -311,7 +311,7 @@ select {
   background-color: var(--background-color);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .app-container {
     flex-direction: column;
   }
@@ -340,7 +340,7 @@ select {
   gap: 1.5rem;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1025px) {
   .content-grid {
     grid-template-columns: 350px 1fr;
   }
@@ -419,7 +419,7 @@ tr:last-child td {
   display: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .table-view {
     display: none;
   }
