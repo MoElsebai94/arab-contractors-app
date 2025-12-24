@@ -627,8 +627,13 @@ const BulkAttendanceModal = ({ employees, onClose, onSave }) => {
     );
 };
 
-const DeactivateWarningModal = ({ employee, tasks, onClose, onConfirm }) => {
+const DeactivateWarningModal = ({ employee, tasks, onClose, onConfirm, mode = 'deactivate' }) => {
     const { t } = useLanguage();
+
+    const isDelete = mode === 'delete';
+    const warningMessage = isDelete ? t('deleteWarningMessage') : t('deactivateWarningMessage');
+    const confirmButtonText = isDelete ? t('removeFromTasksAndDelete') : t('removeFromTasksAndDeactivate');
+
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px', width: '90%' }}>
@@ -662,7 +667,7 @@ const DeactivateWarningModal = ({ employee, tasks, onClose, onConfirm }) => {
                     <div style={{ display: 'flex', gap: '0.75rem', padding: '0.75rem', background: '#fffbeb', borderRadius: 'var(--radius-md)', border: '1px solid #fcd34d' }}>
                         <AlertTriangle size={18} style={{ color: '#d97706', minWidth: '18px', marginTop: '2px' }} />
                         <p style={{ fontSize: '0.85rem', color: '#92400e', margin: 0, lineHeight: '1.4' }}>
-                            {t('deactivateWarningMessage') || 'Deactivating this employee effectively removes them from availability...'}
+                            {warningMessage}
                         </p>
                     </div>
                 </div>
@@ -672,7 +677,7 @@ const DeactivateWarningModal = ({ employee, tasks, onClose, onConfirm }) => {
                         className="btn btn-danger btn-block"
                         style={{ justifyContent: 'center', padding: '0.75rem', fontWeight: '600' }}
                     >
-                        {t('removeFromTasksAndDeactivate') || 'Remove from Tasks & Deactivate'}
+                        {confirmButtonText}
                     </button>
                     <button
                         onClick={onClose}
@@ -764,6 +769,7 @@ const Employees = () => {
     const [showDeactivateWarningModal, setShowDeactivateWarningModal] = useState(false);
     const [employeeToDeactivate, setEmployeeToDeactivate] = useState(null);
     const [conflictingTasks, setConflictingTasks] = useState([]);
+    const [warningMode, setWarningMode] = useState('deactivate'); // 'deactivate' or 'delete'
 
     // Lock scroll when any modal is open
     const isAnyModalOpen = showEditModal || showDeleteModal || showAttendanceModal || showBulkAttendanceModal || showReportModal || showGlobalReportModal || showDeactivateWarningModal;
@@ -982,46 +988,42 @@ const Employees = () => {
             if (activeConflicts.length > 0) {
                 setEmployeeToDeactivate(emp);
                 setConflictingTasks(activeConflicts);
+                setWarningMode('deactivate');
                 setShowDeactivateWarningModal(true);
             } else {
                 performDeactivation(emp, 0);
             }
         } catch (error) {
             console.error("Error checking tasks for deactivation:", error);
-            // Fallback to normal deactivation if check fails? Or warn?
-            // Safer to warn or just proceed. Let's proceed for now but log error.
             performDeactivation(emp, 0);
         }
     };
 
-    const handleRemoveFromTasksAndDeactivate = async () => {
-        if (!employeeToDeactivate) return;
-
+    const handleDeleteClick = async (emp) => {
+        // Check for active tasks before showing delete modal
         try {
-            // 1. Remove from all conflicting tasks
-            const updatePromises = conflictingTasks.map(task => {
-                const currentAssignees = task.assignee.split(',').map(s => s.trim());
-                const newAssignees = currentAssignees.filter(name => name !== employeeToDeactivate.name).join(', ');
-
-                return axios.put(`/api/projects/${task.id}`, {
-                    assignee: newAssignees
-                });
+            const projectsRes = await axios.get('/api/projects');
+            const projects = projectsRes.data.data;
+            const activeConflicts = projects.filter(p => {
+                if (p.status !== 'In Progress' || !p.assignee) return false;
+                const assignees = p.assignee.split(',').map(s => s.trim());
+                return assignees.includes(emp.name);
             });
 
-            await Promise.all(updatePromises);
-
-            // 2. Deactivate employee
-            await performDeactivation(employeeToDeactivate, 0);
-
+            if (activeConflicts.length > 0) {
+                setEmployeeToDeactivate(emp);
+                setConflictingTasks(activeConflicts);
+                setWarningMode('delete');
+                setShowDeactivateWarningModal(true);
+            } else {
+                setDeletingEmployee(emp);
+                setShowDeleteModal(true);
+            }
         } catch (error) {
-            console.error("Error removing from tasks during deactivation:", error);
-            alert("An error occurred while cleaning up tasks. Please try again.");
+            console.error("Error checking tasks for deletion:", error);
+            setDeletingEmployee(emp);
+            setShowDeleteModal(true);
         }
-    };
-
-    const handleDeleteClick = (emp) => {
-        setDeletingEmployee(emp);
-        setShowDeleteModal(true);
     };
 
     const handleConfirmDelete = async () => {
@@ -1033,6 +1035,44 @@ const Employees = () => {
             fetchEmployees();
         } catch (error) {
             console.error('Error deleting employee:', error);
+        }
+    };
+
+    const handleRemoveFromTasksAndProceed = async () => {
+        if (!employeeToDeactivate || conflictingTasks.length === 0) return;
+
+        try {
+            // 1. Remove employee from all conflicting tasks
+            await Promise.all(conflictingTasks.map(async (project) => {
+                const currentAssignees = project.assignee.split(',').map(s => s.trim());
+                const newAssignees = currentAssignees.filter(name => name !== employeeToDeactivate.name);
+                const newAssigneeString = newAssignees.join(', ');
+
+                await axios.put(`/api/projects/${project.id}`, {
+                    ...project, // cautious with this spread if API expects specific fields, but assuming ok
+                    assignee: newAssigneeString
+                });
+            }));
+
+            // 2. Proceed based on mode
+            if (warningMode === 'delete') {
+                // If the mode was 'delete', proceed with actual deletion
+                await axios.delete(`/api/employees/${employeeToDeactivate.id}`);
+                fetchEmployees(); // Refresh employee list
+            } else if (warningMode === 'deactivate') {
+                // If the mode was 'deactivate', proceed with deactivation
+                await performDeactivation(employeeToDeactivate, 0);
+            }
+
+            // Reset warning states
+            setShowDeactivateWarningModal(false);
+            setEmployeeToDeactivate(null);
+            setConflictingTasks([]);
+            setWarningMode(null);
+
+        } catch (error) {
+            console.error("Error removing from tasks and proceeding:", error);
+            alert("Failed to update tasks or process employee. Please try again.");
         }
     };
 
@@ -1571,11 +1611,15 @@ const Employees = () => {
                 showDeleteModal && (
                     <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
                         <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-                            <h3>Confirm Deletion</h3>
-                            <p>Are you sure you want to remove <strong>{deletingEmployee?.name}</strong>?</p>
+                            <h3>{t('confirmDeletion')}</h3>
+                            <p>
+                                {t('areYouSureRemove').split('{name}')[0]}
+                                <strong>{deletingEmployee?.name}</strong>
+                                {t('areYouSureRemove').split('{name}')[1]}
+                            </p>
                             <div className="modal-actions">
-                                <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>Cancel</button>
-                                <button className="btn btn-danger" onClick={handleConfirmDelete}>Delete</button>
+                                <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>{t('cancel')}</button>
+                                <button className="btn btn-danger" onClick={handleConfirmDelete}>{t('delete')}</button>
                             </div>
                         </div>
                     </div>
@@ -1594,6 +1638,38 @@ const Employees = () => {
                     />
                 )
             }
+
+            {/* Bulk Attendance Modal */}
+            {showBulkAttendanceModal && (
+                <BulkAttendanceModal
+                    employees={employees}
+                    onClose={() => setShowBulkAttendanceModal(false)}
+                    onSave={() => {
+                        // Optionally refresh data or show success message
+                        setShowBulkAttendanceModal(false);
+                    }}
+                />
+            )}
+
+            {/* Global Report Modal */}
+            {showGlobalReportModal && (
+                <AttendanceReportModal
+                    employee={null}
+                    isGlobal={true}
+                    onClose={() => setShowGlobalReportModal(false)}
+                />
+            )}
+
+            {showReportModal && (
+                <AttendanceReportModal
+                    employee={reportEmployee}
+                    isGlobal={false}
+                    onClose={() => {
+                        setShowReportModal(false);
+                        setReportEmployee(null);
+                    }}
+                />
+            )}
 
             <style>{`
         .content-grid {
@@ -1677,17 +1753,21 @@ const Employees = () => {
           bottom: 0;
           background: rgba(0,0,0,0.5);
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           justify-content: center;
           z-index: 1000;
+          overflow-y: auto;
+          padding: 2rem 0;
         }
 
         .modal-card {
           background: white;
           padding: 2rem;
           border-radius: var(--radius-lg);
-          width: 100%;
+          width: 90%;
           max-width: 500px;
+          margin: auto;
+          position: relative;
         }
 
         .modal-actions {
@@ -1811,47 +1891,18 @@ const Employees = () => {
         }
       `}</style>
 
-            {showReportModal && reportEmployee && (
-                <AttendanceReportModal
-                    employee={reportEmployee}
-                    onClose={() => {
-                        setShowReportModal(false);
-                        setReportEmployee(null);
-                    }}
-                />
-            )}
-
-            {/* Bulk Attendance Modal */}
-            {showBulkAttendanceModal && (
-                <BulkAttendanceModal
-                    employees={employees}
-                    onClose={() => setShowBulkAttendanceModal(false)}
-                    onSave={() => {
-                        // Optionally refresh data or show success message
-                        setShowBulkAttendanceModal(false);
-                    }}
-                />
-            )}
-
-            {/* Global Report Modal */}
-            {showGlobalReportModal && (
-                <AttendanceReportModal
-                    employee={null}
-                    isGlobal={true}
-                    onClose={() => setShowGlobalReportModal(false)}
-                />
-            )}
-
             {showDeactivateWarningModal && (
                 <DeactivateWarningModal
                     employee={employeeToDeactivate}
                     tasks={conflictingTasks}
+                    mode={warningMode}
                     onClose={() => {
                         setShowDeactivateWarningModal(false);
                         setEmployeeToDeactivate(null);
                         setConflictingTasks([]);
+                        setWarningMode(null);
                     }}
-                    onConfirm={handleRemoveFromTasksAndDeactivate}
+                    onConfirm={handleRemoveFromTasksAndProceed}
                 />
             )}
         </div >

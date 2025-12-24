@@ -268,7 +268,11 @@ export const translations = {
         isCurrentlyAssignedTo: "is currently assigned to",
         activeTasks: "active task(s)",
         deactivateWarningMessage: "Deactivating this employee effectively removes them from availability, but they will remain listed in these tasks unless you remove them.",
-        removeFromTasksAndDeactivate: "Remove from Tasks & Deactivate"
+        removeFromTasksAndDeactivate: "Remove from Tasks & Deactivate",
+        deleteWarningMessage: "Deleting this employee removes them permanently. They are currently assigned to these tasks unless you remove them.",
+        removeFromTasksAndDelete: "Remove from Tasks & Delete",
+        confirmDeletion: "Confirm Deletion",
+        areYouSureRemove: "Are you sure you want to remove {name}?"
     },
     ar: {
         dashboard: "لوحة التحكم",
@@ -519,6 +523,10 @@ export const translations = {
         isCurrentlyAssignedTo: "مكلف حالياً بـ",
         activeTasks: "مهام نشطة",
         deactivateWarningMessage: "تعطيل هذا الموظف يزيله من القائمة، ولكنه سيظل مدرجاً في هذه المهام ما لم تقم بإزالته.",
-        removeFromTasksAndDeactivate: "إزالة من المهام والتعطيل"
+        removeFromTasksAndDeactivate: "إزالة من المهام والتعطيل",
+        deleteWarningMessage: "حذف هذا الموظف يزيله نهائياً. هو مكلف حالياً بهذه المهام ما لم تقم بإزالته.",
+        removeFromTasksAndDelete: "إزالة من المهام والحذف",
+        confirmDeletion: "تأكيد الحذف",
+        areYouSureRemove: "هل أنت متأكد أنك تريد إزالة {name}؟"
     }
 };
