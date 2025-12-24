@@ -537,13 +537,15 @@ const BulkAttendanceModal = ({ employees, onClose, onSave }) => {
     };
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-overlay" onClick={!loading ? onClose : undefined}>
             <div className="modal-card" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                     <h3>{t('bulkAttendance')}</h3>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-                        <X size={24} />
-                    </button>
+                    {!loading && (
+                        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                            <X size={24} />
+                        </button>
+                    )}
                 </div>
 
                 <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
@@ -824,7 +826,7 @@ const Employees = () => {
         };
 
         return (
-            <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-overlay" onClick={!loading ? onClose : undefined}>
                 <div className="modal-card" style={{ maxWidth: '400px', position: 'relative' }} onClick={(e) => e.stopPropagation()}>
 
                     {loading && (
@@ -858,7 +860,7 @@ const Employees = () => {
 
                     <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                         <h3>{t('attendance')}</h3>
-                        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+                        {!loading && <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>}
                     </div>
 
                     <div className="form-group">
