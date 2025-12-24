@@ -1,6 +1,7 @@
 import React from 'react';
-import { BrickWall, ChevronDown, Ruler } from 'lucide-react';
+import { BrickWall, Ruler } from 'lucide-react';
 import ConfigTrigger from './ConfigTrigger';
+import CustomDropdown from '../Storage/CustomDropdown';
 import { useLanguage } from '../../context/LanguageContext';
 
 const CalculatorInputs = ({ calculatorParams, setCalculatorParams }) => {
@@ -49,18 +50,13 @@ const CalculatorInputs = ({ calculatorParams, setCalculatorParams }) => {
                 <label>{t('sectionType')}</label>
                 <div className="input-wrapper">
                     <BrickWall size={18} className="input-icon" />
-                    <select
+                    <CustomDropdown
+                        options={['1x1', '2x2x1', '1x3x3', '2x1.5x2', '1x2x1', '1x1.5x2']}
                         value={calculatorParams.sectionType}
                         onChange={handleSectionChange}
-                    >
-                        <option value="1x1">1x1</option>
-                        <option value="2x2x1">2x2x1</option>
-                        <option value="1x3x3">1x3x3</option>
-                        <option value="2x1.5x2">2x1.5x2</option>
-                        <option value="1x2x1">1x2x1</option>
-                        <option value="1x1.5x2">1x1.5x2</option>
-                    </select>
-                    <ChevronDown size={16} className="select-arrow" />
+                        placeholder={t('selectSection')}
+                        allowAll={false}
+                    />
                 </div>
             </div>
 
@@ -135,11 +131,14 @@ const CalculatorInputs = ({ calculatorParams, setCalculatorParams }) => {
                     appearance: none;
                 }
 
-                select:focus, 
                 input:focus {
                     outline: none;
                     border-color: var(--primary);
                     box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.1);
+                }
+
+                .input-wrapper .custom-dropdown-trigger {
+                    padding-left: 2.5rem;
                 }
             `}</style>
         </div>
