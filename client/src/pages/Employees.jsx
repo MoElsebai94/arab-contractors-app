@@ -202,8 +202,8 @@ const AttendanceModal = ({ employee, onClose }) => {
     if (loading) return <LoadingScreen />;
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-card" style={{ maxWidth: '800px' }}>
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-card" style={{ maxWidth: '800px' }} onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                     <h3>{t('attendance')}: {employee.name}</h3>
                     <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
@@ -537,8 +537,8 @@ const BulkAttendanceModal = ({ employees, onClose, onSave }) => {
     };
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-card" style={{ maxWidth: '500px' }}>
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-card" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                     <h3>{t('bulkAttendance')}</h3>
                     <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
@@ -755,8 +755,8 @@ const Employees = () => {
         };
 
         return (
-            <div className="modal-overlay">
-                <div className="modal-card" style={{ maxWidth: '400px', position: 'relative' }}>
+            <div className="modal-overlay" onClick={onClose}>
+                <div className="modal-card" style={{ maxWidth: '400px', position: 'relative' }} onClick={(e) => e.stopPropagation()}>
 
                     {loading && (
                         <div style={{
@@ -1393,8 +1393,8 @@ const Employees = () => {
             {/* Edit Modal */}
             {
                 showEditModal && (
-                    <div className="modal-overlay">
-                        <div className="modal-card">
+                    <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+                        <div className="modal-card" onClick={(e) => e.stopPropagation()}>
                             <div className="modal-header" style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
                                 <h3 style={{ margin: 0 }}>Edit Employee</h3>
                             </div>
@@ -1443,8 +1443,8 @@ const Employees = () => {
             {/* Delete Modal */}
             {
                 showDeleteModal && (
-                    <div className="modal-overlay">
-                        <div className="modal-card">
+                    <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+                        <div className="modal-card" onClick={(e) => e.stopPropagation()}>
                             <h3>Confirm Deletion</h3>
                             <p>Are you sure you want to remove <strong>{deletingEmployee?.name}</strong>?</p>
                             <div className="modal-actions">

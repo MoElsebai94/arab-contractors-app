@@ -265,8 +265,8 @@ const StorageReportModal = ({ type, data, transactions, onClose, t, language, se
     };
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-card" style={{ maxWidth: '400px', position: 'relative' }}>
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-card" style={{ maxWidth: '400px', position: 'relative' }} onClick={(e) => e.stopPropagation()}>
                 {loading && (
                     <div style={{
                         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,

@@ -894,8 +894,8 @@ const Storage = () => {
 
             {/* Modals */}
             {showDeleteModal && (
-                <div className="modal-overlay">
-                    <div className="modal-card">
+                <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+                    <div className="modal-card" onClick={(e) => e.stopPropagation()}>
                         <h3>{t('confirmCancellation')}</h3>
                         <p>{t('cancelTransactionConfirm')}</p>
                         <div className="modal-actions">
@@ -907,8 +907,8 @@ const Storage = () => {
             )}
 
             {showDeleteIronModal && (
-                <div className="modal-overlay">
-                    <div className="modal-card">
+                <div className="modal-overlay" onClick={() => setShowDeleteIronModal(false)}>
+                    <div className="modal-card" onClick={(e) => e.stopPropagation()}>
                         <h3>{t('deleteIronItem')}</h3>
                         <p>{t('deleteIronConfirm')}</p>
                         <div className="modal-actions">
@@ -920,8 +920,8 @@ const Storage = () => {
             )}
 
             {showDeleteProductionModal && (
-                <div className="modal-overlay">
-                    <div className="modal-card">
+                <div className="modal-overlay" onClick={() => setShowDeleteProductionModal(false)}>
+                    <div className="modal-card" onClick={(e) => e.stopPropagation()}>
                         <h3>{t('deleteProductionItem')}</h3>
                         <p>{t('deleteProductionConfirm')}</p>
                         <div className="modal-actions">
@@ -935,8 +935,8 @@ const Storage = () => {
 
 
             {showAddModal && (
-                <div className="modal-overlay">
-                    <div className="modal-card">
+                <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+                    <div className="modal-card" onClick={(e) => e.stopPropagation()}>
                         <h3>
                             {modalType === 'production' && (editingItem ? t('editProductionItem') : t('addProductionItem'))}
                             {modalType === 'iron' && t('addIronType')}
@@ -1218,8 +1218,8 @@ const Storage = () => {
             )}
 
             {showManageCategoriesModal && (
-                <div className="modal-overlay" style={{ zIndex: 1100 }}>
-                    <div className="modal-card">
+                <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={() => setShowManageCategoriesModal(false)}>
+                    <div className="modal-card" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h3>{t('manageCategories') || "Manage Categories"}</h3>
                             <button className="btn-icon" onClick={() => setShowManageCategoriesModal(false)}><X size={20} /></button>
@@ -1258,8 +1258,8 @@ const Storage = () => {
             )}
 
             {showDeleteCategoryModal && (
-                <div className="modal-overlay" style={{ zIndex: 1200 }}>
-                    <div className="modal-card">
+                <div className="modal-overlay" style={{ zIndex: 1200 }} onClick={() => setShowDeleteCategoryModal(false)}>
+                    <div className="modal-card" onClick={(e) => e.stopPropagation()}>
                         <h3>{t('delete') || "Delete"}</h3>
                         <p>{t('confirmDeleteCategory') || "Are you sure you want to delete this category?"}</p>
                         <div className="modal-actions">

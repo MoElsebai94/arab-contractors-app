@@ -232,8 +232,8 @@ const ProductionReportModal = ({ data, onClose, t, language }) => {
     const isRTL = language === 'ar';
 
     return (
-        <div className="modal-overlay" style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
-            <div className="modal-card" style={{ maxWidth: '400px' }}>
+        <div className="modal-overlay" style={{ direction: isRTL ? 'rtl' : 'ltr' }} onClick={onClose}>
+            <div className="modal-card" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexDirection: isRTL ? 'row-reverse' : 'row' }}>
                     <h3 style={{ textAlign: isRTL ? 'right' : 'left' }}>{t('productionReport') || "Production Report"}</h3>
                     <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer' }}><X size={24} /></button>
