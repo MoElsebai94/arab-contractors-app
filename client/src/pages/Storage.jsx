@@ -999,7 +999,7 @@ const Storage = () => {
                                                 className="form-input"
                                                 value={newItem.daily_rate}
                                                 onChange={(e) => setNewItem({ ...newItem, daily_rate: parseInt(e.target.value) })}
-                                                min="1"
+                                                min="0"
                                             />
                                         </div>
                                     </div>
