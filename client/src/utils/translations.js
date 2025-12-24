@@ -263,7 +263,12 @@ export const translations = {
         progress: "Progress",
         rate: "Rate",
         generatedOn: "Generated on",
-        reportDesc: "Generate a comprehensive PDF report including current progress status, completion estimates, and category breakdowns."
+        reportDesc: "Generate a comprehensive PDF report including current progress status, completion estimates, and category breakdowns.",
+        warning: "Warning",
+        isCurrentlyAssignedTo: "is currently assigned to",
+        activeTasks: "active task(s)",
+        deactivateWarningMessage: "Deactivating this employee effectively removes them from availability, but they will remain listed in these tasks unless you remove them.",
+        removeFromTasksAndDeactivate: "Remove from Tasks & Deactivate"
     },
     ar: {
         dashboard: "لوحة التحكم",
@@ -509,6 +514,11 @@ export const translations = {
         generating: "جاري الإنشاء",
         generatePDF: "إنشاء PDF",
         confirmDeleteCategory: "هل أنت متأكد من حذف هذه الفئة؟",
-        delete: "حذف"
+        delete: "حذف",
+        warning: "تحذير",
+        isCurrentlyAssignedTo: "مكلف حالياً بـ",
+        activeTasks: "مهام نشطة",
+        deactivateWarningMessage: "تعطيل هذا الموظف يزيله من القائمة، ولكنه سيظل مدرجاً في هذه المهام ما لم تقم بإزالته.",
+        removeFromTasksAndDeactivate: "إزالة من المهام والتعطيل"
     }
 };

@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
-import { GripVertical, Pencil, Trash2, X, Check, ToggleLeft, ToggleRight, Calendar, ChevronDown, Search, Eye, EyeOff, FileText, Download } from 'lucide-react';
+import { GripVertical, Pencil, Trash2, X, Check, ToggleLeft, ToggleRight, Calendar, ChevronDown, Search, Eye, EyeOff, FileText, Download, AlertTriangle } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -627,6 +627,66 @@ const BulkAttendanceModal = ({ employees, onClose, onSave }) => {
     );
 };
 
+const DeactivateWarningModal = ({ employee, tasks, onClose, onConfirm }) => {
+    const { t } = useLanguage();
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px', width: '90%' }}>
+                <div className="modal-header" style={{ marginBottom: '1.25rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>
+                    <h3 style={{ margin: 0, color: 'var(--danger-color)', display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.25rem' }}>
+                        <div style={{ background: 'var(--danger-bg-light, #fee2e2)', padding: '0.5rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <AlertTriangle size={24} />
+                        </div>
+                        {t('warning') || 'Warning'}
+                    </h3>
+                </div>
+                <div className="modal-body" style={{ marginBottom: '1.5rem' }}>
+                    <p style={{ marginBottom: '1rem', lineHeight: '1.6', fontSize: '1rem' }}>
+                        <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>{employee?.name}</span> {t('isCurrentlyAssignedTo') || 'is currently assigned to'} <span style={{ fontWeight: '600' }}>{tasks.length} {t('activeTasks') || 'active task(s)'}</span>:
+                    </p>
+                    <div style={{
+                        maxHeight: '180px',
+                        overflowY: 'auto',
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-color)',
+                        padding: '1rem',
+                        borderRadius: 'var(--radius-md)',
+                        marginBottom: '1.25rem'
+                    }} className="custom-scrollbar">
+                        <ul style={{ paddingInlineStart: '1.25rem', margin: 0 }}>
+                            {tasks.map(task => (
+                                <li key={task.id} style={{ marginBottom: '0.5rem', lineHeight: '1.4' }}>{task.name}</li>
+                            ))}
+                        </ul>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.75rem', padding: '0.75rem', background: '#fffbeb', borderRadius: 'var(--radius-md)', border: '1px solid #fcd34d' }}>
+                        <AlertTriangle size={18} style={{ color: '#d97706', minWidth: '18px', marginTop: '2px' }} />
+                        <p style={{ fontSize: '0.85rem', color: '#92400e', margin: 0, lineHeight: '1.4' }}>
+                            {t('deactivateWarningMessage') || 'Deactivating this employee effectively removes them from availability...'}
+                        </p>
+                    </div>
+                </div>
+                <div className="modal-actions" style={{ flexDirection: 'column', gap: '0.75rem' }}>
+                    <button
+                        onClick={onConfirm}
+                        className="btn btn-danger btn-block"
+                        style={{ justifyContent: 'center', padding: '0.75rem', fontWeight: '600' }}
+                    >
+                        {t('removeFromTasksAndDeactivate') || 'Remove from Tasks & Deactivate'}
+                    </button>
+                    <button
+                        onClick={onClose}
+                        className="btn btn-secondary btn-block"
+                        style={{ justifyContent: 'center', marginTop: 0 }}
+                    >
+                        {t('cancel')}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const Employees = () => {
     const { t } = useLanguage();
     const [loading, setLoading] = useState(true);
@@ -690,11 +750,9 @@ const Employees = () => {
     const [deletingEmployee, setDeletingEmployee] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-    // Attendance State
+    // Attendance States
     const [attendanceEmployee, setAttendanceEmployee] = useState(null);
     const [showAttendanceModal, setShowAttendanceModal] = useState(false);
-
-    // Bulk Attendance State
     const [showBulkAttendanceModal, setShowBulkAttendanceModal] = useState(false);
 
     // Generate PDF State
@@ -702,8 +760,13 @@ const Employees = () => {
     const [showReportModal, setShowReportModal] = useState(false);
     const [showGlobalReportModal, setShowGlobalReportModal] = useState(false);
 
+    // Deactivation Warning State
+    const [showDeactivateWarningModal, setShowDeactivateWarningModal] = useState(false);
+    const [employeeToDeactivate, setEmployeeToDeactivate] = useState(null);
+    const [conflictingTasks, setConflictingTasks] = useState([]);
+
     // Lock scroll when any modal is open
-    const isAnyModalOpen = showEditModal || showDeleteModal || showAttendanceModal || showBulkAttendanceModal || showReportModal || showGlobalReportModal;
+    const isAnyModalOpen = showEditModal || showDeleteModal || showAttendanceModal || showBulkAttendanceModal || showReportModal || showGlobalReportModal || showDeactivateWarningModal;
     useScrollLock(isAnyModalOpen);
 
     const AttendanceReportModal = ({ employee, onClose, isGlobal }) => {
@@ -883,13 +946,76 @@ const Employees = () => {
         }
     };
 
-    const handleToggleStatus = async (emp) => {
+    const performDeactivation = async (emp, newStatus) => {
         try {
-            const newStatus = emp.is_active === 0 ? 1 : 0;
             await axios.put(`/api/employees/${emp.id}`, { is_active: newStatus });
             fetchEmployees();
+            // Reset warning state if it was open
+            setShowDeactivateWarningModal(false);
+            setEmployeeToDeactivate(null);
+            setConflictingTasks([]);
         } catch (error) {
             console.error('Error updating employee status:', error);
+        }
+    };
+
+    const handleToggleStatus = async (emp) => {
+        const newStatus = emp.is_active === 0 ? 1 : 0;
+
+        // If Activating, just do it
+        if (newStatus === 1) {
+            performDeactivation(emp, newStatus);
+            return;
+        }
+
+        // If Deactivating, check for active tasks
+        try {
+            const projectsRes = await axios.get('/api/projects');
+            const projects = projectsRes.data.data;
+
+            const activeConflicts = projects.filter(p => {
+                if (p.status !== 'In Progress' || !p.assignee) return false;
+                const assignees = p.assignee.split(',').map(s => s.trim());
+                return assignees.includes(emp.name);
+            });
+
+            if (activeConflicts.length > 0) {
+                setEmployeeToDeactivate(emp);
+                setConflictingTasks(activeConflicts);
+                setShowDeactivateWarningModal(true);
+            } else {
+                performDeactivation(emp, 0);
+            }
+        } catch (error) {
+            console.error("Error checking tasks for deactivation:", error);
+            // Fallback to normal deactivation if check fails? Or warn?
+            // Safer to warn or just proceed. Let's proceed for now but log error.
+            performDeactivation(emp, 0);
+        }
+    };
+
+    const handleRemoveFromTasksAndDeactivate = async () => {
+        if (!employeeToDeactivate) return;
+
+        try {
+            // 1. Remove from all conflicting tasks
+            const updatePromises = conflictingTasks.map(task => {
+                const currentAssignees = task.assignee.split(',').map(s => s.trim());
+                const newAssignees = currentAssignees.filter(name => name !== employeeToDeactivate.name).join(', ');
+
+                return axios.put(`/api/projects/${task.id}`, {
+                    assignee: newAssignees
+                });
+            });
+
+            await Promise.all(updatePromises);
+
+            // 2. Deactivate employee
+            await performDeactivation(employeeToDeactivate, 0);
+
+        } catch (error) {
+            console.error("Error removing from tasks during deactivation:", error);
+            alert("An error occurred while cleaning up tasks. Please try again.");
         }
     };
 
@@ -1713,6 +1839,19 @@ const Employees = () => {
                     employee={null}
                     isGlobal={true}
                     onClose={() => setShowGlobalReportModal(false)}
+                />
+            )}
+
+            {showDeactivateWarningModal && (
+                <DeactivateWarningModal
+                    employee={employeeToDeactivate}
+                    tasks={conflictingTasks}
+                    onClose={() => {
+                        setShowDeactivateWarningModal(false);
+                        setEmployeeToDeactivate(null);
+                        setConflictingTasks([]);
+                    }}
+                    onConfirm={handleRemoveFromTasksAndDeactivate}
                 />
             )}
         </div >
