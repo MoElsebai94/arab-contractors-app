@@ -145,6 +145,13 @@ const Storage = () => {
                     return;
                 }
                 const newQty = editingItem.current_quantity + transaction.quantity;
+
+                // Add validation for target quantity
+                if (newQty > editingItem.target_quantity) {
+                    setFormError(`${t('quantityExceedsTarget')} (${editingItem.target_quantity})`);
+                    return;
+                }
+
                 await updateProduction(editingItem.id, 'current_quantity', newQty);
                 setShowAddModal(false);
                 setTransaction({ quantity: 0, description: '', date: new Date().toISOString().split('T')[0] });
@@ -482,7 +489,7 @@ const Storage = () => {
                                 <tr>
                                     <th style={{ width: '50px' }}></th>
                                     <th style={{ width: '15%', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('itemName')}</th>
-                                    <th style={{ width: '12%', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('category')}</th>
+                                    <th style={{ width: '15%', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('category')}</th>
                                     <th style={{ width: '25%', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('currentQty')} / {t('targetQty')}</th>
                                     <th style={{ width: '10%', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('dailyRate')}</th>
                                     <th style={{ width: '8%', textAlign: language === 'ar' ? 'right' : 'left' }}>{t('moldCount')}</th>

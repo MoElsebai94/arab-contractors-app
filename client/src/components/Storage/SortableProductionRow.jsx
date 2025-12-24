@@ -41,7 +41,7 @@ const SortableProductionRow = ({ item, openModal, confirmDeleteProductionItem })
     };
 
     return (
-        <tr ref={setNodeRef} style={style} className="hover:bg-slate-50 transition-colors">
+        <tr ref={setNodeRef} style={style}>
             <td style={{ width: '40px' }}>
                 <button className="btn-drag-handle" {...attributes} {...listeners} style={{ color: '#cbd5e1' }}>
                     <GripVertical size={16} />

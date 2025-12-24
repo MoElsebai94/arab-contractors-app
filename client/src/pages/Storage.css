@@ -379,27 +379,154 @@
 
 .production-table {
     width: 100%;
-    border-collapse: collapse;
-}
-
-.production-table th,
-.production-table td {
-    padding: 1rem;
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
+    border-collapse: separate;
+    border-spacing: 0 1rem;
+    /* Gap between rows */
+    margin-top: -1rem;
 }
 
 .production-table th {
-    font-weight: 600;
+    padding: 1rem 1.5rem;
+    font-size: 0.8rem;
+    /* Slightly larger */
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     color: var(--text-secondary);
-    background: var(--bg-secondary);
+    font-weight: 700;
+    /* Bolder */
+    border-bottom: 2px solid #e2e8f0;
+    /* Clear separator */
+    background: transparent;
+    opacity: 0.8;
+}
+
+.production-table tbody tr {
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease;
+    border-radius: var(--radius-md);
+}
+
+.production-table tbody tr:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.04), 0 4px 6px rgba(0, 0, 0, 0.02);
+}
+
+.production-table td {
+    padding: 1.25rem 1.5rem;
+    vertical-align: middle;
+    border: none;
+    background: white;
+    /* Ensure bg is solid for shadows */
+}
+
+/* Rounded corners for rows */
+.production-table td:first-child {
+    border-top-left-radius: var(--radius-md);
+    border-bottom-left-radius: var(--radius-md);
+}
+
+.production-table td:last-child {
+    border-top-right-radius: var(--radius-md);
+    border-bottom-right-radius: var(--radius-md);
+}
+
+.text-strong {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.text-muted {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Modern Progress Bar */
+.progress-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.progress-track {
+    background-color: #f1f5f9;
+    height: 6px;
+    border-radius: 99px;
+    overflow: hidden;
+    width: 100%;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progress-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.badge-time {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.35rem 1rem;
+    border-radius: 99px;
+    background-color: #f1f5f9;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    /* Prevent wrapping */
+    min-width: 80px;
+    /* Ensure uniform look */
+}
+
+.badge-time.done {
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
+.badge-time.infinite {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+.action-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: flex-end;
+    /* Align actions to the right */
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.production-table tbody tr:hover .action-group {
+    opacity: 1;
+}
+
+.production-table td {
+    padding: 1.25rem 1rem;
+    /* Slightly reduced horizontal padding */
+    vertical-align: middle;
+    border: none;
+    background: white;
 }
 
 .badge {
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    font-weight: 500;
+    padding: 0.25rem 0.75rem;
+    border-radius: 99px;
+    /* Fully rounded for modern look */
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    text-transform: uppercase;
 }
 
 .badge-planned {

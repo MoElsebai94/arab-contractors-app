@@ -226,7 +226,11 @@ export const translations = {
         report: "Report",
         itemId: "Item ID",
         noTransactionsInPeriod: "No transactions in this period",
-        cementInWarehouse: "Cement In Warehouse"
+        noTransactionsInPeriod: "No transactions in this period",
+        cementInWarehouse: "Cement In Warehouse",
+        quantityExceedsTarget: "Quantity cannot exceed target",
+        quantityMustBePositive: "Quantity must be positive",
+        insufficientStock: "Insufficient stock"
     },
     ar: {
         dashboard: "لوحة التحكم",
@@ -453,6 +457,9 @@ export const translations = {
         report: "تقرير",
         itemId: "رقم العنصر",
         noTransactionsInPeriod: "لا توجد معاملات في هذه الفترة",
-        cementInWarehouse: "أسمنت بالمخزن"
+        cementInWarehouse: "أسمنت بالمخزن",
+        quantityExceedsTarget: "الكمية لا يمكن أن تتجاوز المستهدف",
+        quantityMustBePositive: "يجب أن تكون الكمية موجبة",
+        insufficientStock: "المخزون غير كافي"
     }
 };
