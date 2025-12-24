@@ -225,7 +225,8 @@ export const translations = {
         diameter: "Diameter",
         report: "Report",
         itemId: "Item ID",
-        noTransactionsInPeriod: "No transactions in this period"
+        noTransactionsInPeriod: "No transactions in this period",
+        cementInWarehouse: "Cement In Warehouse"
     },
     ar: {
         dashboard: "لوحة التحكم",
@@ -451,6 +452,7 @@ export const translations = {
         diameter: "قطر",
         report: "تقرير",
         itemId: "رقم العنصر",
-        noTransactionsInPeriod: "لا توجد معاملات في هذه الفترة"
+        noTransactionsInPeriod: "لا توجد معاملات في هذه الفترة",
+        cementInWarehouse: "أسمنت بالمخزن"
     }
 };
