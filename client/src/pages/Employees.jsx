@@ -825,11 +825,15 @@ const Employees = () => {
     }, []);
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        const upperValue = ['name', 'role', 'contact_info'].includes(name) ? value.toUpperCase() : value;
+        setFormData({ ...formData, [name]: upperValue });
     };
 
     const handleEditChange = (e) => {
-        setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        const upperValue = ['name', 'role', 'contact_info'].includes(name) ? value.toUpperCase() : value;
+        setEditFormData({ ...editFormData, [name]: upperValue });
     };
 
     const handleSubmit = async (e) => {
@@ -1373,32 +1377,37 @@ const Employees = () => {
                 showEditModal && (
                     <div className="modal-overlay">
                         <div className="modal-card">
-                            <h3>Edit Employee</h3>
+                            <div className="modal-header" style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+                                <h3 style={{ margin: 0 }}>Edit Employee</h3>
+                            </div>
                             <form onSubmit={handleUpdateEmployee}>
                                 <div className="form-group">
-                                    <label>Full Name</label>
+                                    <label className="form-label">Full Name</label>
                                     <input
                                         type="text"
                                         name="name"
+                                        className="form-input"
                                         value={editFormData.name}
                                         onChange={handleEditChange}
                                         required
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label>Role</label>
+                                    <label className="form-label">Role</label>
                                     <input
                                         type="text"
                                         name="role"
+                                        className="form-input"
                                         value={editFormData.role}
                                         onChange={handleEditChange}
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label>Contact Info</label>
+                                    <label className="form-label">Contact Info</label>
                                     <input
                                         type="text"
                                         name="contact_info"
+                                        className="form-input"
                                         value={editFormData.contact_info}
                                         onChange={handleEditChange}
                                     />

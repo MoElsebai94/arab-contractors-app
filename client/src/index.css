@@ -201,6 +201,23 @@ textarea:focus {
   box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1);
 }
 
+/* Fix for iOS Input Styles */
+input[type="date"],
+input[type="time"],
+.form-input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: var(--surface-color);
+}
+
+/* Ensure date/time inputs have consistent height and padding on iOS */
+input[type="date"],
+input[type="time"] {
+  min-height: 38px;
+  line-height: 1.5;
+}
+
 /* App Layout */
 .app-container {
   display: flex;
@@ -634,6 +651,7 @@ tr:last-child td {
     transform: translateY(0);
   }
 }
+
 /* Modern Table Styles */
 .modern-table {
   width: 100%;
@@ -735,7 +753,7 @@ tr:last-child td {
 
 /* Actions */
 .action-group {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
