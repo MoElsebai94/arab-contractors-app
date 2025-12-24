@@ -2,27 +2,23 @@ import { useEffect } from 'react';
 
 const useScrollLock = (isLocked) => {
     useEffect(() => {
-        const originalStyle = window.getComputedStyle(document.body).overflow;
         if (isLocked) {
+            // Save original style only if not already locked to avoid overwriting with 'hidden'
+            const originalStyle = window.getComputedStyle(document.body).overflow;
+            const originalPaddingRight = window.getComputedStyle(document.body).paddingRight;
+
+            // Prevent width shift
+            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+            document.body.style.paddingRight = `${scrollbarWidth}px`;
+
             document.body.style.overflow = 'hidden';
-            // Also handle mobile safari specific scroll locking if needed
-            // But basic overflow: hidden usually works for modern browsers
-        }
 
-        return () => {
-            document.body.style.overflow = originalStyle === 'hidden' ? '' : originalStyle;
-            if (!isLocked) {
+            return () => {
                 document.body.style.overflow = '';
-            }
-        };
+                document.body.style.paddingRight = '';
+            };
+        }
     }, [isLocked]);
-
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => {
-            document.body.style.overflow = '';
-        };
-    }, []);
 };
 
 export default useScrollLock;
