@@ -31,7 +31,11 @@ const authenticateToken = (req, res, next) => {
 // Login Route
 app.post('/api/auth/login', (req, res) => {
     const { passcode } = req.body;
-    if (passcode === process.env.ADMIN_PASSCODE) {
+    // Normalized comparison
+    const normalizedInput = passcode ? passcode.toString().trim() : '';
+    const normalizedTarget = process.env.ADMIN_PASSCODE ? process.env.ADMIN_PASSCODE.toString().trim() : '';
+
+    if (normalizedInput === normalizedTarget) {
         const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '24h' });
         res.json({ success: true, token });
     } else {

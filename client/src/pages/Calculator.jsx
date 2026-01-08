@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calculator, Hammer, BrickWall, Ruler, Box, Download, FileText } from 'lucide-react';
+import { Calculator, Hammer, BrickWall, Ruler, Box, Download, FileText, Scissors } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import DalotVisualization from '../components/DalotVisualization';
@@ -11,6 +11,7 @@ import CalculatorInputs from '../components/Calculator/CalculatorInputs';
 import IronResults from '../components/Calculator/IronResults';
 import ConcreteResults from '../components/Calculator/ConcreteResults';
 import WoodResults from '../components/Calculator/WoodResults';
+import IronCutter from '../components/Calculator/IronCutter';
 
 const CalculatorPage = () => {
     const { t } = useLanguage();
@@ -31,6 +32,7 @@ const CalculatorPage = () => {
     const getTitle = () => {
         switch (activeTab) {
             case 'iron': return t('ironCalculator');
+            case 'cutter': return t('ironCutter');
             case 'concrete': return t('concreteCalculator');
             case 'wood': return t('woodCalculator');
             case '3d': return t('threeDVisualization');
@@ -267,6 +269,12 @@ const CalculatorPage = () => {
                     <Hammer size={18} /> {t('iron')}
                 </button>
                 <button
+                    className={`tab ${activeTab === 'cutter' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('cutter')}
+                >
+                    <Scissors size={18} /> {t('ironCutter')}
+                </button>
+                <button
                     className={`tab ${activeTab === 'concrete' ? 'active' : ''}`}
                     onClick={() => setActiveTab('concrete')}
                 >
@@ -294,6 +302,12 @@ const CalculatorPage = () => {
                             setCalculatorParams={setCalculatorParams}
                         />
                         <IronResults calculateIron={calculateIron} />
+                    </div>
+                )}
+
+                {activeTab === 'cutter' && (
+                    <div className="calculator-section">
+                        <IronCutter />
                     </div>
                 )}
 
