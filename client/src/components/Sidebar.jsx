@@ -71,6 +71,7 @@ const Sidebar = () => {
           {t('storage')}
         </Link>
         <Link to="/calculator" className={`nav-item ${isActive('/calculator')}`} onClick={closeMenu}>
+          <Calculator className="nav-icon" size={24} />
           {t('calculator')}
         </Link>
         <Link to="/documents" className={`nav-item ${isActive('/documents')}`} onClick={closeMenu}>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Plus, Trash2, FileText, Download } from 'lucide-react';
+import { Plus, Trash2, FileText, Download, ChevronDown } from 'lucide-react';
 
 const DemandeAchatForm = () => {
     const [project, setProject] = useState('');
@@ -200,130 +200,172 @@ const DemandeAchatForm = () => {
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h2 className="text-xl font-bold mb-6 text-slate-800 flex items-center gap-2">
-                <FileText className="text-blue-600" />
-                Demande d'Achat
-            </h2>
+        <div style={{ maxWidth: '1000px', margin: '0 auto', paddingBottom: '3rem' }}>
+            <div className="card">
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{
+                            width: '48px',
+                            height: '48px',
+                            backgroundColor: 'var(--bg-secondary)',
+                            borderRadius: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--primary-color)'
+                        }}>
+                            <FileText size={24} />
+                        </div>
+                        <div>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--primary-color)', margin: 0 }}>Purchase Request</h2>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>Create and manage project procurement</p>
+                        </div>
+                    </div>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Nom du Projet</label>
-                    <input
-                        type="text"
-                        value={project}
-                        onChange={(e) => setProject(e.target.value)}
-                        className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-                        placeholder="Ex: BOUCLE DE LA LEKIE"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Directeur de Projet</label>
-                    <input
-                        type="text"
-                        value={director}
-                        onChange={(e) => setDirector(e.target.value)}
-                        className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
-                    <input
-                        type="date"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                        className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                </div>
-            </div>
+                {/* Project Details Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+                    <div className="form-group">
+                        <label className="form-label">Project Name</label>
+                        <input
+                            type="text"
+                            value={project}
+                            onChange={(e) => setProject(e.target.value)}
+                            className="form-input"
+                            placeholder="e.g. BOUCLE DE LA LEKIE"
+                            style={{ width: '100%' }}
+                        />
+                    </div>
 
-            <div className="mb-8">
-                <h3 className="font-semibold text-slate-700 mb-4">Items</h3>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <thead className="text-xs text-slate-500 uppercase bg-slate-50">
-                            <tr>
-                                <th className="px-4 py-3 w-16">N°</th>
-                                <th className="px-4 py-3">Désignation</th>
-                                <th className="px-4 py-3 w-32">Unité</th>
-                                <th className="px-4 py-3 w-32">Quantité</th>
-                                <th className="px-4 py-3 w-16"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {items.map((item, index) => (
-                                <tr key={index} className="border-b border-slate-100">
-                                    <td className="px-4 py-3 font-medium text-slate-900">{index + 1}</td>
-                                    <td className="px-4 py-3">
-                                        <input
-                                            type="text"
-                                            value={item.designation}
-                                            onChange={(e) => updateItem(index, 'designation', e.target.value)}
-                                            className="w-full bg-transparent outline-none focus:border-b focus:border-blue-500"
-                                            placeholder="Item name"
-                                        />
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <select
-                                            value={item.unit}
-                                            onChange={(e) => updateItem(index, 'unit', e.target.value)}
-                                            className="w-full bg-transparent outline-none"
-                                        >
-                                            <option value="PCS">PCS</option>
-                                            <option value="KG">KG</option>
-                                            <option value="TONNES">TONNES</option>
-                                            <option value="BARRES">BARRES</option>
-                                            <option value="M3">M3</option>
-                                            <option value="LITRES">LITRES</option>
-                                        </select>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <input
-                                            type="number"
-                                            value={item.quantity}
-                                            onChange={(e) => updateItem(index, 'quantity', e.target.value)}
-                                            className="w-full bg-transparent outline-none focus:border-b focus:border-blue-500 text-center"
-                                        />
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                        <button
-                                            onClick={() => removeItem(index)}
-                                            className="text-red-400 hover:text-red-600 transition-colors"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </td>
+                    <div className="form-group">
+                        <label className="form-label">Director</label>
+                        <input
+                            type="text"
+                            value={director}
+                            onChange={(e) => setDirector(e.target.value)}
+                            className="form-input"
+                            style={{ width: '100%' }}
+                        />
+                    </div>
+
+                    <div className="form-group" style={{ maxWidth: '200px' }}>
+                        <label className="form-label">Date</label>
+                        <input
+                            type="date"
+                            value={date}
+                            onChange={(e) => setDate(e.target.value)}
+                            className="form-input"
+                            style={{ width: '100%' }}
+                        />
+                    </div>
+                </div>
+
+                {/* Items Table */}
+                <div style={{ marginBottom: '2rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-primary)' }}>Items List</h3>
+                        <span className="badge badge-planned">{items.length} Items</span>
+                    </div>
+
+                    <div className="table-view">
+                        <table className="modern-table">
+                            <thead>
+                                <tr>
+                                    <th style={{ width: '60px', textAlign: 'center' }}>#</th>
+                                    <th>Description</th>
+                                    <th style={{ width: '150px' }}>Unit</th>
+                                    <th style={{ width: '120px' }}>Qty</th>
+                                    <th style={{ width: '60px' }}></th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {items.map((item, index) => (
+                                    <tr key={index}>
+                                        <td style={{ textAlign: 'center', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
+                                            {String(index + 1).padStart(2, '0')}
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="text"
+                                                value={item.designation}
+                                                onChange={(e) => updateItem(index, 'designation', e.target.value)}
+                                                className="form-input"
+                                                placeholder="Item description"
+                                                style={{ border: 'none', background: 'transparent', padding: '0.4rem 0', borderRadius: 0 }}
+                                            />
+                                        </td>
+                                        <td>
+                                            <select
+                                                value={item.unit}
+                                                onChange={(e) => updateItem(index, 'unit', e.target.value)}
+                                                className="form-input"
+                                                style={{}}
+                                            >
+                                                <option value="PCS">PCS</option>
+                                                <option value="KG">KG</option>
+                                                <option value="TONNES">TONNES</option>
+                                                <option value="BARRES">BARRES</option>
+                                                <option value="M3">M3</option>
+                                                <option value="LITRES">LITRES</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="number"
+                                                value={item.quantity}
+                                                onChange={(e) => updateItem(index, 'quantity', e.target.value)}
+                                                className="form-input"
+                                                style={{ textAlign: 'center' }}
+                                            />
+                                        </td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <button
+                                                onClick={() => removeItem(index)}
+                                                className="btn-icon-small danger"
+                                                title="Remove Item"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+
                 <button
                     onClick={addItem}
-                    className="mt-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm"
+                    className="btn btn-secondary btn-block"
+                    style={{ marginBottom: '2rem', borderStyle: 'dashed', borderWidth: '2px' }}
                 >
-                    <Plus size={16} /> Add Item
+                    <Plus size={16} style={{ marginRight: '0.5rem' }} />
+                    Add New Row
                 </button>
-            </div>
 
-            <div className="flex justify-end pt-6 border-t border-slate-100">
-                <button
-                    onClick={generatePDF}
-                    disabled={loading}
-                    className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    {loading ? (
-                        <>Generating...</>
-                    ) : (
-                        <>
-                            <Download size={18} />
-                            Generate PDF
-                        </>
-                    )}
-                </button>
+                {/* Footer Actions */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
+                    <button
+                        onClick={generatePDF}
+                        disabled={loading}
+                        className="btn btn-primary"
+                        style={{ padding: '0.75rem 2rem', fontSize: '1rem' }}
+                    >
+                        {loading ? (
+                            'Processing...'
+                        ) : (
+                            <>
+                                <Download size={18} style={{ marginRight: '0.75rem' }} />
+                                Download Official PDF
+                            </>
+                        )}
+                    </button>
+                </div>
             </div>
         </div>
     );
 };
 
 export default DemandeAchatForm;
+
