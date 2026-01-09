@@ -968,13 +968,31 @@ const IronCutter = () => {
 
                     /* Fix Marker Height Overlap */
                     .patterns-list {
-                        gap: 1.5rem;
+                        gap: 2rem;
+                    }
+
+                    .bar-visual {
+                        gap: 0.25rem; /* Reduce gap since we add margin to track */
                     }
 
                     .bar-track {
-                        margin-bottom: 1.25rem;
+                        margin-bottom: 1.5rem;
+                        margin-top: 1.25rem; /* Space for the top floating quantity */
                     }
-                }
+
+                    /* Move the quantity 'x20' above the bar */
+                    .segment-qty {
+                        display: block;
+                        position: absolute;
+                        top: -18px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        font-size: 0.7rem;
+                        color: #64748b;
+                        background: none;
+                        padding: 0;
+                        font-weight: 600;
+                    }
             `}</style>
         </div>
     );
