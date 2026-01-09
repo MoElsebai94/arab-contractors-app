@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { Plus, Trash2, Scissors, Calculator } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Plus, Trash2, Scissors, Calculator, ChevronDown, Download } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { useLanguage } from '../../context/LanguageContext';
 
 const IronCutter = () => {
@@ -7,8 +9,29 @@ const IronCutter = () => {
     const [items, setItems] = useState([]);
     const [newItem, setNewItem] = useState({ quantity: 1, length: '', diameter: '10' });
     const [results, setResults] = useState(null);
+    const [isDiameterOpen, setIsDiameterOpen] = useState(false);
+
+    // PDF Report Modal State
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportNameInput, setReportNameInput] = useState('');
+
+    const dropdownRef = useRef(null);
 
     const diameters = ['6', '8', '10', '12', '14', '16', '20', '25', '32'];
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsDiameterOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     const handleAddItem = () => {
         if (!newItem.length || newItem.length <= 0) return;
@@ -115,22 +138,249 @@ const IronCutter = () => {
         setResults(optimizationResults);
     };
 
+    const openReportModal = () => {
+        setReportNameInput('');
+        setShowReportModal(true);
+    };
+
+    const confirmGeneratePDF = () => {
+        generatePDF(reportNameInput);
+        setShowReportModal(false);
+    };
+
+    const generatePDF = async (reportName) => {
+        if (!results) return;
+
+        // Fallback or empty name if user just clicks confirms without typing (optional)
+        const finalName = reportName || "Untitled Project";
+
+        const doc = new jsPDF({ orientation: 'landscape' });
+        const today = new Date().toLocaleDateString();
+
+        // Colors
+        const NAVY_BLUE = [0, 35, 102];
+        const MCLAREN_ORANGE = [255, 128, 0];
+        const LIGHT_BLUE = [240, 244, 255];
+        const BAR_BLUE = [59, 130, 246]; // #3b82f6
+        const WASTE_RED = [239, 68, 68]; // #ef4444
+
+        // Load Logo
+        try {
+            const logoUrl = '/favicon.png';
+            const logoImg = new Image();
+            logoImg.src = logoUrl;
+            await new Promise((resolve) => {
+                logoImg.onload = resolve;
+                logoImg.onerror = resolve; // Continue even if logo fails
+                if (logoImg.complete) resolve();
+            });
+            doc.addImage(logoImg, 'PNG', 14, 10, 25, 25);
+        } catch (e) {
+            console.warn("Logo load failed", e);
+        }
+
+        // Header
+        doc.setFontSize(22);
+        doc.setTextColor(...NAVY_BLUE);
+        doc.setFont("helvetica", "bold");
+        doc.text("ARAB CONTRACTORS CAMEROON", 45, 20);
+
+        doc.setFontSize(14);
+        doc.setTextColor(100);
+        doc.setFont("helvetica", "normal");
+        doc.text("Iron Cutting Optimization Report", 45, 30);
+
+        if (finalName) {
+            doc.setFontSize(12);
+            doc.setTextColor(...MCLAREN_ORANGE);
+            doc.text(`Project: ${finalName}`, 45, 38);
+        }
+
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Date: ${today}`, 250, 50); // Adjusted X for landscape
+
+        let finalY = 60;
+
+        // 1. Required List
+        doc.setFontSize(14);
+        doc.setTextColor(...MCLAREN_ORANGE);
+        doc.setFont("helvetica", "bold");
+        doc.text("1. Required Bars", 14, finalY);
+
+        const reqData = items.map(item => [
+            `${item.diameter}`, // Removed Phi symbol to prevent encoding bugs
+            `${item.length}m`,
+            item.quantity
+        ]);
+
+        autoTable(doc, {
+            startY: finalY + 5,
+            head: [['Diameter', 'Length', 'Quantity']],
+            body: reqData,
+            theme: 'striped',
+            headStyles: { fillColor: NAVY_BLUE },
+            styles: { fontSize: 10 },
+            margin: { left: 14, right: 14 }
+        });
+
+        finalY = doc.lastAutoTable.finalY + 15;
+
+        // 2. Optimization Results
+        doc.setFontSize(14);
+        doc.setTextColor(...MCLAREN_ORANGE);
+        doc.text("2. Optimization Results", 14, finalY);
+
+        Object.entries(results).forEach(([diameter, data]) => {
+            if (finalY > 150) { // Check page break earlier for landscape
+                doc.addPage();
+                finalY = 20;
+            }
+
+            doc.setFontSize(12);
+            doc.setTextColor(...NAVY_BLUE);
+            // Removed Phi symbol here too
+            doc.text(`Diameter ${diameter} - Total 12m Bars: ${data.totalBars}`, 14, finalY + 10);
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Total Waste: ${data.wastePercentage}%`, 14, finalY + 16);
+
+            // Prepare data with raw objects for hooks
+            const patternData = data.patterns.map((p, idx) => ({
+                pattern: `Pattern #${idx + 1}`,
+                count: `x${p.count}`,
+                visual: '', // Placeholder
+                cuts: p.cuts, // Raw data for drawing
+                remaining: p.remaining
+            }));
+
+            autoTable(doc, {
+                startY: finalY + 20,
+                head: [['Pattern', 'Count', 'Visualization (12m Bar)', 'Waste']],
+                body: patternData.map(p => [p.pattern, p.count, '', `${p.remaining.toFixed(2)}m`]),
+                theme: 'grid',
+                headStyles: { fillColor: [51, 65, 85] },
+                styles: { fontSize: 9, minCellHeight: 15, valign: 'middle' },
+                columnStyles: {
+                    0: { cellWidth: 30 },
+                    1: { cellWidth: 20 },
+                    2: { cellWidth: 'auto' }, // Expanded for visual
+                    3: { cellWidth: 25 }
+                },
+                margin: { left: 14, right: 14 },
+                didDrawCell: (data) => {
+                    if (data.section === 'body' && data.column.index === 2) {
+                        const rawRow = patternData[data.row.index];
+                        if (!rawRow) return;
+
+                        const cell = data.cell;
+                        const barWidth = cell.width - 4; // Padding
+                        const barHeight = 8; // Height of the visual bar
+                        const startX = cell.x + 2;
+                        const startY = cell.y + (cell.height - barHeight) / 2;
+                        const scale = barWidth / 12; // Pixels per meter
+
+                        let currentX = startX;
+
+                        // Draw Cuts
+                        rawRow.cuts.forEach(cut => {
+                            const width = cut * scale;
+
+                            // Bar Rect
+                            doc.setFillColor(...BAR_BLUE);
+                            doc.rect(currentX, startY, width, barHeight, 'F');
+
+                            // Divider
+                            doc.setDrawColor(255, 255, 255);
+                            doc.setLineWidth(0.2);
+                            doc.rect(currentX, startY, width, barHeight, 'S');
+
+                            // Text
+                            if (width > 8) { // Only draw text if space permits
+                                doc.setFontSize(7);
+                                doc.setTextColor(255, 255, 255);
+                                doc.text(`${cut}m`, currentX + width / 2, startY + 5.5, { align: 'center' });
+                            }
+
+                            currentX += width;
+                        });
+
+                        // Draw Waste
+                        if (rawRow.remaining > 0) {
+                            const width = rawRow.remaining * scale;
+                            // Waste Rect
+                            doc.setFillColor(...WASTE_RED);
+                            doc.rect(currentX, startY, width, barHeight, 'F');
+
+                            // Divider
+                            doc.setDrawColor(255, 255, 255);
+                            doc.setLineWidth(0.2);
+                            doc.rect(currentX, startY, width, barHeight, 'S');
+                        }
+                    }
+                }
+            });
+
+            finalY = doc.lastAutoTable.finalY + 10;
+        });
+
+        // Footer
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text(`Page ${i} of ${pageCount}`, 280, 200, { align: 'right' }); // Adjusted for landscape
+            doc.text("Generated by Arab Contractors System", 14, 200);
+        }
+
+        const safeName = finalName.replace(/[^a-z0-9]/gi, '_').substring(0, 30);
+        doc.save(`${safeName}_Iron_Opt_${today.replace(/\//g, '-')}.pdf`);
+    };
+
     return (
         <div className="iron-cutter-container">
+            <div className="iron-cutter-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3>{t('ironCutter')}</h3>
+                {results && (
+                    <button className="generate-btn" onClick={openReportModal} style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>
+                        <Download size={16} /> Download Report
+                    </button>
+                )}
+            </div>
+
             <div className="input-section">
                 <h3>{t('ironCutter')}</h3>
 
                 <div className="add-item-form">
                     <div className="form-group">
                         <label>{t('diameter')}</label>
-                        <select
-                            value={newItem.diameter}
-                            onChange={(e) => setNewItem({ ...newItem, diameter: e.target.value })}
-                        >
-                            {diameters.map(d => (
-                                <option key={d} value={d}>Φ{d}</option>
-                            ))}
-                        </select>
+                        <div className="custom-dropdown-container" ref={dropdownRef}>
+                            <div
+                                className="custom-dropdown-trigger"
+                                onClick={() => setIsDiameterOpen(!isDiameterOpen)}
+                            >
+                                <span>Φ{newItem.diameter}</span>
+                                <ChevronDown size={16} className={`dropdown-arrow ${isDiameterOpen ? 'open' : ''}`} />
+                            </div>
+
+                            {isDiameterOpen && (
+                                <div className="custom-dropdown-menu">
+                                    {diameters.map(d => (
+                                        <div
+                                            key={d}
+                                            className={`custom-dropdown-item ${newItem.diameter === d ? 'selected' : ''}`}
+                                            onClick={() => {
+                                                setNewItem({ ...newItem, diameter: d });
+                                                setIsDiameterOpen(false);
+                                            }}
+                                        >
+                                            Φ{d}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     <div className="form-group">
@@ -235,13 +485,41 @@ const IronCutter = () => {
                                                 className="waste-segment"
                                                 style={{ width: `${(group.remaining / 12) * 100}%` }}
                                                 title={`Waste: ${group.remaining.toFixed(2)}m`}
-                                            />
+                                            >
+                                                {group.remaining >= 0.5 && (
+                                                    <span className="waste-text">{group.remaining.toFixed(2)}m</span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {showReportModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h4>{t('enterReportName') || "Report Name"}</h4>
+                        <input
+                            type="text"
+                            placeholder="e.g. Project Alpha"
+                            value={reportNameInput}
+                            onChange={(e) => setReportNameInput(e.target.value)}
+                            autoFocus
+                            onKeyDown={(e) => e.key === 'Enter' && confirmGeneratePDF()}
+                        />
+                        <div className="modal-actions">
+                            <button className="cancel-btn" onClick={() => setShowReportModal(false)}>
+                                {t('cancel') || "Cancel"}
+                            </button>
+                            <button className="confirm-btn" onClick={confirmGeneratePDF}>
+                                {t('generate') || "Generate PDF"}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -279,13 +557,36 @@ const IronCutter = () => {
                     font-weight: 500;
                 }
 
-                .form-group select,
                 .form-group input {
                     padding: 0.75rem;
                     border: 1px solid var(--border);
                     border-radius: 6px;
                     font-size: 0.95rem;
                     background: white;
+                }
+
+                .custom-dropdown-container {
+                    width: 100%;
+                    min-width: 0;
+                    position: relative; /* Ensure stacking context */
+                    z-index: 50; /* Raise container */
+                }
+
+                .custom-dropdown-menu {
+                    z-index: 1000;
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 4px;
+                    padding: 4px;
+                    width: 240px; /* Wider to fit 3 columns comfortably */
+                }
+
+                .custom-dropdown-item {
+                    text-align: center;
+                    padding: 8px 4px;
+                    border-radius: 4px;
+                    justify-content: center; /* Center flex content if it is flex */
+                    display: flex;
                 }
 
                 .add-btn {
@@ -515,7 +816,7 @@ const IronCutter = () => {
                 .waste-segment {
                     height: 100%;
                     background: #ef4444;
-                    opacity: 0.3;
+                    opacity: 0.6;
                     background-image: repeating-linear-gradient(
                         45deg,
                         transparent,
@@ -523,6 +824,101 @@ const IronCutter = () => {
                         #ffffff 5px,
                         #ffffff 10px
                     );
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    overflow: hidden;
+                }
+
+                .waste-text {
+                    font-size: 0.7rem;
+                    color: #7f1d1d;
+                    font-weight: 700;
+                    background: rgba(255,255,255,0.7);
+                    padding: 0 4px;
+                    border-radius: 4px;
+                    white-space: nowrap;
+                    z-index: 2;
+                }
+
+                /* Modal Styles */
+                .modal-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 2000;
+                    backdrop-filter: blur(2px);
+                }
+
+                .modal-content {
+                    background: white;
+                    padding: 1.5rem;
+                    border-radius: var(--radius-md);
+                    width: 100%;
+                    max-width: 400px;
+                    box-shadow: var(--shadow-md);
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1rem;
+                    animation: slideIn 0.2s ease;
+                }
+
+                @keyframes slideIn {
+                    from { transform: translateY(10px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+
+                .modal-content h4 {
+                    font-size: 1.1rem;
+                    margin: 0;
+                    color: var(--text-main);
+                }
+
+                .modal-content input {
+                    padding: 0.75rem;
+                    border: 1px solid var(--border);
+                    border-radius: 6px;
+                    font-size: 1rem;
+                }
+
+                .modal-actions {
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 0.75rem;
+                    margin-top: 0.5rem;
+                }
+
+                .modal-actions button {
+                    padding: 0.5rem 1rem;
+                    border-radius: 6px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    border: none;
+                    font-size: 0.9rem;
+                }
+
+                .cancel-btn {
+                    background: var(--bg-secondary);
+                    color: var(--text-secondary);
+                }
+
+                .cancel-btn:hover {
+                    background: #e2e8f0;
+                }
+
+                .confirm-btn {
+                    background: var(--primary);
+                    color: white;
+                }
+
+                .confirm-btn:hover {
+                    background: var(--primary-hover);
                 }
             `}</style>
         </div>

@@ -244,21 +244,23 @@ const CalculatorPage = () => {
             <div className="page-header">
                 <h1 className="page-title">{getTitle()}</h1>
 
-                <div className="report-controls">
-                    <div className="input-wrapper dalot-input-wrapper">
-                        <FileText size={18} className="input-icon" />
-                        <input
-                            type="text"
-                            placeholder={t('enterDalotName')}
-                            value={dalotName}
-                            onChange={(e) => setDalotName(e.target.value)}
-                            className="dalot-name-input"
-                        />
+                {activeTab !== 'cutter' && (
+                    <div className="report-controls">
+                        <div className="input-wrapper dalot-input-wrapper">
+                            <FileText size={18} className="input-icon" />
+                            <input
+                                type="text"
+                                placeholder={t('enterDalotName')}
+                                value={dalotName}
+                                onChange={(e) => setDalotName(e.target.value)}
+                                className="dalot-name-input"
+                            />
+                        </div>
+                        <button className="generate-btn" onClick={generatePDF}>
+                            <Download size={18} /> {t('generatePDFReport')}
+                        </button>
                     </div>
-                    <button className="generate-btn" onClick={generatePDF}>
-                        <Download size={18} /> {t('generatePDFReport')}
-                    </button>
-                </div>
+                )}
             </div>
 
             <div className="tabs">

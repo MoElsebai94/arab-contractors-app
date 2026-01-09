@@ -167,7 +167,10 @@ export const translations = {
         totalBars12m: "Total 12m Bars",
         barLengthTrigger: "Bar Length must be <= 12m",
         noData: "No data to optimize",
+        noData: "No data to optimize",
         results: "Results",
+        enterReportName: "Enter Report Name",
+        generate: "Generate",
         // Storage
         storageManagement: "Storage Management",
         rate: "Rate",
@@ -454,7 +457,10 @@ export const translations = {
         totalBars12m: "إجمالي أسياخ 12م",
         barLengthTrigger: "طول السيخ يجب أن يكون <= 12م",
         noData: "لا توجد بيانات للتحسين",
+        noData: "لا توجد بيانات للتحسين",
         results: "النتائج",
+        enterReportName: "أدخل اسم التقرير",
+        generate: "إصدار",
         // Storage
         storageManagement: "إدارة المخزن",
         rate: "المعدل",
