@@ -139,9 +139,31 @@ const DemandeAchatForm = () => {
                     2: { halign: 'center', cellWidth: 30 },
                     3: { halign: 'center', cellWidth: 30 },
                 },
-                margin: { bottom: 40 }, // Ensure table doesn't overlap footer
-                didDrawCell: null
+                didDrawCell: (data) => {
+                    // Capture the Y position of the last real item
+                    if (data.section === 'body' && data.row.index === items.length - 1) {
+                        doc.lastRealItemY = data.cell.y + data.cell.height;
+                    }
+                }
             });
+
+            // --- 5. Hash/Diagonal Line over Empty Rows ---
+            if (doc.lastRealItemY) {
+                const finalY = doc.lastAutoTable.finalY;
+
+                // Ensure we have space to draw
+                if (finalY > doc.lastRealItemY) {
+                    doc.setDrawColor(0); // Black
+                    doc.setLineWidth(0.5);
+
+                    // Draw Z-pattern or simple Diagonal
+                    // Top horizontal is already the row border.
+                    // Draw diagonal from Top-Left of empty area to Bottom-Right
+                    doc.line(14, doc.lastRealItemY, pageWidth - 14, finalY);
+
+                    // Optional: Bottom horizontal is already the table border
+                }
+            }
 
             // --- 6. Footer ---
             // Signatures
