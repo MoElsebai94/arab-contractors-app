@@ -67,7 +67,7 @@ const DemandeAchatForm = () => {
             // Blue Horizontal Line
             doc.setDrawColor(0, 51, 153); // Blue
             doc.setLineWidth(1);
-            doc.line(10, 28, pageWidth - 10, 28);
+            doc.line(10, 33, pageWidth - 10, 33);
 
             // Project Info
             doc.setFontSize(11);
