@@ -85,9 +85,28 @@ const IronCutter = () => {
                 }
             });
 
+            // Group identical patterns
+            const groupedPatterns = [];
+            bars.forEach(bar => {
+                // Sort cuts for consistent key generation
+                bar.cuts.sort((a, b) => b - a);
+                const key = bar.cuts.join(',');
+
+                const existingGroup = groupedPatterns.find(g => g.key === key);
+                if (existingGroup) {
+                    existingGroup.count++;
+                } else {
+                    groupedPatterns.push({
+                        ...bar,
+                        key,
+                        count: 1
+                    });
+                }
+            });
+
             optimizationResults[diameter] = {
                 totalBars: bars.length,
-                patterns: bars,
+                patterns: groupedPatterns,
                 totalWaste: bars.reduce((acc, bar) => acc + bar.remaining, 0),
                 wastePercentage: ((bars.reduce((acc, bar) => acc + bar.remaining, 0) / (bars.length * stockLength)) * 100).toFixed(1)
             };
@@ -178,24 +197,44 @@ const IronCutter = () => {
                             </div>
 
                             <div className="patterns-list">
-                                {results[diameter].patterns.map((bar, idx) => (
+                                {results[diameter].patterns.map((group, idx) => (
                                     <div key={idx} className="bar-visual">
-                                        <div className="bar-label">Bar #{idx + 1}</div>
+                                        <div className="bar-label">
+                                            <div>{t('cutPattern')} #{idx + 1}</div>
+                                            <div className="bar-count-badge">x{group.count}</div>
+                                        </div>
                                         <div className="bar-track">
-                                            {bar.cuts.map((cut, cIdx) => (
-                                                <div
-                                                    key={cIdx}
-                                                    className="cut-segment"
-                                                    style={{ width: `${(cut / 12) * 100}%` }}
-                                                    title={`${cut}m`}
-                                                >
-                                                    {cut}m
-                                                </div>
-                                            ))}
+                                            {(() => {
+                                                let cumulative = 0;
+                                                return group.cuts.map((cut, cIdx) => {
+                                                    cumulative += cut;
+                                                    // Floating point correction for display
+                                                    const displayCumulative = Number(cumulative.toFixed(2));
+
+                                                    return (
+                                                        <div
+                                                            key={cIdx}
+                                                            className="cut-segment"
+                                                            style={{ width: `${(cut / 12) * 100}%` }}
+                                                            title={`${cut}m (x${group.count})`}
+                                                        >
+                                                            <span className="segment-text">
+                                                                {cut}m <span className="segment-qty">x{group.count}</span>
+                                                            </span>
+                                                            {cIdx < group.cuts.length && (
+                                                                <div className="cumulative-marker">
+                                                                    <div className="marker-line"></div>
+                                                                    <div className="marker-value">{displayCumulative}m</div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                });
+                                            })()}
                                             <div
                                                 className="waste-segment"
-                                                style={{ width: `${(bar.remaining / 12) * 100}%` }}
-                                                title={`Waste: ${bar.remaining.toFixed(2)}m`}
+                                                style={{ width: `${(group.remaining / 12) * 100}%` }}
+                                                title={`Waste: ${group.remaining.toFixed(2)}m`}
                                             />
                                         </div>
                                     </div>
@@ -386,20 +425,23 @@ const IronCutter = () => {
                 }
 
                 .bar-label {
-                    width: 60px;
+                    width: 70px;
                     font-size: 0.85rem;
                     color: var(--text-secondary);
                     font-weight: 500;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.25rem;
                 }
 
-                .bar-track {
-                    flex: 1;
-                    height: 24px;
-                    background: #eee;
-                    border-radius: 4px;
-                    display: flex;
-                    overflow: hidden;
-                    position: relative;
+                .bar-count-badge {
+                    background: var(--text-main);
+                    color: white;
+                    border-radius: 12px;
+                    padding: 0.1rem 0.5rem;
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                    align-self: flex-start;
                 }
 
                 .cut-segment {
@@ -413,7 +455,61 @@ const IronCutter = () => {
                     justify-content: center;
                     font-weight: 600;
                     white-space: nowrap;
-                    overflow: hidden;
+                    overflow: visible;
+                    padding: 0 4px;
+                    position: relative;
+                    min-width: 0; /* Critical for accurate flex sizing */
+                }
+
+                .segment-text {
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                }
+
+                .segment-qty {
+                    background: rgba(255,255,255,0.2);
+                    padding: 0 4px;
+                    border-radius: 4px;
+                    font-size: 0.7rem;
+                }
+
+                .cumulative-marker {
+                    position: absolute;
+                    right: 0;
+                    bottom: -22px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    z-index: 10;
+                    transform: translateX(50%); /* Centers the marker on the cut line */
+                }
+
+                .marker-line {
+                    width: 1px;
+                    height: 6px;
+                    background: #666;
+                    margin-bottom: 2px;
+                }
+
+                .marker-value {
+                    font-size: 0.7rem;
+                    color: #4b5563;
+                    font-weight: 600;
+                    background: white;
+                    padding: 0 2px;
+                    line-height: 1;
+                }
+
+                .bar-track {
+                    flex: 1;
+                    height: 32px;
+                    background: #eee;
+                    border-radius: 4px;
+                    display: flex;
+                    overflow: visible;
+                    position: relative;
+                    margin-bottom: 1.5rem;
                 }
 
                 .waste-segment {
