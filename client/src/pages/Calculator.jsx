@@ -15,7 +15,8 @@ import IronCutter from '../components/Calculator/IronCutter';
 
 const CalculatorPage = () => {
     const { t } = useLanguage();
-    const [activeTab, setActiveTab] = useState('iron');
+    const [mainTab, setMainTab] = useState('dalot'); // 'dalot' or 'cutter'
+    const [dalotTab, setDalotTab] = useState('iron');
     const [dalotName, setDalotName] = useState('');
 
     const {
@@ -30,9 +31,10 @@ const CalculatorPage = () => {
     } = useCalculator();
 
     const getTitle = () => {
-        switch (activeTab) {
+        if (mainTab === 'cutter') return t('ironCutter');
+
+        switch (dalotTab) {
             case 'iron': return t('ironCalculator');
-            case 'cutter': return t('ironCutter');
             case 'concrete': return t('concreteCalculator');
             case 'wood': return t('woodCalculator');
             case '3d': return t('threeDVisualization');
@@ -241,10 +243,28 @@ const CalculatorPage = () => {
 
     return (
         <div>
-            <div className="page-header">
-                <h1 className="page-title">{getTitle()}</h1>
+            {/* Top Level Mode Switcher */}
+            <div className="main-mode-switcher">
+                <button
+                    className={`mode-btn ${mainTab === 'dalot' ? 'active' : ''}`}
+                    onClick={() => setMainTab('dalot')}
+                >
+                    <Box size={20} />
+                    {t('dalot') || "Dalots"}
+                </button>
+                <button
+                    className={`mode-btn ${mainTab === 'cutter' ? 'active' : ''}`}
+                    onClick={() => setMainTab('cutter')}
+                >
+                    <Scissors size={20} />
+                    {t('ironCutter')}
+                </button>
+            </div>
 
-                {activeTab !== 'cutter' && (
+            <div className="page-header">
+                {mainTab === 'dalot' && <h1 className="page-title">{getTitle()}</h1>}
+
+                {mainTab === 'dalot' && (
                     <div className="report-controls">
                         <div className="input-wrapper dalot-input-wrapper">
                             <FileText size={18} className="input-icon" />
@@ -263,95 +283,94 @@ const CalculatorPage = () => {
                 )}
             </div>
 
-            <div className="tabs">
-                <button
-                    className={`tab ${activeTab === 'iron' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('iron')}
-                >
-                    <Hammer size={18} /> {t('iron')}
-                </button>
-                <button
-                    className={`tab ${activeTab === 'cutter' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('cutter')}
-                >
-                    <Scissors size={18} /> {t('ironCutter')}
-                </button>
-                <button
-                    className={`tab ${activeTab === 'concrete' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('concrete')}
-                >
-                    <BrickWall size={18} /> {t('concreteCalculator')}
-                </button>
-                <button
-                    className={`tab ${activeTab === 'wood' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('wood')}
-                >
-                    <Ruler size={18} /> {t('woodCalculator')}
-                </button>
-                <button
-                    className={`tab ${activeTab === '3d' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('3d')}
-                >
-                    <Box size={18} /> {t('threeDVisualization')}
-                </button>
-            </div>
-
-            <div className="calculator-content">
-                {activeTab === 'iron' && (
-                    <div className="calculator-section">
-                        <CalculatorInputs
-                            calculatorParams={calculatorParams}
-                            setCalculatorParams={setCalculatorParams}
-                        />
-                        <IronResults calculateIron={calculateIron} />
+            {mainTab === 'dalot' ? (
+                <>
+                    <div className="tabs">
+                        <button
+                            className={`tab ${dalotTab === 'iron' ? 'active' : ''}`}
+                            onClick={() => setDalotTab('iron')}
+                        >
+                            <Hammer size={18} /> {t('iron')}
+                        </button>
+                        <button
+                            className={`tab ${dalotTab === 'concrete' ? 'active' : ''}`}
+                            onClick={() => setDalotTab('concrete')}
+                        >
+                            <BrickWall size={18} /> {t('concreteCalculator')}
+                        </button>
+                        <button
+                            className={`tab ${dalotTab === 'wood' ? 'active' : ''}`}
+                            onClick={() => setDalotTab('wood')}
+                        >
+                            <Ruler size={18} /> {t('woodCalculator')}
+                        </button>
+                        <button
+                            className={`tab ${dalotTab === '3d' ? 'active' : ''}`}
+                            onClick={() => setDalotTab('3d')}
+                        >
+                            <Box size={18} /> {t('threeDVisualization')}
+                        </button>
                     </div>
-                )}
 
-                {activeTab === 'cutter' && (
-                    <div className="calculator-section">
+                    <div className="calculator-content">
+                        {dalotTab === 'iron' && (
+                            <div className="calculator-section">
+                                <CalculatorInputs
+                                    calculatorParams={calculatorParams}
+                                    setCalculatorParams={setCalculatorParams}
+                                />
+                                <IronResults calculateIron={calculateIron} />
+                            </div>
+                        )}
+
+                        {dalotTab === 'concrete' && (
+                            <div className="calculator-section">
+                                <CalculatorInputs
+                                    calculatorParams={calculatorParams}
+                                    setCalculatorParams={setCalculatorParams}
+                                />
+                                <ConcreteResults
+                                    calculatorParams={calculatorParams}
+                                    calculateConcreteVolume={calculateConcreteVolume}
+                                    calculateTotalVolume={calculateTotalVolume}
+                                    calculateBags={calculateBags}
+                                    calculateTotalBags={calculateTotalBags}
+                                />
+                            </div>
+                        )}
+
+                        {dalotTab === 'wood' && (
+                            <div className="calculator-section">
+                                <CalculatorInputs
+                                    calculatorParams={calculatorParams}
+                                    setCalculatorParams={setCalculatorParams}
+                                />
+                                <WoodResults calculateWood={calculateWood} />
+                            </div>
+                        )}
+
+                        {dalotTab === '3d' && (
+                            <div className="calculator-section">
+                                <CalculatorInputs
+                                    calculatorParams={calculatorParams}
+                                    setCalculatorParams={setCalculatorParams}
+                                />
+                                <div className="results-container">
+                                    <h3>3D Visualization</h3>
+                                    <DalotVisualization params={calculatorParams} />
+                                </div>
+                            </div >
+                        )}
+                    </div >
+                </>
+            ) : (
+                // Iron Cutter Full View
+                <div className="calculator-content">
+                    <div className="calculator-section" style={{ maxWidth: '1000px' }}>
                         <IronCutter />
                     </div>
-                )}
-
-                {activeTab === 'concrete' && (
-                    <div className="calculator-section">
-                        <CalculatorInputs
-                            calculatorParams={calculatorParams}
-                            setCalculatorParams={setCalculatorParams}
-                        />
-                        <ConcreteResults
-                            calculatorParams={calculatorParams}
-                            calculateConcreteVolume={calculateConcreteVolume}
-                            calculateTotalVolume={calculateTotalVolume}
-                            calculateBags={calculateBags}
-                            calculateTotalBags={calculateTotalBags}
-                        />
-                    </div>
-                )}
-
-                {activeTab === 'wood' && (
-                    <div className="calculator-section">
-                        <CalculatorInputs
-                            calculatorParams={calculatorParams}
-                            setCalculatorParams={setCalculatorParams}
-                        />
-                        <WoodResults calculateWood={calculateWood} />
-                    </div>
-                )}
-
-                {activeTab === '3d' && (
-                    <div className="calculator-section">
-                        <CalculatorInputs
-                            calculatorParams={calculatorParams}
-                            setCalculatorParams={setCalculatorParams}
-                        />
-                        <div className="results-container">
-                            <h3>3D Visualization</h3>
-                            <DalotVisualization params={calculatorParams} />
-                        </div>
-                    </div >
-                )}
-            </div >
+                </div>
+            )}
 
             <style>{`
                 :root {
@@ -593,6 +612,59 @@ const CalculatorPage = () => {
                         border: 1px solid var(--border);
                         background: white;
                         margin: 0 1rem 2rem 1rem; /* Add margin on sides */
+                    }
+                }
+                /* Main Mode Switcher */
+                .main-mode-switcher {
+                    display: flex;
+                    justify-content: center;
+                    gap: 1rem;
+                    margin-bottom: 2rem;
+                    background: white;
+                    padding: 0.5rem;
+                    border-radius: 12px;
+                    width: fit-content;
+                    margin-left: auto;
+                    margin-right: auto;
+                    box-shadow: var(--shadow-sm);
+                    border: 1px solid var(--border);
+                }
+
+                .mode-btn {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    padding: 0.75rem 1.5rem;
+                    border: none;
+                    background: transparent;
+                    color: var(--text-secondary);
+                    font-weight: 600;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+
+                .mode-btn:hover {
+                    background: var(--bg-secondary);
+                    color: var(--text-main);
+                }
+
+                .mode-btn.active {
+                    background: var(--primary);
+                    color: white;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+
+                /* Mobile optimization for switcher */
+                @media (max-width: 640px) {
+                    .main-mode-switcher {
+                        width: 100%;
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                    }
+                    
+                    .mode-btn {
+                        justify-content: center;
                     }
                 }
             `}</style>

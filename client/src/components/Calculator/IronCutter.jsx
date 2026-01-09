@@ -340,8 +340,7 @@ const IronCutter = () => {
 
     return (
         <div className="iron-cutter-container">
-            <div className="iron-cutter-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3>{t('ironCutter')}</h3>
+            <div className="iron-cutter-header" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '1rem' }}>
                 {results && (
                     <button className="generate-btn" onClick={openReportModal} style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>
                         <Download size={16} /> Download Report
