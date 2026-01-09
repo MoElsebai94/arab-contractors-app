@@ -15,6 +15,10 @@ const IronCutter = () => {
     const [showReportModal, setShowReportModal] = useState(false);
     const [reportNameInput, setReportNameInput] = useState('');
 
+    // Error Modal State
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+
     const dropdownRef = useRef(null);
 
     const diameters = ['6', '8', '10', '12', '14', '16', '20', '25', '32'];
@@ -36,7 +40,8 @@ const IronCutter = () => {
     const handleAddItem = () => {
         if (!newItem.length || newItem.length <= 0) return;
         if (parseFloat(newItem.length) > 12) {
-            alert(t('barLengthTrigger'));
+            setErrorMessage(t('barLengthTrigger'));
+            setShowErrorModal(true);
             return;
         }
 
@@ -522,6 +527,20 @@ const IronCutter = () => {
                 </div>
             )}
 
+            {showErrorModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h4 style={{ color: '#ef4444' }}>Error</h4>
+                        <p style={{ margin: '1rem 0', color: '#374151' }}>{errorMessage}</p>
+                        <div className="modal-actions" style={{ justifyContent: 'flex-end' }}>
+                            <button className="confirm-btn" onClick={() => setShowErrorModal(false)}>
+                                OK
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <style>{`
                 .iron-cutter-container {
                     display: flex;
@@ -798,8 +817,10 @@ const IronCutter = () => {
                     font-weight: 600;
                     background: white;
                     padding: 0 2px;
-                    line-height: 1;
                 }
+
+
+
 
                 .bar-track {
                     flex: 1;
@@ -918,6 +939,41 @@ const IronCutter = () => {
 
                 .confirm-btn:hover {
                     background: var(--primary-hover);
+                }
+
+                @media (max-width: 640px) {
+                    /* Fix Header Overlap */
+                    .result-header {
+                        flex-direction: column;
+                        align-items: flex-start;
+                        gap: 1rem;
+                    }
+                    
+                    .result-stats {
+                        width: 100%;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 0.25rem;
+                    }
+
+                    .result-stats span {
+                         /* Normal flow, not spaced apart */
+                        white-space: nowrap;
+                    }
+                    
+                    /* Hide the redundant 'x20' inside the bar on mobile */
+                    .segment-qty {
+                        display: none;
+                    }
+
+                    /* Fix Marker Height Overlap */
+                    .patterns-list {
+                        gap: 1.5rem;
+                    }
+
+                    .bar-track {
+                        margin-bottom: 1.25rem;
+                    }
                 }
             `}</style>
         </div>
