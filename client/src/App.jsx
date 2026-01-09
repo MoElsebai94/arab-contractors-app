@@ -12,6 +12,7 @@ const Employees = lazy(() => import('./pages/Employees'));
 const Projects = lazy(() => import('./pages/Projects'));
 const Storage = lazy(() => import('./pages/Storage'));
 const CalculatorPage = lazy(() => import('./pages/Calculator'));
+const Documents = lazy(() => import('./pages/Documents'));
 
 function App() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -45,6 +46,7 @@ function App() {
                                 <Route path="/tasks" element={<Projects />} />
                                 <Route path="/storage" element={<Storage />} />
                                 <Route path="/calculator" element={<CalculatorPage />} />
+                                <Route path="/documents" element={<Documents />} />
                                 <Route path="*" element={<NotFound />} />
                             </Routes>
                         </Suspense>

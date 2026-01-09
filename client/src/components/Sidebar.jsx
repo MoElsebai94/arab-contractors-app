@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Rocket, Package, Calculator, Menu, X, Globe } from 'lucide-react';
+import { LayoutDashboard, Users, Rocket, Package, Calculator, Menu, X, Globe, Files } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import useScrollLock from '../hooks/useScrollLock';
 
@@ -71,8 +71,11 @@ const Sidebar = () => {
           {t('storage')}
         </Link>
         <Link to="/calculator" className={`nav-item ${isActive('/calculator')}`} onClick={closeMenu}>
-          <Calculator className="nav-icon" size={24} />
           {t('calculator')}
+        </Link>
+        <Link to="/documents" className={`nav-item ${isActive('/documents')}`} onClick={closeMenu}>
+          <Files className="nav-icon" size={24} />
+          {t('documents') || "Documents"}
         </Link>
       </nav>
 
@@ -417,7 +420,7 @@ const Sidebar = () => {
           }
         }
       `}</style>
-    </aside>
+    </aside >
   );
 };
 
