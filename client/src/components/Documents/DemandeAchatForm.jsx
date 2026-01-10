@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Plus, Trash2, FileText, Download, ChevronDown } from 'lucide-react';
+import useItemMemory from '../../hooks/useItemMemory';
 
 const DemandeAchatForm = () => {
+    const { savedItems, saveItems } = useItemMemory();
     const [project, setProject] = useState('');
     const [director, setDirector] = useState('Ing. EL-BADAWY MOHAMADY');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -28,6 +30,7 @@ const DemandeAchatForm = () => {
 
     const generatePDF = async () => {
         setLoading(true);
+        saveItems(items); // Save items to memory
         try {
             const doc = new jsPDF({ format: 'a4', unit: 'mm' });
             const pageWidth = doc.internal.pageSize.width;
@@ -292,6 +295,7 @@ const DemandeAchatForm = () => {
                                                 onChange={(e) => updateItem(index, 'designation', e.target.value)}
                                                 className="form-input"
                                                 placeholder="Item description"
+                                                list="item-suggestions"
                                                 style={{ border: 'none', background: 'transparent', padding: '0.4rem 0', borderRadius: 0 }}
                                             />
                                         </td>
@@ -363,6 +367,14 @@ const DemandeAchatForm = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Autocomplete Datalist */}
+            <datalist id="item-suggestions">
+                {savedItems.map((item, index) => (
+                    <option key={index} value={item} />
+                ))}
+            </datalist>
+
         </div>
     );
 };
