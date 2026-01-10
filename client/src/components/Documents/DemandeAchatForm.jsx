@@ -4,6 +4,8 @@ import autoTable from 'jspdf-autotable';
 import { Plus, Trash2, FileText, Download, ChevronDown } from 'lucide-react';
 import useItemMemory from '../../hooks/useItemMemory';
 
+import { robotoBase64 } from '../../utils/fonts';
+
 const DemandeAchatForm = () => {
     const { savedItems, saveItems } = useItemMemory();
     const [project, setProject] = useState('');
@@ -36,16 +38,31 @@ const DemandeAchatForm = () => {
             const pageWidth = doc.internal.pageSize.width;
             const pageHeight = doc.internal.pageSize.height;
 
-            // --- 1. Load Logo ---
+            // --- 1. Load Resources (Logo) ---
             let logoImg = null;
+            const fontBase64 = robotoBase64;
+
             try {
-                logoImg = await new Promise((resolve, reject) => {
+                const logo = await new Promise((resolve) => {
                     const img = new Image();
-                    img.src = '/logo_circular.png'; // Assuming this exists based on previous file
+                    img.src = '/logo_circular.png';
                     img.onload = () => resolve(img);
-                    img.onerror = (e) => reject(e);
+                    img.onerror = () => resolve(null); // Continue even if logo fails
                 });
+
+                logoImg = logo;
+
             } catch (err) { console.warn("Logo load failed", err); }
+
+            // Add Font to VFS
+            if (fontBase64) {
+                const fileName = 'Roboto-Regular.ttf';
+                doc.addFileToVFS(fileName, fontBase64);
+                doc.addFont(fileName, 'Roboto', 'normal');
+                doc.setFont('Roboto'); // Set as default
+            } else {
+                doc.setFont("helvetica"); // Fallback
+            }
 
             // --- 2. Header ---
             if (logoImg) {
@@ -55,7 +72,8 @@ const DemandeAchatForm = () => {
             // Company Name
             doc.setFontSize(16);
             doc.setTextColor(0, 100, 0); // Dark Green
-            doc.setFont("helvetica", "bold");
+            if (fontBase64) doc.setFont("Roboto", "normal");
+            else doc.setFont("helvetica", "bold"); // Standard bold if no custom font
             doc.text("ARAB CONTRACTORS CAMEROON LTD", 40, 12);
 
             // Address Details
@@ -74,7 +92,8 @@ const DemandeAchatForm = () => {
 
             // Project Info
             doc.setFontSize(11);
-            doc.setFont("helvetica", "bold");
+            if (fontBase64) doc.setFont("Roboto", "normal");
+            else doc.setFont("helvetica", "bold");
             doc.text(`PROJET : ${project.toUpperCase()}`, 20, 40);
 
             // Format Date: OKOLA LE DD / MM / YYYY
@@ -125,13 +144,15 @@ const DemandeAchatForm = () => {
                 headStyles: {
                     fillColor: [200, 200, 200], // Grey header
                     textColor: 0,
-                    fontStyle: 'bold',
+                    font: fontBase64 ? 'Roboto' : 'helvetica',
+                    fontStyle: 'normal', // Roboto-Regular doesn't have bold, so use normal or simulated bold if needed
                     lineColor: 0,
                     lineWidth: 0.1,
                     halign: 'center'
                 },
                 bodyStyles: {
                     textColor: 0,
+                    font: fontBase64 ? 'Roboto' : 'helvetica',
                     lineColor: 0,
                     lineWidth: 0.1,
                     minCellHeight: 8
@@ -178,7 +199,8 @@ const DemandeAchatForm = () => {
 
             doc.setFontSize(11);
             doc.setTextColor(0, 0, 0); // Ensure black text
-            doc.setFont("helvetica", "bold");
+            if (fontBase64) doc.setFont("Roboto", "normal");
+            else doc.setFont("helvetica", "bold");
 
             const signatureTitle = "LE DIRECTEUR DU PROJET";
             const titleWidth = doc.getTextWidth(signatureTitle);
