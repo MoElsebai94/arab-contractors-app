@@ -8,39 +8,65 @@ const Documents = () => {
     const [activeTab, setActiveTab] = useState('demandeAchat');
 
     return (
-        <div className="min-h-screen bg-slate-50/50 p-6 md:p-12">
-            <div className="max-w-5xl mx-auto">
-                <header className="mb-10">
-                    <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 flex items-center gap-4 mb-3 tracking-tight">
-                        <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
-                            <Files className="text-blue-600 w-8 h-8" />
+        <div className="app-container" style={{ flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+            <div className="main-content" style={{ padding: '2rem', overflowY: 'auto' }}>
+                <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+
+                    {/* Header */}
+                    <header style={{ marginBottom: '2.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                            <div style={{
+                                backgroundColor: 'white',
+                                padding: '0.75rem',
+                                borderRadius: '1rem',
+                                border: '1px solid var(--border-color)',
+                                boxShadow: 'var(--shadow-sm)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                <Files size={32} color="var(--primary-color)" />
+                            </div>
+                            <h1 style={{ fontSize: '2rem', fontWeight: '800', color: 'var(--primary-color)', margin: 0 }}>
+                                Documents Generator
+                            </h1>
                         </div>
-                        Documents Generator
-                    </h1>
-                    <p className="text-lg text-slate-500 ml-1">
-                        Create and download official project documents with ease.
-                    </p>
-                </header>
+                        <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', marginLeft: '0.25rem' }}>
+                            Create and download official project documents with ease.
+                        </p>
+                    </header>
 
-                {/* Tabs */}
-                <div className="flex gap-6 mb-10 border-b border-slate-200/60 pb-1">
-                    <button
-                        onClick={() => setActiveTab('demandeAchat')}
-                        className={`pb-4 px-2 font-semibold text-sm transition-all relative ${activeTab === 'demandeAchat'
-                            ? 'text-blue-600'
-                            : 'text-slate-500 hover:text-slate-700'
-                            }`}
-                    >
-                        Demande d'Achat
-                        {activeTab === 'demandeAchat' && (
-                            <span className="absolute bottom-[-1px] left-0 w-full h-0.5 bg-blue-600 rounded-full" />
-                        )}
-                    </button>
-                    {/* Future tabs can go here */}
-                </div>
+                    {/* Tabs */}
+                    <div style={{
+                        display: 'flex',
+                        gap: '2rem',
+                        marginBottom: '2.5rem',
+                        borderBottom: '1px solid var(--border-color)',
+                        paddingBottom: '0.25rem'
+                    }}>
+                        <button
+                            onClick={() => setActiveTab('demandeAchat')}
+                            style={{
+                                padding: '0 0.5rem 1rem 0.5rem',
+                                background: 'none',
+                                border: 'none',
+                                borderBottom: activeTab === 'demandeAchat' ? '2px solid var(--primary-color)' : '2px solid transparent',
+                                color: activeTab === 'demandeAchat' ? 'var(--primary-color)' : 'var(--text-secondary)',
+                                fontWeight: activeTab === 'demandeAchat' ? '600' : '500',
+                                fontSize: '1rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                position: 'relative',
+                                marginBottom: '-1px'
+                            }}
+                        >
+                            Demande d'Achat
+                        </button>
+                    </div>
 
-                <div className="content-area animate-fade-in">
-                    {activeTab === 'demandeAchat' && <DemandeAchatForm />}
+                    <div className="animate-fade-in">
+                        {activeTab === 'demandeAchat' && <DemandeAchatForm />}
+                    </div>
                 </div>
             </div>
         </div>
