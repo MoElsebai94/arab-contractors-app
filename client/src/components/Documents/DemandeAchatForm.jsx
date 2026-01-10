@@ -6,7 +6,10 @@ import useItemMemory from '../../hooks/useItemMemory';
 
 import { robotoBase64 } from '../../utils/fonts';
 
+import { useLanguage } from '../../context/LanguageContext';
+
 const DemandeAchatForm = () => {
+    const { t } = useLanguage();
     const { savedItems, saveItems } = useItemMemory();
     const [project, setProject] = useState('');
     const [director, setDirector] = useState('Ing. EL-BADAWY MOHAMADY');
@@ -243,8 +246,8 @@ const DemandeAchatForm = () => {
                             <FileText size={24} />
                         </div>
                         <div>
-                            <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--primary-color)', margin: 0 }}>Purchase Request</h2>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>Create and manage project procurement</p>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--primary-color)', margin: 0 }}>{t('purchaseRequest')}</h2>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>{t('purchaseRequestDesc')}</p>
                         </div>
                     </div>
                 </div>
@@ -252,7 +255,7 @@ const DemandeAchatForm = () => {
                 {/* Project Details Grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
                     <div className="form-group">
-                        <label className="form-label">Project Name</label>
+                        <label className="form-label">{t('projectName')}</label>
                         <input
                             type="text"
                             value={project}
@@ -264,7 +267,7 @@ const DemandeAchatForm = () => {
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label">Director</label>
+                        <label className="form-label">{t('director')}</label>
                         <input
                             type="text"
                             value={director}
@@ -275,7 +278,7 @@ const DemandeAchatForm = () => {
                     </div>
 
                     <div className="form-group" style={{ maxWidth: '200px' }}>
-                        <label className="form-label">Date</label>
+                        <label className="form-label">{t('date')}</label>
                         <input
                             type="date"
                             value={date}
@@ -289,18 +292,18 @@ const DemandeAchatForm = () => {
                 {/* Items Table */}
                 <div style={{ marginBottom: '2rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-primary)' }}>Items List</h3>
-                        <span className="badge badge-planned">{items.length} Items</span>
+                        <h3 style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-primary)' }}>{t('itemsList')}</h3>
+                        <span className="badge badge-planned">{items.length} {t('items')}</span>
                     </div>
 
-                    <div className="table-view">
+                    <div style={{ overflowX: 'auto' }}>
                         <table className="modern-table">
                             <thead>
                                 <tr>
                                     <th style={{ width: '60px', textAlign: 'center' }}>#</th>
-                                    <th>Description</th>
-                                    <th style={{ width: '150px' }}>Unit</th>
-                                    <th style={{ width: '120px' }}>Qty</th>
+                                    <th style={{ minWidth: '200px' }}>{t('itemDescription')}</th>
+                                    <th style={{ width: '150px', minWidth: '120px' }}>{t('unit')}</th>
+                                    <th style={{ width: '120px', minWidth: '100px' }}>{t('qty')}</th>
                                     <th style={{ width: '60px' }}></th>
                                 </tr>
                             </thead>
@@ -316,9 +319,9 @@ const DemandeAchatForm = () => {
                                                 value={item.designation}
                                                 onChange={(e) => updateItem(index, 'designation', e.target.value)}
                                                 className="form-input"
-                                                placeholder="Item description"
+                                                placeholder={t('itemDescription')}
                                                 list="item-suggestions"
-                                                style={{ border: 'none', background: 'transparent', padding: '0.4rem 0', borderRadius: 0 }}
+                                                style={{ border: 'none', background: 'transparent', padding: '0.4rem 0', borderRadius: 0, width: '100%' }}
                                             />
                                         </td>
                                         <td>
@@ -326,7 +329,7 @@ const DemandeAchatForm = () => {
                                                 value={item.unit}
                                                 onChange={(e) => updateItem(index, 'unit', e.target.value)}
                                                 className="form-input"
-                                                style={{}}
+                                                style={{ width: '100%' }}
                                             >
                                                 <option value="PCS">PCS</option>
                                                 <option value="KG">KG</option>
@@ -342,7 +345,7 @@ const DemandeAchatForm = () => {
                                                 value={item.quantity}
                                                 onChange={(e) => updateItem(index, 'quantity', e.target.value)}
                                                 className="form-input"
-                                                style={{ textAlign: 'center' }}
+                                                style={{ textAlign: 'center', width: '100%' }}
                                             />
                                         </td>
                                         <td style={{ textAlign: 'center' }}>
@@ -367,7 +370,7 @@ const DemandeAchatForm = () => {
                     style={{ marginBottom: '2rem', borderStyle: 'dashed', borderWidth: '2px' }}
                 >
                     <Plus size={16} style={{ marginRight: '0.5rem' }} />
-                    Add New Row
+                    {t('addNewRow')}
                 </button>
 
                 {/* Footer Actions */}
@@ -379,11 +382,11 @@ const DemandeAchatForm = () => {
                         style={{ padding: '0.75rem 2rem', fontSize: '1rem' }}
                     >
                         {loading ? (
-                            'Processing...'
+                            t('processing')
                         ) : (
                             <>
                                 <Download size={18} style={{ marginRight: '0.75rem' }} />
-                                Download Official PDF
+                                {t('downloadOfficialPDF')}
                             </>
                         )}
                     </button>

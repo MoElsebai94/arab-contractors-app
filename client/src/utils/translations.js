@@ -287,12 +287,31 @@ export const translations = {
         deleteWarningMessage: "Deleting this employee removes them permanently. They are currently assigned to these tasks unless you remove them.",
         removeFromTasksAndDelete: "Remove from Tasks & Delete",
         confirmDeletion: "Confirm Deletion",
-        areYouSureRemove: "Are you sure you want to remove {name}?"
+        areYouSureRemove: "Are you sure you want to remove {name}?",
+        // Documents
+        documents: "Documents",
+        purchaseRequest: "Purchase Request",
+        purchaseRequestDesc: "Create and manage project procurement",
+        projectName: "Project Name",
+        director: "Director",
+        itemsList: "Items List",
+        addNewRow: "Add New Row",
+        downloadOfficialPDF: "Download Official PDF",
+        itemDescription: "Item description",
+        unit: "Unit",
+        qty: "Qty",
+        date: "Date",
+        qty: "Qty",
+        date: "Date",
+        processing: "Processing...",
+        documentsGenerator: "Documents Generator",
+        documentsSubtitle: "Create and download official project documents."
     },
     ar: {
         dashboard: "لوحة التحكم",
         employees: "الموظفين",
         tasks: "المهام",
+        documents: "المستندات",
         storage: "المخزن",
         calculator: "الحاسبة",
         menu: "القائمة",
@@ -557,6 +576,23 @@ export const translations = {
         deleteWarningMessage: "حذف هذا الموظف يزيله نهائياً. هو مكلف حالياً بهذه المهام ما لم تقم بإزالته.",
         removeFromTasksAndDelete: "إزالة من المهام والحذف",
         confirmDeletion: "تأكيد الحذف",
-        areYouSureRemove: "هل أنت متأكد أنك تريد إزالة {name}؟"
+        areYouSureRemove: "هل أنت متأكد أنك تريد إزالة {name}؟",
+        // Documents
+        purchaseRequest: "طلب شراء",
+        purchaseRequestDesc: "إنشاء وإدارة مشتريات المشروع",
+        projectName: "اسم المشروع",
+        director: "المدير",
+        itemsList: "قائمة العناصر",
+        addNewRow: "إضافة صف جديد",
+        downloadOfficialPDF: "تحميل PDF الرسمي",
+        itemDescription: "وصف العنصر",
+        unit: "الوحدة",
+        qty: "الكمية",
+        date: "التاريخ",
+        qty: "الكمية",
+        date: "التاريخ",
+        processing: "جاري المعالجة...",
+        documentsGenerator: "منشئ المستندات",
+        documentsSubtitle: "إنشاء وتحميل مستندات المشروع الرسمية."
     }
 };

@@ -28,11 +28,11 @@ const Documents = () => {
                                 <Files size={32} color="var(--primary-color)" />
                             </div>
                             <h1 style={{ fontSize: '2rem', fontWeight: '800', color: 'var(--primary-color)', margin: 0 }}>
-                                Documents Generator
+                                {t('documentsGenerator')}
                             </h1>
                         </div>
                         <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', marginLeft: '0.25rem' }}>
-                            Create and download official project documents with ease.
+                            {t('documentsSubtitle')}
                         </p>
                     </header>
 
