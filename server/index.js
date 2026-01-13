@@ -964,6 +964,7 @@ app.get("/api/dalots/sections", (req, res) => {
     const sql = `
         SELECT 
             s.id, s.name, s.route_name, s.display_order,
+            s.start_pk, s.end_pk, s.type, s.parent_section_id, s.branch_pk, s.row_index,
             COUNT(d.id) as total_dalots,
             SUM(CASE WHEN d.status = 'finished' THEN 1 ELSE 0 END) as finished_count,
             SUM(CASE WHEN d.status = 'in_progress' THEN 1 ELSE 0 END) as in_progress_count,
@@ -985,11 +986,16 @@ app.get("/api/dalots/sections", (req, res) => {
 
 // Create a dalot section
 app.post("/api/dalots/sections", (req, res) => {
-    const { name, route_name } = req.body;
+    const { name, route_name, start_pk, end_pk, type, parent_section_id, branch_pk, row_index } = req.body;
     db.get("SELECT MAX(display_order) as maxOrder FROM dalot_sections", (err, row) => {
         const newOrder = (row?.maxOrder ?? -1) + 1;
-        const sql = 'INSERT INTO dalot_sections (name, route_name, display_order) VALUES (?, ?, ?)';
-        db.run(sql, [name, route_name, newOrder], function (err) {
+        const sql = 'INSERT INTO dalot_sections (name, route_name, display_order, start_pk, end_pk, type, parent_section_id, branch_pk, row_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        const params = [
+            name, route_name, newOrder,
+            start_pk || 0, end_pk || 0, type || 'main',
+            parent_section_id || null, branch_pk || 0, row_index || 0
+        ];
+        db.run(sql, params, function (err) {
             if (err) {
                 res.status(400).json({ error: err.message });
                 return;
@@ -1001,12 +1007,23 @@ app.post("/api/dalots/sections", (req, res) => {
 
 // Update a dalot section
 app.put("/api/dalots/sections/:id", (req, res) => {
-    const { name, route_name } = req.body;
+    const { name, route_name, start_pk, end_pk, type, parent_section_id, branch_pk, row_index } = req.body;
     const sql = `UPDATE dalot_sections SET 
         name = COALESCE(?, name),
-        route_name = COALESCE(?, route_name)
+        route_name = COALESCE(?, route_name),
+        start_pk = COALESCE(?, start_pk),
+        end_pk = COALESCE(?, end_pk),
+        type = COALESCE(?, type),
+        parent_section_id = COALESCE(?, parent_section_id),
+        branch_pk = COALESCE(?, branch_pk),
+        row_index = COALESCE(?, row_index)
         WHERE id = ?`;
-    db.run(sql, [name, route_name, req.params.id], function (err) {
+    const params = [
+        name, route_name, start_pk, end_pk, type,
+        parent_section_id, branch_pk, row_index,
+        req.params.id
+    ];
+    db.run(sql, params, function (err) {
         if (err) {
             res.status(400).json({ error: err.message });
             return;

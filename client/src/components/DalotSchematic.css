@@ -1,0 +1,150 @@
+/* client/src/components/DalotSchematic.css */
+
+.dalot-schematic-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+
+.schematic-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.schematic-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.zoom-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.zoom-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.zoom-btn:hover {
+    background: #f8fafc;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+
+.schematic-viewport {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    position: relative;
+    /* Custom scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.schematic-viewport::-webkit-scrollbar {
+    height: 8px;
+}
+
+.schematic-viewport::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+.schematic-viewport::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 4px;
+}
+
+.schematic-svg {
+    display: block;
+    min-height: 300px;
+}
+
+/* Tooltip */
+.dalot-tooltip {
+    position: absolute;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+    z-index: 50;
+    min-width: 200px;
+}
+
+.tooltip-header {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #1e293b;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 0.25rem;
+}
+
+.tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-bottom: 0.15rem;
+}
+
+.tooltip-val {
+    color: #334155;
+    font-weight: 500;
+}
+
+/* Marker interactions */
+.dalot-marker {
+    cursor: pointer;
+    transition: r 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.dalot-marker:hover {
+    stroke: #1e293b;
+    stroke-width: 2px;
+    /* r is animated in JS or via transform */
+}
+
+/* Axis Labels */
+.axis-label {
+    font-size: 10px;
+    fill: #94a3b8;
+    user-select: none;
+}
+
+.track-label {
+    font-size: 12px;
+    font-weight: 600;
+    fill: #64748b;
+    user-select: none;
+}
+
+[dir="rtl"] .schematic-controls {
+    flex-direction: row-reverse;
+    /* Ensure title is on right, controls on left if needed, or keep standard */
+}

@@ -343,19 +343,50 @@ const db = new sqlite3.Database(dbPath, (err) => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         route_name TEXT,
-        display_order INTEGER DEFAULT 0
+        display_order INTEGER DEFAULT 0,
+        start_pk INTEGER DEFAULT 0,
+        end_pk INTEGER DEFAULT 0,
+        type TEXT DEFAULT 'main', -- 'main', 'continuous', 'branch'
+        parent_section_id INTEGER,
+        branch_pk INTEGER DEFAULT 0,
+        row_index INTEGER DEFAULT 0,
+        FOREIGN KEY (parent_section_id) REFERENCES dalot_sections(id)
       )`, (err) => {
         if (!err) {
+          // Migration: Check for new columns
+          db.all("PRAGMA table_info(dalot_sections)", (err, rows) => {
+            if (!err) {
+              const columns = ['start_pk', 'end_pk', 'type', 'parent_section_id', 'branch_pk', 'row_index'];
+              const colTypes = {
+                'start_pk': 'INTEGER DEFAULT 0',
+                'end_pk': 'INTEGER DEFAULT 0',
+                'type': "TEXT DEFAULT 'main'",
+                'parent_section_id': 'INTEGER',
+                'branch_pk': 'INTEGER DEFAULT 0',
+                'row_index': 'INTEGER DEFAULT 0'
+              };
+
+              columns.forEach(col => {
+                if (!rows.some(r => r.name === col)) {
+                  db.run(`ALTER TABLE dalot_sections ADD COLUMN ${col} ${colTypes[col]}`, (err) => {
+                    if (!err) console.log(`Added ${col} column to dalot_sections`);
+                  });
+                }
+              });
+            }
+          });
+
           // Initialize default sections if empty
           db.get("SELECT count(*) as count FROM dalot_sections", (err, row) => {
             if (!err && row.count === 0) {
               const sections = [
-                { name: "Section 1", route: "ZAMENGOUE – EKEKAM – EVODOULA", order: 0 },
-                { name: "Section 2", route: "ZAMENGOUE – EKEKAM – EVODOULA", order: 1 },
-                { name: "Section 3", route: "ZAMENGOUE – EKEKAM – EVODOULA", order: 2 }
+                { name: "Section 1", route: "ZAMENGOUE – EKEKAM – EVODOULA", order: 0, start: 0, end: 48000, type: 'main', row: 0 },
+                { name: "Section 2", route: "ZAMENGOUE – EKEKAM – EVODOULA", order: 1, start: 48000, end: 80000, type: 'continuous', row: 0 },
+                { name: "Section 3", route: "ZAMENGOUE – EKEKAM – EVODOULA", order: 2, start: 0, end: 20000, type: 'branch', row: 1 }
               ];
-              const insert = 'INSERT INTO dalot_sections (name, route_name, display_order) VALUES (?, ?, ?)';
-              sections.forEach(s => db.run(insert, [s.name, s.route, s.order]));
+              // Note: Only basic insert here, user will configure details via UI
+              const insert = 'INSERT INTO dalot_sections (name, route_name, display_order, start_pk, end_pk, type, row_index) VALUES (?, ?, ?, ?, ?, ?, ?)';
+              sections.forEach(s => db.run(insert, [s.name, s.route, s.order, s.start, s.end, s.type, s.row]));
               console.log("Initialized Default Dalot Sections");
             }
           });

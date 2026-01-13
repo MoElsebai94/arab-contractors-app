@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
     ChevronDown, Plus, Search, Filter, X, Check, Edit2, Trash2,
     Construction, CheckCircle2, Clock, XCircle, AlertCircle, Upload, FileSpreadsheet
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import DalotStatistics from '../components/DalotStatistics';
+import DalotSchematic from '../components/DalotSchematic';
 import './Dalots.css';
 
 const API_BASE = window.location.hostname === 'localhost'
@@ -31,6 +32,14 @@ const STATUS_OPTIONS = [
     { value: 'in_progress', label: 'In Progress', labelAr: 'قيد التنفيذ' },
     { value: 'finished', label: 'Finished', labelAr: 'مكتمل' },
     { value: 'cancelled', label: 'Cancelled', labelAr: 'ملغى' }
+];
+
+// Topology Configuration for Schematic View
+
+const SECTION_CONFIG = [
+    { id: '1', name: 'Section 1', startPK: 0, endPK: 48000, type: 'main', row: 0, color: '#94a3b8' },
+    { id: '2', name: 'Section 2', startPK: 48000, endPK: 80000, type: 'continuous', fromSection: '1', row: 0, color: '#94a3b8' },
+    { id: '3', name: 'Section 3', startPK: 0, endPK: 20000, type: 'branch', fromSection: '2', branchPK: 48000, row: 1, color: '#64748b' }
 ];
 
 // Custom Dropdown Component
@@ -132,6 +141,7 @@ const Dalots = () => {
     const [stats, setStats] = useState({ total: 0, finished: 0, in_progress: 0, cancelled: 0, validated: 0 });
     const [expandedSections, setExpandedSections] = useState({});
     const [loading, setLoading] = useState(true);
+    const [viewMode, setViewMode] = useState('list'); // 'list' or 'schematic'
 
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
@@ -161,7 +171,13 @@ const Dalots = () => {
     const [editingSection, setEditingSection] = useState(null);
     const [sectionFormData, setSectionFormData] = useState({
         name: '',
-        route_name: ''
+        route_name: '',
+        start_pk: 0,
+        end_pk: 0,
+        type: 'main',
+        parent_section_id: '',
+        branch_pk: 0,
+        row_index: 0
     });
 
     // Import modal state
@@ -200,6 +216,22 @@ const Dalots = () => {
     const closeConfirm = () => {
         setConfirmModal(prev => ({ ...prev, show: false }));
     };
+
+    // Transform backend sections to schematic topology
+    const topology = useMemo(() => {
+        if (!sections || sections.length === 0) return [];
+        return sections.map(s => ({
+            id: String(s.id),
+            name: s.name,
+            startPK: s.start_pk || 0,
+            endPK: s.end_pk || 0,
+            type: s.type || 'main',
+            row: s.row_index || 0,
+            fromSection: s.parent_section_id ? String(s.parent_section_id) : null,
+            branchPK: s.branch_pk || 0,
+            color: s.type === 'main' ? '#94a3b8' : (s.type === 'continuous' ? '#94a3b8' : '#64748b')
+        }));
+    }, [sections]);
 
     // Fetch data
     const fetchSections = useCallback(async () => {
@@ -385,13 +417,25 @@ const Dalots = () => {
             setEditingSection(section);
             setSectionFormData({
                 name: section.name || '',
-                route_name: section.route_name || ''
+                route_name: section.route_name || '',
+                start_pk: section.start_pk || 0,
+                end_pk: section.end_pk || 0,
+                type: section.type || 'main',
+                parent_section_id: section.parent_section_id || '',
+                branch_pk: section.branch_pk || 0,
+                row_index: section.row_index || 0
             });
         } else {
             setEditingSection(null);
             setSectionFormData({
                 name: '',
-                route_name: ''
+                route_name: '',
+                start_pk: 0,
+                end_pk: 0,
+                type: 'main',
+                parent_section_id: '',
+                branch_pk: 0,
+                row_index: 0
             });
         }
         setShowSectionModal(true);
@@ -617,6 +661,24 @@ const Dalots = () => {
                 </div>
             </div>
 
+            {/* View Toggle */}
+            <div className="view-toggle-container" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem', gap: '0.5rem' }}>
+                <button
+                    className={`btn ${viewMode === 'list' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setViewMode('list')}
+                    title="List View"
+                >
+                    {isRTL ? 'قائمة' : 'List'}
+                </button>
+                <button
+                    className={`btn ${viewMode === 'schematic' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setViewMode('schematic')}
+                    title="Schematic View"
+                >
+                    {isRTL ? 'مخطط' : 'Schematic'}
+                </button>
+            </div>
+
             {/* Stats Cards */}
             <div className="dalots-stats">
                 <div className="stat-card-dalot">
@@ -747,165 +809,178 @@ const Dalots = () => {
                 )}
             </div>
 
-            {/* Sections */}
-            <div className="sections-container">
-                {sections.map(section => (
-                    <div key={section.id} className="section-card">
-                        <div className="section-header" onClick={() => toggleSection(section.id)}>
-                            <div className="section-header-left">
-                                <div className={`section-toggle ${expandedSections[section.id] ? 'open' : ''}`}>
-                                    <ChevronDown size={18} />
-                                </div>
-                                <div>
-                                    <div className="section-title">{section.name}</div>
-                                    <div className="section-route">{section.route_name}</div>
-                                </div>
-                            </div>
-
-                            <div className="section-header-right">
-                                <div className="section-progress">
-                                    <div className="progress-bar-container">
-                                        <div
-                                            className="progress-bar-fill"
-                                            style={{ width: `${getSectionProgress(section)}%` }}
-                                        />
+            {viewMode === 'schematic' ? (
+                <DalotSchematic
+                    dalots={dalots.filter(d =>
+                        (!sectionFilter || d.section_id === sectionFilter) &&
+                        (!statusFilter || d.status === statusFilter) &&
+                        (!dimensionFilter || d.dimension === dimensionFilter) &&
+                        (!searchTerm || (d.ouvrage_transmis && d.ouvrage_transmis.includes(searchTerm)))
+                    )}
+                    topology={topology}
+                    isRTL={isRTL}
+                />
+            ) : (
+                /* Sections */
+                <div className="sections-container">
+                    {sections.map(section => (
+                        <div key={section.id} className="section-card">
+                            <div className="section-header" onClick={() => toggleSection(section.id)}>
+                                <div className="section-header-left">
+                                    <div className={`section-toggle ${expandedSections[section.id] ? 'open' : ''}`}>
+                                        <ChevronDown size={18} />
                                     </div>
-                                    <span className="progress-text">{getSectionProgress(section)}%</span>
+                                    <div>
+                                        <div className="section-title">{section.name}</div>
+                                        <div className="section-route">{section.route_name}</div>
+                                    </div>
                                 </div>
 
-                                <div className="section-count">
-                                    <Construction size={14} />
-                                    <span>{section.total_dalots || 0}</span>
-                                </div>
+                                <div className="section-header-right">
+                                    <div className="section-progress">
+                                        <div className="progress-bar-container">
+                                            <div
+                                                className="progress-bar-fill"
+                                                style={{ width: `${getSectionProgress(section)}%` }}
+                                            />
+                                        </div>
+                                        <span className="progress-text">{getSectionProgress(section)}%</span>
+                                    </div>
 
-                                <div className="section-actions">
-                                    <button
-                                        className="section-action-btn"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            openSectionModal(section);
-                                        }}
-                                        title={isRTL ? 'تعديل القسم' : 'Edit Section'}
-                                    >
-                                        <Edit2 size={14} />
-                                    </button>
-                                    <button
-                                        className="section-action-btn danger"
-                                        onClick={(e) => handleDeleteSection(section.id, e)}
-                                        title={isRTL ? 'حذف القسم' : 'Delete Section'}
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
+                                    <div className="section-count">
+                                        <Construction size={14} />
+                                        <span>{section.total_dalots || 0}</span>
+                                    </div>
+
+                                    <div className="section-actions">
+                                        <button
+                                            className="section-action-btn"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                openSectionModal(section);
+                                            }}
+                                            title={isRTL ? 'تعديل القسم' : 'Edit Section'}
+                                        >
+                                            <Edit2 size={14} />
+                                        </button>
+                                        <button
+                                            className="section-action-btn danger"
+                                            onClick={(e) => handleDeleteSection(section.id, e)}
+                                            title={isRTL ? 'حذف القسم' : 'Delete Section'}
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className={`section-content ${expandedSections[section.id] ? 'open' : ''}`}>
-                            {getDalotsBySection(section.id).length > 0 ? (
-                                <div className="dalots-table-container">
-                                    <table className="dalots-table">
-                                        <thead>
-                                            <tr>
-                                                <th>#</th>
-                                                <th>{isRTL ? 'رقم المنشأة المرسل' : 'N° Transmis'}</th>
-                                                <th>{isRTL ? 'رقم الدراسة' : "N° d'Étude"}</th>
-                                                <th>{isRTL ? 'الرقم النهائي' : 'N° Définitif'}</th>
-                                                <th>{isRTL ? 'نقطة الدراسة' : "PK d'Étude"}</th>
-                                                <th>{isRTL ? 'نقطة المرسل' : 'PK Transmis'}</th>
-                                                <th>{isRTL ? 'الأبعاد' : 'Dimension'}</th>
-                                                <th>{isRTL ? 'الطول (م)' : 'Length (m)'}</th>
-                                                <th>{isRTL ? 'تحقق' : 'Validated'}</th>
-                                                <th>{isRTL ? 'الحالة' : 'Status'}</th>
-                                                <th>{isRTL ? 'إجراءات' : 'Actions'}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {getDalotsBySection(section.id).map((dalot, index) => (
-                                                <tr
-                                                    key={dalot.id}
-                                                    className={
-                                                        dalot.notes?.includes('NOUVEAU DALOT') ? 'note-row' :
-                                                            dalot.notes?.includes('LE PONT') ? 'bridge-row' : ''
-                                                    }
-                                                >
-                                                    <td>{index + 1}</td>
-                                                    <td><strong>{dalot.ouvrage_transmis}</strong></td>
-                                                    <td>{dalot.ouvrage_etude || '-'}</td>
-                                                    <td>{dalot.ouvrage_definitif || '-'}</td>
-                                                    <td className="pk-value">{dalot.pk_etude || '-'}</td>
-                                                    <td className="pk-value">{dalot.pk_transmis || '-'}</td>
-                                                    <td>
-                                                        {dalot.dimension && (
-                                                            <span className={`dimension-badge ${getDimensionClass(dalot.dimension)}`}>{dalot.dimension}</span>
-                                                        )}
-                                                    </td>
-                                                    <td>{dalot.length > 0 ? dalot.length : '-'}</td>
-                                                    <td>
-                                                        <button
-                                                            className={`validation-toggle ${dalot.is_validated ? 'validated' : ''}`}
-                                                            onClick={() => handleValidationToggle(dalot.id)}
-                                                            title={dalot.is_validated ? (isRTL ? 'تم التحقق' : 'Validated') : (isRTL ? 'غير محقق' : 'Not validated')}
-                                                        >
-                                                            <Check size={16} />
-                                                        </button>
-                                                    </td>
-                                                    <td>
-                                                        <StatusDropdown
-                                                            value={dalot.status}
-                                                            onChange={(newStatus) => handleStatusChange(dalot.id, newStatus)}
-                                                            isRTL={isRTL}
-                                                        />
-                                                    </td>
-                                                    <td>
-                                                        <div className="action-buttons">
-                                                            <button
-                                                                className="action-btn"
-                                                                onClick={() => openModal(dalot)}
-                                                                title={isRTL ? 'تعديل' : 'Edit'}
-                                                            >
-                                                                <Edit2 size={14} />
-                                                            </button>
-                                                            <button
-                                                                className="action-btn danger"
-                                                                onClick={() => handleDelete(dalot.id)}
-                                                                title={isRTL ? 'حذف' : 'Delete'}
-                                                            >
-                                                                <Trash2 size={14} />
-                                                            </button>
-                                                        </div>
-                                                    </td>
+                            <div className={`section-content ${expandedSections[section.id] ? 'open' : ''}`}>
+                                {getDalotsBySection(section.id).length > 0 ? (
+                                    <div className="dalots-table-container">
+                                        <table className="dalots-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>{isRTL ? 'رقم المنشأة المرسل' : 'N° Transmis'}</th>
+                                                    <th>{isRTL ? 'رقم الدراسة' : "N° d'Étude"}</th>
+                                                    <th>{isRTL ? 'الرقم النهائي' : 'N° Définitif'}</th>
+                                                    <th>{isRTL ? 'نقطة الدراسة' : "PK d'Étude"}</th>
+                                                    <th>{isRTL ? 'نقطة المرسل' : 'PK Transmis'}</th>
+                                                    <th>{isRTL ? 'الأبعاد' : 'Dimension'}</th>
+                                                    <th>{isRTL ? 'الطول (م)' : 'Length (m)'}</th>
+                                                    <th>{isRTL ? 'تحقق' : 'Validated'}</th>
+                                                    <th>{isRTL ? 'الحالة' : 'Status'}</th>
+                                                    <th>{isRTL ? 'إجراءات' : 'Actions'}</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            ) : (
-                                <div className="empty-state">
-                                    <Construction size={48} />
-                                    <p>{isRTL ? 'لا توجد دالوت في هذا القسم' : 'No dalots in this section'}</p>
-                                </div>
-                            )}
+                                            </thead>
+                                            <tbody>
+                                                {getDalotsBySection(section.id).map((dalot, index) => (
+                                                    <tr
+                                                        key={dalot.id}
+                                                        className={
+                                                            dalot.notes?.includes('NOUVEAU DALOT') ? 'note-row' :
+                                                                dalot.notes?.includes('LE PONT') ? 'bridge-row' : ''
+                                                        }
+                                                    >
+                                                        <td>{index + 1}</td>
+                                                        <td><strong>{dalot.ouvrage_transmis}</strong></td>
+                                                        <td>{dalot.ouvrage_etude || '-'}</td>
+                                                        <td>{dalot.ouvrage_definitif || '-'}</td>
+                                                        <td className="pk-value">{dalot.pk_etude || '-'}</td>
+                                                        <td className="pk-value">{dalot.pk_transmis || '-'}</td>
+                                                        <td>
+                                                            {dalot.dimension && (
+                                                                <span className={`dimension-badge ${getDimensionClass(dalot.dimension)}`}>{dalot.dimension}</span>
+                                                            )}
+                                                        </td>
+                                                        <td>{dalot.length > 0 ? dalot.length : '-'}</td>
+                                                        <td>
+                                                            <button
+                                                                className={`validation-toggle ${dalot.is_validated ? 'validated' : ''}`}
+                                                                onClick={() => handleValidationToggle(dalot.id)}
+                                                                title={dalot.is_validated ? (isRTL ? 'تم التحقق' : 'Validated') : (isRTL ? 'غير محقق' : 'Not validated')}
+                                                            >
+                                                                <Check size={16} />
+                                                            </button>
+                                                        </td>
+                                                        <td>
+                                                            <StatusDropdown
+                                                                value={dalot.status}
+                                                                onChange={(newStatus) => handleStatusChange(dalot.id, newStatus)}
+                                                                isRTL={isRTL}
+                                                            />
+                                                        </td>
+                                                        <td>
+                                                            <div className="action-buttons">
+                                                                <button
+                                                                    className="action-btn"
+                                                                    onClick={() => openModal(dalot)}
+                                                                    title={isRTL ? 'تعديل' : 'Edit'}
+                                                                >
+                                                                    <Edit2 size={14} />
+                                                                </button>
+                                                                <button
+                                                                    className="action-btn danger"
+                                                                    onClick={() => handleDelete(dalot.id)}
+                                                                    title={isRTL ? 'حذف' : 'Delete'}
+                                                                >
+                                                                    <Trash2 size={14} />
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ) : (
+                                    <div className="empty-state">
+                                        <Construction size={48} />
+                                        <p>{isRTL ? 'لا توجد دالوت في هذا القسم' : 'No dalots in this section'}</p>
+                                    </div>
+                                )}
 
-                            <button
-                                className="add-dalot-btn"
-                                onClick={() => {
-                                    setFormData(prev => ({ ...prev, section_id: section.id }));
-                                    openModal();
-                                }}
-                            >
-                                <Plus size={18} />
-                                {isRTL ? 'إضافة دالوت جديد' : 'Add New Dalot'}
-                            </button>
+                                <button
+                                    className="add-dalot-btn"
+                                    onClick={() => {
+                                        setFormData(prev => ({ ...prev, section_id: section.id }));
+                                        openModal();
+                                    }}
+                                >
+                                    <Plus size={18} />
+                                    {isRTL ? 'إضافة دالوت جديد' : 'Add New Dalot'}
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
 
-                {/* Add Section Button */}
-                <button className="add-section-btn" onClick={() => openSectionModal()}>
-                    <Plus size={20} />
-                    {isRTL ? 'إضافة قسم جديد' : 'Add New Section'}
-                </button>
-            </div>
+                    {/* Add Section Button */}
+                    <button className="add-section-btn" onClick={() => openSectionModal()}>
+                        <Plus size={20} />
+                        {isRTL ? 'إضافة قسم جديد' : 'Add New Section'}
+                    </button>
+                </div>
+            )}
 
             {/* Dalot Modal */}
             {showModal && (
@@ -1105,6 +1180,84 @@ const Dalots = () => {
                                         placeholder="ZAMENGOUE – EKEKAM – EVODOULA"
                                     />
                                 </div>
+
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label className="form-label">{isRTL ? 'بداية PK' : 'Start PK'}</label>
+                                        <input
+                                            type="number"
+                                            className="form-input"
+                                            value={sectionFormData.start_pk}
+                                            onChange={(e) => setSectionFormData({ ...sectionFormData, start_pk: parseInt(e.target.value) || 0 })}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">{isRTL ? 'نهاية PK' : 'End PK'}</label>
+                                        <input
+                                            type="number"
+                                            className="form-input"
+                                            value={sectionFormData.end_pk}
+                                            onChange={(e) => setSectionFormData({ ...sectionFormData, end_pk: parseInt(e.target.value) || 0 })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label className="form-label">{isRTL ? 'النوع' : 'Type'}</label>
+                                        <select
+                                            className="form-input"
+                                            value={sectionFormData.type}
+                                            onChange={(e) => {
+                                                const newType = e.target.value;
+                                                // Auto-set row_index: Branch goes to row 1, others stay on row 0
+                                                const autoRow = newType === 'branch' ? 1 : 0;
+                                                setSectionFormData({
+                                                    ...sectionFormData,
+                                                    type: newType,
+                                                    row_index: autoRow
+                                                });
+                                            }}
+                                        >
+                                            <option value="main">Main Line</option>
+                                            <option value="continuous">Continuous</option>
+                                            <option value="branch">Branch</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">{isRTL ? 'الصف Visual Row' : 'Visual Row'}</label>
+                                        <input
+                                            type="number"
+                                            className="form-input"
+                                            value={sectionFormData.row_index}
+                                            onChange={(e) => setSectionFormData({ ...sectionFormData, row_index: parseInt(e.target.value) || 0 })}
+                                        />
+                                    </div>
+                                </div>
+
+                                {(sectionFormData.type === 'branch' || sectionFormData.type === 'continuous') && (
+                                    <div className="form-row">
+                                        <div className="form-group">
+                                            <label className="form-label">{isRTL ? 'متفرع من' : 'From Section'}</label>
+                                            <CustomDropdown
+                                                value={sectionFormData.parent_section_id}
+                                                options={sectionFormOptions.filter(o => o.value !== String(editingSection?.id))}
+                                                onChange={(val) => setSectionFormData({ ...sectionFormData, parent_section_id: val })}
+                                                placeholder="Select Parent"
+                                                isRTL={isRTL}
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">{isRTL ? 'عند PK' : 'Branch at PK'}</label>
+                                            <input
+                                                type="number"
+                                                className="form-input"
+                                                value={sectionFormData.branch_pk}
+                                                onChange={(e) => setSectionFormData({ ...sectionFormData, branch_pk: parseInt(e.target.value) || 0 })}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="dalot-modal-footer">
@@ -1252,6 +1405,7 @@ const Dalots = () => {
             )}
         </div>
     );
+
 };
 
 export default Dalots;
