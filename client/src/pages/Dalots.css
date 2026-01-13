@@ -328,16 +328,81 @@
   color: #475569;
 }
 
-/* Dimension Badge */
+/* Dimension Badge - Color coded by dimension type */
 .dimension-badge {
   display: inline-block;
   padding: 0.25rem 0.5rem;
-  background: #fef3c7;
-  color: #92400e;
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
   font-weight: 600;
   font-family: monospace;
+  white-space: nowrap;
+}
+
+/* 1D100x100 - Amber/Yellow */
+.dimension-badge.dim-1d100x100 {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* 1D150X200 - Teal */
+.dimension-badge.dim-1d150x200 {
+  background: #ccfbf1;
+  color: #115e59;
+}
+
+/* 2D100x100 - Blue */
+.dimension-badge.dim-2d100x100 {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* 2D150X200 - Purple */
+.dimension-badge.dim-2d150x200 {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+/* 2D200X100 - Rose */
+.dimension-badge.dim-2d200x100 {
+  background: #ffe4e6;
+  color: #be123c;
+}
+
+/* 1D200X100 - Orange */
+.dimension-badge.dim-1d200x100 {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+/* 1D300X300 - Emerald */
+.dimension-badge.dim-1d300x300 {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+/* 2D300X300 - Indigo */
+.dimension-badge.dim-2d300x300 {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+/* 1D150X150 - Pink */
+.dimension-badge.dim-1d150x150 {
+  background: #fce7f3;
+  color: #9d174d;
+}
+
+/* 10D100x100 - Slate */
+.dimension-badge.dim-10d100x100 {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+/* Default fallback */
+.dimension-badge.dim-default {
+  background: #f1f5f9;
+  color: #475569;
 }
 
 /* Validation Toggle */

@@ -134,6 +134,7 @@ const Dalots = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [sectionFilter, setSectionFilter] = useState('');
+    const [dimensionFilter, setDimensionFilter] = useState('');
 
     // Modal state
     const [showModal, setShowModal] = useState(false);
@@ -534,9 +535,26 @@ const Dalots = () => {
         setImportResult(null);
     };
 
-    // Group dalots by section
+    // Group dalots by section (with dimension filter applied)
     const getDalotsBySection = (sectionId) => {
-        return dalots.filter(d => d.section_id === sectionId);
+        return dalots.filter(d => {
+            const matchesSection = d.section_id === sectionId;
+            const matchesDimension = !dimensionFilter || d.dimension === dimensionFilter;
+            return matchesSection && matchesDimension;
+        });
+    };
+
+    // Helper to get dimension CSS class
+    const getDimensionClass = (dimension) => {
+        if (!dimension) return 'dim-default';
+        const normalized = dimension.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return `dim-${normalized}`;
+    };
+
+    // Get unique dimensions from data for filter dropdown
+    const getUniqueDimensions = () => {
+        const dims = [...new Set(dalots.map(d => d.dimension).filter(Boolean))];
+        return dims.sort();
     };
 
     // Calculate section progress
@@ -556,6 +574,12 @@ const Dalots = () => {
     const statusFilterOptions = [
         { value: '', label: 'All Statuses', labelAr: 'كل الحالات' },
         ...STATUS_OPTIONS
+    ];
+
+    // Dimension filter options (built from actual data)
+    const dimensionFilterOptions = [
+        { value: '', label: 'All Dimensions', labelAr: 'كل الأبعاد' },
+        ...getUniqueDimensions().map(d => ({ value: d, label: d, labelAr: d }))
     ];
 
     // Dimension options for dropdown
@@ -683,7 +707,24 @@ const Dalots = () => {
                     />
                 </div>
 
-                {(searchTerm || sectionFilter || statusFilter) && (
+                <div className="filter-group">
+                    <CustomDropdown
+                        className="filter-dropdown"
+                        value={dimensionFilter}
+                        options={dimensionFilterOptions}
+                        onChange={setDimensionFilter}
+                        placeholder={isRTL ? 'كل الأبعاد' : 'All Dimensions'}
+                        isRTL={isRTL}
+                        renderOption={(option) => (
+                            <>
+                                {option.value && <span className={`dimension-badge ${getDimensionClass(option.value)}`} style={{ marginRight: '0.5rem' }}>{option.value}</span>}
+                                {!option.value && <span>{isRTL ? option.labelAr : option.label}</span>}
+                            </>
+                        )}
+                    />
+                </div>
+
+                {(searchTerm || sectionFilter || statusFilter || dimensionFilter) && (
                     <div className="filter-actions">
                         <button
                             className="btn btn-secondary"
@@ -691,6 +732,7 @@ const Dalots = () => {
                                 setSearchTerm('');
                                 setSectionFilter('');
                                 setStatusFilter('');
+                                setDimensionFilter('');
                             }}
                         >
                             {isRTL ? 'مسح الكل' : 'Clear All'}
@@ -788,7 +830,7 @@ const Dalots = () => {
                                                     <td className="pk-value">{dalot.pk_transmis || '-'}</td>
                                                     <td>
                                                         {dalot.dimension && (
-                                                            <span className="dimension-badge">{dalot.dimension}</span>
+                                                            <span className={`dimension-badge ${getDimensionClass(dalot.dimension)}`}>{dalot.dimension}</span>
                                                         )}
                                                     </td>
                                                     <td>{dalot.length > 0 ? dalot.length : '-'}</td>
