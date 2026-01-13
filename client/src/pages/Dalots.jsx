@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     ChevronDown, Plus, Search, Filter, X, Check, Edit2, Trash2,
-    Construction, CheckCircle2, Clock, XCircle, AlertCircle, Ruler
+    Construction, CheckCircle2, Clock, XCircle, AlertCircle, Settings
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import './Dalots.css';
@@ -29,6 +29,95 @@ const STATUS_OPTIONS = [
     { value: 'finished', label: 'Finished', labelAr: 'مكتمل' },
     { value: 'cancelled', label: 'Cancelled', labelAr: 'ملغى' }
 ];
+
+// Custom Dropdown Component
+const CustomDropdown = ({
+    value,
+    options,
+    onChange,
+    placeholder,
+    isRTL,
+    className = '',
+    renderOption,
+    renderTrigger
+}) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selectedOption = options.find(o => o.value === value);
+
+    return (
+        <div className={`custom-dropdown ${className}`} ref={dropdownRef}>
+            <div
+                className={`custom-dropdown-trigger ${isOpen ? 'open' : ''} ${value || ''}`}
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                {renderTrigger ? renderTrigger(selectedOption) : (
+                    <>
+                        <span>{selectedOption ? (isRTL ? selectedOption.labelAr : selectedOption.label) : placeholder}</span>
+                        <ChevronDown size={16} className="dropdown-icon" />
+                    </>
+                )}
+            </div>
+            {isOpen && (
+                <div className="custom-dropdown-menu">
+                    {options.map(option => (
+                        <div
+                            key={option.value}
+                            className={`custom-dropdown-option ${value === option.value ? 'selected' : ''}`}
+                            onClick={() => {
+                                onChange(option.value);
+                                setIsOpen(false);
+                            }}
+                        >
+                            {renderOption ? renderOption(option) : (
+                                <>
+                                    <span>{isRTL ? option.labelAr : option.label}</span>
+                                    {value === option.value && <Check size={14} className="check-icon" />}
+                                </>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// Status Dropdown Component
+const StatusDropdown = ({ value, onChange, isRTL }) => {
+    return (
+        <CustomDropdown
+            className="status-dropdown"
+            value={value}
+            options={STATUS_OPTIONS}
+            onChange={onChange}
+            isRTL={isRTL}
+            renderTrigger={(option) => (
+                <>
+                    <span>{option ? (isRTL ? option.labelAr : option.label) : ''}</span>
+                    <ChevronDown size={14} className="dropdown-icon" />
+                </>
+            )}
+            renderOption={(option) => (
+                <>
+                    <span className={`status-option-dot ${option.value}`} />
+                    <span>{isRTL ? option.labelAr : option.label}</span>
+                </>
+            )}
+        />
+    );
+};
 
 const Dalots = () => {
     const { t, language } = useLanguage();
@@ -63,6 +152,14 @@ const Dalots = () => {
         notes: ''
     });
 
+    // Section modal state
+    const [showSectionModal, setShowSectionModal] = useState(false);
+    const [editingSection, setEditingSection] = useState(null);
+    const [sectionFormData, setSectionFormData] = useState({
+        name: '',
+        route_name: ''
+    });
+
     // Fetch data
     const fetchSections = useCallback(async () => {
         try {
@@ -74,7 +171,7 @@ const Dalots = () => {
             // Expand all sections by default
             const expanded = {};
             (data.data || []).forEach(s => { expanded[s.id] = true; });
-            setExpandedSections(expanded);
+            setExpandedSections(prev => ({ ...expanded, ...prev }));
         } catch (err) {
             console.error('Error fetching sections:', err);
         }
@@ -173,7 +270,7 @@ const Dalots = () => {
         }
     };
 
-    // Open modal for adding/editing
+    // Open modal for adding/editing dalot
     const openModal = (dalot = null) => {
         if (dalot) {
             setEditingDalot(dalot);
@@ -209,7 +306,7 @@ const Dalots = () => {
         setShowModal(true);
     };
 
-    // Handle form submit
+    // Handle dalot form submit
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -233,6 +330,68 @@ const Dalots = () => {
         }
     };
 
+    // Section CRUD
+    const openSectionModal = (section = null) => {
+        if (section) {
+            setEditingSection(section);
+            setSectionFormData({
+                name: section.name || '',
+                route_name: section.route_name || ''
+            });
+        } else {
+            setEditingSection(null);
+            setSectionFormData({
+                name: '',
+                route_name: ''
+            });
+        }
+        setShowSectionModal(true);
+    };
+
+    const handleSectionSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const url = editingSection
+                ? `${API_BASE}/dalots/sections/${editingSection.id}`
+                : `${API_BASE}/dalots/sections`;
+            const method = editingSection ? 'PUT' : 'POST';
+
+            await fetch(url, {
+                method,
+                headers: getAuthHeaders(),
+                body: JSON.stringify(sectionFormData)
+            });
+
+            setShowSectionModal(false);
+            fetchSections();
+        } catch (err) {
+            console.error('Error saving section:', err);
+        }
+    };
+
+    const handleDeleteSection = async (sectionId, e) => {
+        e.stopPropagation();
+        const sectionDalots = dalots.filter(d => d.section_id === sectionId);
+        const confirmMsg = sectionDalots.length > 0
+            ? (isRTL
+                ? `هذا القسم يحتوي على ${sectionDalots.length} دالوت. هل أنت متأكد من الحذف؟`
+                : `This section contains ${sectionDalots.length} dalots. Are you sure you want to delete it?`)
+            : (isRTL ? 'هل أنت متأكد من حذف هذا القسم؟' : 'Are you sure you want to delete this section?');
+
+        if (!window.confirm(confirmMsg)) return;
+        try {
+            await fetch(`${API_BASE}/dalots/sections/${sectionId}`, {
+                method: 'DELETE',
+                headers: getAuthHeaders()
+            });
+            fetchSections();
+            fetchDalots();
+            fetchStats();
+        } catch (err) {
+            console.error('Error deleting section:', err);
+        }
+    };
+
     // Group dalots by section
     const getDalotsBySection = (sectionId) => {
         return dalots.filter(d => d.section_id === sectionId);
@@ -245,15 +404,23 @@ const Dalots = () => {
         return total > 0 ? Math.round((finished / total) * 100) : 0;
     };
 
-    // Get status icon
-    const getStatusIcon = (status) => {
-        switch (status) {
-            case 'finished': return <CheckCircle2 size={14} />;
-            case 'in_progress': return <Clock size={14} />;
-            case 'cancelled': return <XCircle size={14} />;
-            default: return <AlertCircle size={14} />;
-        }
-    };
+    // Section filter options
+    const sectionOptions = [
+        { value: '', label: 'All Sections', labelAr: 'كل الأقسام' },
+        ...sections.map(s => ({ value: String(s.id), label: s.name, labelAr: s.name }))
+    ];
+
+    // Status filter options
+    const statusFilterOptions = [
+        { value: '', label: 'All Statuses', labelAr: 'كل الحالات' },
+        ...STATUS_OPTIONS
+    ];
+
+    // Dimension options for dropdown
+    const dimensionOptions = DIMENSION_PRESETS.map(d => ({ value: d, label: d, labelAr: d }));
+
+    // Section options for form
+    const sectionFormOptions = sections.map(s => ({ value: String(s.id), label: s.name, labelAr: s.name }));
 
     if (loading) {
         return (
@@ -347,31 +514,25 @@ const Dalots = () => {
 
                 <div className="filter-group">
                     <Filter size={16} />
-                    <select
-                        className="form-input filter-select"
+                    <CustomDropdown
+                        className="filter-dropdown"
                         value={sectionFilter}
-                        onChange={(e) => setSectionFilter(e.target.value)}
-                    >
-                        <option value="">{isRTL ? 'كل الأقسام' : 'All Sections'}</option>
-                        {sections.map(s => (
-                            <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                    </select>
+                        options={sectionOptions}
+                        onChange={setSectionFilter}
+                        placeholder={isRTL ? 'كل الأقسام' : 'All Sections'}
+                        isRTL={isRTL}
+                    />
                 </div>
 
                 <div className="filter-group">
-                    <select
-                        className="form-input filter-select"
+                    <CustomDropdown
+                        className="filter-dropdown"
                         value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                        <option value="">{isRTL ? 'كل الحالات' : 'All Statuses'}</option>
-                        {STATUS_OPTIONS.map(opt => (
-                            <option key={opt.value} value={opt.value}>
-                                {isRTL ? opt.labelAr : opt.label}
-                            </option>
-                        ))}
-                    </select>
+                        options={statusFilterOptions}
+                        onChange={setStatusFilter}
+                        placeholder={isRTL ? 'كل الحالات' : 'All Statuses'}
+                        isRTL={isRTL}
+                    />
                 </div>
 
                 {(searchTerm || sectionFilter || statusFilter) && (
@@ -419,6 +580,26 @@ const Dalots = () => {
                                 <div className="section-count">
                                     <Construction size={14} />
                                     <span>{section.total_dalots || 0}</span>
+                                </div>
+
+                                <div className="section-actions">
+                                    <button
+                                        className="section-action-btn"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            openSectionModal(section);
+                                        }}
+                                        title={isRTL ? 'تعديل القسم' : 'Edit Section'}
+                                    >
+                                        <Edit2 size={14} />
+                                    </button>
+                                    <button
+                                        className="section-action-btn danger"
+                                        onClick={(e) => handleDeleteSection(section.id, e)}
+                                        title={isRTL ? 'حذف القسم' : 'Delete Section'}
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -473,17 +654,11 @@ const Dalots = () => {
                                                         </button>
                                                     </td>
                                                     <td>
-                                                        <select
-                                                            className={`status-select ${dalot.status}`}
+                                                        <StatusDropdown
                                                             value={dalot.status}
-                                                            onChange={(e) => handleStatusChange(dalot.id, e.target.value)}
-                                                        >
-                                                            {STATUS_OPTIONS.map(opt => (
-                                                                <option key={opt.value} value={opt.value}>
-                                                                    {isRTL ? opt.labelAr : opt.label}
-                                                                </option>
-                                                            ))}
-                                                        </select>
+                                                            onChange={(newStatus) => handleStatusChange(dalot.id, newStatus)}
+                                                            isRTL={isRTL}
+                                                        />
                                                     </td>
                                                     <td>
                                                         <div className="action-buttons">
@@ -528,9 +703,15 @@ const Dalots = () => {
                         </div>
                     </div>
                 ))}
+
+                {/* Add Section Button */}
+                <button className="add-section-btn" onClick={() => openSectionModal()}>
+                    <Plus size={20} />
+                    {isRTL ? 'إضافة قسم جديد' : 'Add New Section'}
+                </button>
             </div>
 
-            {/* Modal */}
+            {/* Dalot Modal */}
             {showModal && (
                 <div className="dalot-modal-overlay" onClick={() => setShowModal(false)}>
                     <div className="dalot-modal" onClick={(e) => e.stopPropagation()}>
@@ -545,17 +726,13 @@ const Dalots = () => {
                             <div className="dalot-modal-body">
                                 <div className="form-group">
                                     <label className="form-label">{isRTL ? 'القسم' : 'Section'}</label>
-                                    <select
-                                        className="form-input"
-                                        value={formData.section_id}
-                                        onChange={(e) => setFormData({ ...formData, section_id: e.target.value })}
-                                        required
-                                    >
-                                        <option value="">{isRTL ? 'اختر القسم' : 'Select Section'}</option>
-                                        {sections.map(s => (
-                                            <option key={s.id} value={s.id}>{s.name}</option>
-                                        ))}
-                                    </select>
+                                    <CustomDropdown
+                                        value={String(formData.section_id)}
+                                        options={sectionFormOptions}
+                                        onChange={(val) => setFormData({ ...formData, section_id: val })}
+                                        placeholder={isRTL ? 'اختر القسم' : 'Select Section'}
+                                        isRTL={isRTL}
+                                    />
                                 </div>
 
                                 <div className="form-row">
@@ -619,15 +796,13 @@ const Dalots = () => {
                                 <div className="form-row">
                                     <div className="form-group">
                                         <label className="form-label">{isRTL ? 'الأبعاد' : 'Dimension'}</label>
-                                        <select
-                                            className="form-input"
+                                        <CustomDropdown
                                             value={formData.dimension}
-                                            onChange={(e) => setFormData({ ...formData, dimension: e.target.value })}
-                                        >
-                                            {DIMENSION_PRESETS.map(dim => (
-                                                <option key={dim} value={dim}>{dim}</option>
-                                            ))}
-                                        </select>
+                                            options={dimensionOptions}
+                                            onChange={(val) => setFormData({ ...formData, dimension: val })}
+                                            placeholder="1D100x100"
+                                            isRTL={isRTL}
+                                        />
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">{isRTL ? 'الطول (م)' : 'Length (m)'}</label>
@@ -645,17 +820,18 @@ const Dalots = () => {
                                 <div className="form-row">
                                     <div className="form-group">
                                         <label className="form-label">{isRTL ? 'الحالة' : 'Status'}</label>
-                                        <select
-                                            className="form-input"
+                                        <CustomDropdown
                                             value={formData.status}
-                                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                                        >
-                                            {STATUS_OPTIONS.map(opt => (
-                                                <option key={opt.value} value={opt.value}>
-                                                    {isRTL ? opt.labelAr : opt.label}
-                                                </option>
-                                            ))}
-                                        </select>
+                                            options={STATUS_OPTIONS}
+                                            onChange={(val) => setFormData({ ...formData, status: val })}
+                                            isRTL={isRTL}
+                                            renderOption={(option) => (
+                                                <>
+                                                    <span className={`status-option-dot ${option.value}`} />
+                                                    <span>{isRTL ? option.labelAr : option.label}</span>
+                                                </>
+                                            )}
+                                        />
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">{isRTL ? 'تم التحقق' : 'Validated'}</label>
@@ -691,6 +867,56 @@ const Dalots = () => {
                                 </button>
                                 <button type="submit" className="btn btn-primary">
                                     {editingDalot ? (isRTL ? 'حفظ التعديلات' : 'Save Changes') : (isRTL ? 'إضافة' : 'Add Dalot')}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Section Modal */}
+            {showSectionModal && (
+                <div className="dalot-modal-overlay" onClick={() => setShowSectionModal(false)}>
+                    <div className="dalot-modal section-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="dalot-modal-header">
+                            <h2>{editingSection ? (isRTL ? 'تعديل القسم' : 'Edit Section') : (isRTL ? 'إضافة قسم جديد' : 'Add New Section')}</h2>
+                            <button className="modal-close-btn" onClick={() => setShowSectionModal(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSectionSubmit}>
+                            <div className="dalot-modal-body">
+                                <div className="form-group">
+                                    <label className="form-label">{isRTL ? 'اسم القسم' : 'Section Name'} *</label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        value={sectionFormData.name}
+                                        onChange={(e) => setSectionFormData({ ...sectionFormData, name: e.target.value })}
+                                        placeholder={isRTL ? 'مثال: القسم 4' : 'e.g., Section 4'}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">{isRTL ? 'اسم الطريق' : 'Route Name'}</label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        value={sectionFormData.route_name}
+                                        onChange={(e) => setSectionFormData({ ...sectionFormData, route_name: e.target.value })}
+                                        placeholder="ZAMENGOUE – EKEKAM – EVODOULA"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="dalot-modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={() => setShowSectionModal(false)}>
+                                    {isRTL ? 'إلغاء' : 'Cancel'}
+                                </button>
+                                <button type="submit" className="btn btn-primary">
+                                    {editingSection ? (isRTL ? 'حفظ التعديلات' : 'Save Changes') : (isRTL ? 'إضافة' : 'Add Section')}
                                 </button>
                             </div>
                         </form>
