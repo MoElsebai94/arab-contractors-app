@@ -4,6 +4,7 @@ import {
     Construction, CheckCircle2, Clock, XCircle, AlertCircle, Upload, FileSpreadsheet
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import DalotStatistics from '../components/DalotStatistics';
 import './Dalots.css';
 
 const API_BASE = window.location.hostname === 'localhost'
@@ -668,6 +669,9 @@ const Dalots = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Dimension Stats */}
+            <DalotStatistics dalots={dalots} isRTL={isRTL} />
 
             {/* Filters */}
             <div className="dalots-filters">

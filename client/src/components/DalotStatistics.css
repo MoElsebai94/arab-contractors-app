@@ -1,0 +1,117 @@
+/* client/src/components/DalotStatistics.css */
+
+.dalot-dimension-stats {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.stats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.stats-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.5rem;
+}
+
+.dimension-stat-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 1.25rem;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+}
+
+.dimension-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-color: #cbd5e1;
+}
+
+.dim-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.dim-name {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #334155;
+    background: #e2e8f0;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+}
+
+.dim-count {
+    font-family: 'Monaco', 'Consolas', monospace;
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.dim-count span.finished {
+    color: #10b981;
+}
+
+.dim-progress-container {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+}
+
+.dim-progress-bar {
+    height: 100%;
+    background: #10b981;
+    /* Default success color */
+    border-radius: 4px;
+    transition: width 0.5s ease-out;
+}
+
+/* Dynamic color adjustments based on percentage could be added here if passed as style */
+.dim-progress-bar.low {
+    background: #f59e0b;
+}
+
+.dim-progress-bar.high {
+    background: #10b981;
+}
+
+.dim-progress-bar.complete {
+    background: #059669;
+}
+
+.dim-footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+/* RTL Support via implicit div[dir="rtl"] or parent class */
+[dir="rtl"] .stats-title {
+    flex-direction: row;
+    /* Icon handling */
+}
