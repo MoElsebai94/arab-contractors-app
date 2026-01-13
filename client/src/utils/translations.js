@@ -305,7 +305,25 @@ export const translations = {
         date: "Date",
         processing: "Processing...",
         documentsGenerator: "Documents Generator",
-        documentsSubtitle: "Create and download official project documents."
+        documentsSubtitle: "Create and download official project documents.",
+        // Dalots
+        dalots: "Dalots",
+        dalotManagement: "Dalots Management",
+        addDalot: "Add Dalot",
+        editDalot: "Edit Dalot",
+        sections: "Sections",
+        allSections: "All Sections",
+        ouvrageTransmis: "N° Ouvrage Transmis",
+        ouvrageEtude: "N° d'Étude",
+        ouvrageDefinitif: "N° Définitif",
+        pkEtude: "PK d'Étude",
+        pkTransmis: "PK Transmis",
+        dimension: "Dimension",
+        length: "Length (m)",
+        validated: "Validated",
+        finished: "Finished",
+        cancelled: "Cancelled",
+        totalDalots: "Total Dalots"
     },
     ar: {
         dashboard: "لوحة التحكم",
@@ -593,6 +611,24 @@ export const translations = {
         date: "التاريخ",
         processing: "جاري المعالجة...",
         documentsGenerator: "منشئ المستندات",
-        documentsSubtitle: "إنشاء وتحميل مستندات المشروع الرسمية."
+        documentsSubtitle: "إنشاء وتحميل مستندات المشروع الرسمية.",
+        // Dalots
+        dalots: "دالوت",
+        dalotManagement: "إدارة الدالوت",
+        addDalot: "إضافة دالوت",
+        editDalot: "تعديل دالوت",
+        sections: "الأقسام",
+        allSections: "كل الأقسام",
+        ouvrageTransmis: "رقم المنشأة المرسل",
+        ouvrageEtude: "رقم الدراسة",
+        ouvrageDefinitif: "الرقم النهائي",
+        pkEtude: "نقطة الدراسة",
+        pkTransmis: "نقطة المرسل",
+        dimension: "الأبعاد",
+        length: "الطول (م)",
+        validated: "تم التحقق",
+        finished: "مكتمل",
+        cancelled: "ملغى",
+        totalDalots: "إجمالي الدالوت"
     }
 };

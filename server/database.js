@@ -337,6 +337,56 @@ const db = new sqlite3.Database(dbPath, (err) => {
           });
         }
       });
+
+      // Create Dalot Sections Table
+      db.run(`CREATE TABLE IF NOT EXISTS dalot_sections (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        route_name TEXT,
+        display_order INTEGER DEFAULT 0
+      )`, (err) => {
+        if (!err) {
+          // Initialize default sections if empty
+          db.get("SELECT count(*) as count FROM dalot_sections", (err, row) => {
+            if (!err && row.count === 0) {
+              const sections = [
+                { name: "Section 1", route: "ZAMENGOUE – EKEKAM – EVODOULA", order: 0 },
+                { name: "Section 2", route: "ZAMENGOUE – EKEKAM – EVODOULA", order: 1 },
+                { name: "Section 3", route: "ZAMENGOUE – EKEKAM – EVODOULA", order: 2 }
+              ];
+              const insert = 'INSERT INTO dalot_sections (name, route_name, display_order) VALUES (?, ?, ?)';
+              sections.forEach(s => db.run(insert, [s.name, s.route, s.order]));
+              console.log("Initialized Default Dalot Sections");
+            }
+          });
+        }
+      });
+
+      // Create Dalots Table
+      db.run(`CREATE TABLE IF NOT EXISTS dalots (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        section_id INTEGER,
+        ouvrage_transmis TEXT NOT NULL,
+        ouvrage_etude TEXT,
+        ouvrage_definitif TEXT,
+        pk_etude TEXT,
+        pk_transmis TEXT,
+        dimension TEXT,
+        length REAL DEFAULT 0,
+        status TEXT DEFAULT 'pending',
+        is_validated INTEGER DEFAULT 0,
+        notes TEXT,
+        display_order INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (section_id) REFERENCES dalot_sections(id)
+      )`, (err) => {
+        if (!err) {
+          console.log("Dalots table checked/created");
+        } else {
+          console.error("Error creating dalots table", err);
+        }
+      });
     });
   }
 });

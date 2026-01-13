@@ -957,6 +957,273 @@ app.post('/api/attendance/bulk', (req, res) => {
     });
 });
 
+// --- Dalots API ---
+
+// Get all dalot sections with statistics
+app.get("/api/dalots/sections", (req, res) => {
+    const sql = `
+        SELECT 
+            s.id, s.name, s.route_name, s.display_order,
+            COUNT(d.id) as total_dalots,
+            SUM(CASE WHEN d.status = 'finished' THEN 1 ELSE 0 END) as finished_count,
+            SUM(CASE WHEN d.status = 'in_progress' THEN 1 ELSE 0 END) as in_progress_count,
+            SUM(CASE WHEN d.status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_count,
+            SUM(CASE WHEN d.is_validated = 1 THEN 1 ELSE 0 END) as validated_count
+        FROM dalot_sections s
+        LEFT JOIN dalots d ON s.id = d.section_id
+        GROUP BY s.id
+        ORDER BY s.display_order ASC
+    `;
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ message: "success", data: rows });
+    });
+});
+
+// Create a dalot section
+app.post("/api/dalots/sections", (req, res) => {
+    const { name, route_name } = req.body;
+    db.get("SELECT MAX(display_order) as maxOrder FROM dalot_sections", (err, row) => {
+        const newOrder = (row?.maxOrder ?? -1) + 1;
+        const sql = 'INSERT INTO dalot_sections (name, route_name, display_order) VALUES (?, ?, ?)';
+        db.run(sql, [name, route_name, newOrder], function (err) {
+            if (err) {
+                res.status(400).json({ error: err.message });
+                return;
+            }
+            res.json({ message: "success", id: this.lastID });
+        });
+    });
+});
+
+// Update a dalot section
+app.put("/api/dalots/sections/:id", (req, res) => {
+    const { name, route_name } = req.body;
+    const sql = `UPDATE dalot_sections SET 
+        name = COALESCE(?, name),
+        route_name = COALESCE(?, route_name)
+        WHERE id = ?`;
+    db.run(sql, [name, route_name, req.params.id], function (err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ message: "success", changes: this.changes });
+    });
+});
+
+// Delete a dalot section
+app.delete("/api/dalots/sections/:id", (req, res) => {
+    // First delete all dalots in this section
+    db.run("DELETE FROM dalots WHERE section_id = ?", [req.params.id], (err) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        db.run("DELETE FROM dalot_sections WHERE id = ?", [req.params.id], function (err) {
+            if (err) {
+                res.status(400).json({ error: err.message });
+                return;
+            }
+            res.json({ message: "deleted", changes: this.changes });
+        });
+    });
+});
+
+// Get overall dalots statistics
+app.get("/api/dalots/stats", (req, res) => {
+    const sql = `
+        SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN status = 'finished' THEN 1 ELSE 0 END) as finished,
+            SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
+            SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled,
+            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN is_validated = 1 THEN 1 ELSE 0 END) as validated,
+            SUM(length) as total_length
+        FROM dalots
+    `;
+    db.get(sql, [], (err, row) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ message: "success", data: row });
+    });
+});
+
+// Get all dalots (with optional section filter)
+app.get("/api/dalots", (req, res) => {
+    const { section_id, status, search } = req.query;
+    let sql = `
+        SELECT d.*, s.name as section_name 
+        FROM dalots d
+        LEFT JOIN dalot_sections s ON d.section_id = s.id
+        WHERE 1=1
+    `;
+    const params = [];
+
+    if (section_id) {
+        sql += " AND d.section_id = ?";
+        params.push(section_id);
+    }
+    if (status) {
+        sql += " AND d.status = ?";
+        params.push(status);
+    }
+    if (search) {
+        sql += " AND (d.ouvrage_transmis LIKE ? OR d.ouvrage_etude LIKE ? OR d.notes LIKE ?)";
+        params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
+    sql += " ORDER BY d.section_id ASC, d.display_order ASC";
+
+    db.all(sql, params, (err, rows) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ message: "success", data: rows });
+    });
+});
+
+// Get dalots for a specific section
+app.get("/api/dalots/section/:sectionId", (req, res) => {
+    const sql = `
+        SELECT * FROM dalots 
+        WHERE section_id = ? 
+        ORDER BY display_order ASC
+    `;
+    db.all(sql, [req.params.sectionId], (err, rows) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ message: "success", data: rows });
+    });
+});
+
+// Create a dalot
+app.post("/api/dalots", (req, res) => {
+    const {
+        section_id, ouvrage_transmis, ouvrage_etude, ouvrage_definitif,
+        pk_etude, pk_transmis, dimension, length, status, is_validated, notes
+    } = req.body;
+
+    db.get("SELECT MAX(display_order) as maxOrder FROM dalots WHERE section_id = ?", [section_id], (err, row) => {
+        const newOrder = (row?.maxOrder ?? -1) + 1;
+        const sql = `INSERT INTO dalots 
+            (section_id, ouvrage_transmis, ouvrage_etude, ouvrage_definitif, pk_etude, pk_transmis, dimension, length, status, is_validated, notes, display_order)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        db.run(sql, [
+            section_id, ouvrage_transmis, ouvrage_etude, ouvrage_definitif,
+            pk_etude, pk_transmis, dimension, length || 0, status || 'pending', is_validated || 0, notes, newOrder
+        ], function (err) {
+            if (err) {
+                res.status(400).json({ error: err.message });
+                return;
+            }
+            res.json({ message: "success", id: this.lastID });
+        });
+    });
+});
+
+// Update a dalot
+app.put("/api/dalots/:id", (req, res) => {
+    const {
+        section_id, ouvrage_transmis, ouvrage_etude, ouvrage_definitif,
+        pk_etude, pk_transmis, dimension, length, status, is_validated, notes
+    } = req.body;
+
+    const sql = `UPDATE dalots SET 
+        section_id = COALESCE(?, section_id),
+        ouvrage_transmis = COALESCE(?, ouvrage_transmis),
+        ouvrage_etude = COALESCE(?, ouvrage_etude),
+        ouvrage_definitif = COALESCE(?, ouvrage_definitif),
+        pk_etude = COALESCE(?, pk_etude),
+        pk_transmis = COALESCE(?, pk_transmis),
+        dimension = COALESCE(?, dimension),
+        length = COALESCE(?, length),
+        status = COALESCE(?, status),
+        is_validated = COALESCE(?, is_validated),
+        notes = ?,
+        updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?`;
+
+    db.run(sql, [
+        section_id, ouvrage_transmis, ouvrage_etude, ouvrage_definitif,
+        pk_etude, pk_transmis, dimension, length, status, is_validated, notes, req.params.id
+    ], function (err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ message: "success", changes: this.changes });
+    });
+});
+
+// Quick status update
+app.put("/api/dalots/:id/status", (req, res) => {
+    const { status } = req.body;
+    const sql = "UPDATE dalots SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+    db.run(sql, [status, req.params.id], function (err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ message: "success", changes: this.changes });
+    });
+});
+
+// Toggle validation status
+app.put("/api/dalots/:id/validate", (req, res) => {
+    const sql = "UPDATE dalots SET is_validated = CASE WHEN is_validated = 1 THEN 0 ELSE 1 END, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+    db.run(sql, [req.params.id], function (err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ message: "success", changes: this.changes });
+    });
+});
+
+// Delete a dalot
+app.delete("/api/dalots/:id", (req, res) => {
+    db.run("DELETE FROM dalots WHERE id = ?", [req.params.id], function (err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ message: "deleted", changes: this.changes });
+    });
+});
+
+// Reorder dalots within a section
+app.put("/api/dalots/reorder", (req, res) => {
+    const { items } = req.body;
+    if (!items || !Array.isArray(items)) {
+        res.status(400).json({ error: "Invalid input" });
+        return;
+    }
+
+    db.serialize(() => {
+        const stmt = db.prepare("UPDATE dalots SET display_order = ? WHERE id = ?");
+        items.forEach((item, index) => {
+            stmt.run(index, item.id);
+        });
+        stmt.finalize((err) => {
+            if (err) {
+                res.status(400).json({ error: err.message });
+                return;
+            }
+            res.json({ message: "success" });
+        });
+    });
+});
+
 // --- Deployment Configuration ---
 const path = require('path');
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Rocket, Package, Calculator, Menu, X, Globe, Files } from 'lucide-react';
+import { LayoutDashboard, Users, Rocket, Package, Calculator, Menu, X, Globe, Files, Construction } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import useScrollLock from '../hooks/useScrollLock';
 
@@ -77,6 +77,10 @@ const Sidebar = () => {
         <Link to="/documents" className={`nav-item ${isActive('/documents')}`} onClick={closeMenu}>
           <Files className="nav-icon" size={24} />
           {t('documents') || "Documents"}
+        </Link>
+        <Link to="/dalots" className={`nav-item ${isActive('/dalots')}`} onClick={closeMenu}>
+          <Construction className="nav-icon" size={24} />
+          {t('dalots') || "Dalots"}
         </Link>
       </nav>
 
