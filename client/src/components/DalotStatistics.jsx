@@ -31,6 +31,13 @@ const DalotStatistics = ({ dalots = [], isRTL = false }) => {
         return Object.values(dimensionGroups).sort((a, b) => a.name.localeCompare(b.name));
     }, [dalots]);
 
+    // Helper to get dimension CSS class
+    const getDimensionClass = (dimension) => {
+        if (!dimension) return 'dim-default';
+        const normalized = dimension.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return `dim-${normalized}`;
+    };
+
     if (stats.length === 0) return null;
 
     return (
@@ -56,7 +63,7 @@ const DalotStatistics = ({ dalots = [], isRTL = false }) => {
                         return (
                             <div key={stat.name} className={`dimension-stat-card ${isComplete ? 'complete-card' : ''}`}>
                                 <div className="dim-card-header">
-                                    <span className="dim-name">{stat.name}</span>
+                                    <span className={`dimension-badge ${getDimensionClass(stat.name)}`}>{stat.name}</span>
                                     {isComplete && <CheckCircle2 size={16} className="text-green-500" />}
                                 </div>
 
