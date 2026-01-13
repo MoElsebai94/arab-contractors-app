@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     ChevronDown, Plus, Search, Filter, X, Check, Edit2, Trash2,
-    Construction, CheckCircle2, Clock, XCircle, AlertCircle, Settings
+    Construction, CheckCircle2, Clock, XCircle, AlertCircle, Upload, FileSpreadsheet
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import './Dalots.css';
@@ -160,6 +160,43 @@ const Dalots = () => {
         route_name: ''
     });
 
+    // Import modal state
+    const [showImportModal, setShowImportModal] = useState(false);
+    const [importFile, setImportFile] = useState(null);
+    const [importData, setImportData] = useState([]);
+    const [importSection, setImportSection] = useState('');
+    const [importResult, setImportResult] = useState(null);
+    const [importing, setImporting] = useState(false);
+    const [dragOver, setDragOver] = useState(false);
+    const fileInputRef = useRef(null);
+
+    // Confirm modal state
+    const [confirmModal, setConfirmModal] = useState({
+        show: false,
+        title: '',
+        message: '',
+        onConfirm: null,
+        confirmText: '',
+        cancelText: '',
+        type: 'danger' // 'danger' or 'warning'
+    });
+
+    const showConfirm = ({ title, message, onConfirm, confirmText, cancelText, type = 'danger' }) => {
+        setConfirmModal({
+            show: true,
+            title,
+            message,
+            onConfirm,
+            confirmText: confirmText || (isRTL ? 'حذف' : 'Delete'),
+            cancelText: cancelText || (isRTL ? 'إلغاء' : 'Cancel'),
+            type
+        });
+    };
+
+    const closeConfirm = () => {
+        setConfirmModal(prev => ({ ...prev, show: false }));
+    };
+
     // Fetch data
     const fetchSections = useCallback(async () => {
         try {
@@ -255,19 +292,27 @@ const Dalots = () => {
     };
 
     // Handle delete
-    const handleDelete = async (dalotId) => {
-        if (!window.confirm(isRTL ? 'هل أنت متأكد من الحذف؟' : 'Are you sure you want to delete this dalot?')) return;
-        try {
-            await fetch(`${API_BASE}/dalots/${dalotId}`, {
-                method: 'DELETE',
-                headers: getAuthHeaders()
-            });
-            fetchDalots();
-            fetchStats();
-            fetchSections();
-        } catch (err) {
-            console.error('Error deleting dalot:', err);
-        }
+    const handleDelete = (dalotId) => {
+        showConfirm({
+            title: isRTL ? 'حذف الدالوت' : 'Delete Dalot',
+            message: isRTL ? 'هل أنت متأكد من حذف هذا الدالوت؟ لا يمكن التراجع عن هذا الإجراء.' : 'Are you sure you want to delete this dalot? This action cannot be undone.',
+            confirmText: isRTL ? 'حذف' : 'Delete',
+            type: 'danger',
+            onConfirm: async () => {
+                try {
+                    await fetch(`${API_BASE}/dalots/${dalotId}`, {
+                        method: 'DELETE',
+                        headers: getAuthHeaders()
+                    });
+                    fetchDalots();
+                    fetchStats();
+                    fetchSections();
+                    closeConfirm();
+                } catch (err) {
+                    console.error('Error deleting dalot:', err);
+                }
+            }
+        });
     };
 
     // Open modal for adding/editing dalot
@@ -369,27 +414,124 @@ const Dalots = () => {
         }
     };
 
-    const handleDeleteSection = async (sectionId, e) => {
+    const handleDeleteSection = (sectionId, e) => {
         e.stopPropagation();
         const sectionDalots = dalots.filter(d => d.section_id === sectionId);
-        const confirmMsg = sectionDalots.length > 0
-            ? (isRTL
-                ? `هذا القسم يحتوي على ${sectionDalots.length} دالوت. هل أنت متأكد من الحذف؟`
-                : `This section contains ${sectionDalots.length} dalots. Are you sure you want to delete it?`)
-            : (isRTL ? 'هل أنت متأكد من حذف هذا القسم؟' : 'Are you sure you want to delete this section?');
+        const section = sections.find(s => s.id === sectionId);
 
-        if (!window.confirm(confirmMsg)) return;
-        try {
-            await fetch(`${API_BASE}/dalots/sections/${sectionId}`, {
-                method: 'DELETE',
-                headers: getAuthHeaders()
+        showConfirm({
+            title: isRTL ? 'حذف القسم' : 'Delete Section',
+            message: sectionDalots.length > 0
+                ? (isRTL
+                    ? `سيتم حذف القسم "${section?.name}" مع ${sectionDalots.length} دالوت. هذا الإجراء لا يمكن التراجع عنه.`
+                    : `Section "${section?.name}" and its ${sectionDalots.length} dalots will be deleted. This action cannot be undone.`)
+                : (isRTL
+                    ? `هل أنت متأكد من حذف القسم "${section?.name}"؟`
+                    : `Are you sure you want to delete "${section?.name}"?`),
+            confirmText: isRTL ? 'حذف' : 'Delete',
+            type: sectionDalots.length > 0 ? 'danger' : 'warning',
+            onConfirm: async () => {
+                try {
+                    await fetch(`${API_BASE}/dalots/sections/${sectionId}`, {
+                        method: 'DELETE',
+                        headers: getAuthHeaders()
+                    });
+                    fetchSections();
+                    fetchDalots();
+                    fetchStats();
+                    closeConfirm();
+                } catch (err) {
+                    console.error('Error deleting section:', err);
+                }
+            }
+        });
+    };
+
+    // CSV Import handlers
+    const parseCSV = (text) => {
+        const lines = text.split('\n').filter(line => line.trim());
+        if (lines.length < 2) return [];
+
+        const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+        const rows = [];
+
+        for (let i = 1; i < lines.length; i++) {
+            const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+            const row = {};
+            headers.forEach((header, index) => {
+                row[header] = values[index] || '';
             });
-            fetchSections();
-            fetchDalots();
-            fetchStats();
-        } catch (err) {
-            console.error('Error deleting section:', err);
+            rows.push(row);
         }
+        return rows;
+    };
+
+    const handleFileSelect = (file) => {
+        if (!file) return;
+
+        setImportFile(file);
+        setImportResult(null);
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const text = e.target.result;
+            const data = parseCSV(text);
+            setImportData(data);
+        };
+        reader.readAsText(file);
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const file = e.dataTransfer.files[0];
+        if (file && (file.name.endsWith('.csv') || file.type === 'text/csv')) {
+            handleFileSelect(file);
+        }
+    };
+
+    const handleImport = async () => {
+        if (!importSection || importData.length === 0) return;
+
+        setImporting(true);
+        setImportResult(null);
+
+        try {
+            const res = await fetch(`${API_BASE}/dalots/import`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    section_id: importSection,
+                    dalots: importData
+                })
+            });
+            const result = await res.json();
+
+            if (res.ok) {
+                setImportResult({
+                    success: true,
+                    message: isRTL
+                        ? `تم استيراد ${result.imported} من ${result.total} سجل بنجاح`
+                        : `Successfully imported ${result.imported} of ${result.total} records`
+                });
+                fetchDalots();
+                fetchStats();
+                fetchSections();
+            } else {
+                setImportResult({ success: false, message: result.error });
+            }
+        } catch (err) {
+            setImportResult({ success: false, message: err.message });
+        }
+        setImporting(false);
+    };
+
+    const resetImportModal = () => {
+        setShowImportModal(false);
+        setImportFile(null);
+        setImportData([]);
+        setImportSection('');
+        setImportResult(null);
     };
 
     // Group dalots by section
@@ -436,10 +578,16 @@ const Dalots = () => {
             {/* Header */}
             <div className="page-header">
                 <h1 className="page-title">{isRTL ? 'إدارة الدالوت' : 'Dalots Management'}</h1>
-                <button className="btn btn-primary" onClick={() => openModal()}>
-                    <Plus size={18} />
-                    {isRTL ? 'إضافة دالوت' : 'Add Dalot'}
-                </button>
+                <div className="header-actions">
+                    <button className="btn btn-secondary" onClick={() => setShowImportModal(true)}>
+                        <Upload size={18} />
+                        {isRTL ? 'استيراد CSV' : 'Import CSV'}
+                    </button>
+                    <button className="btn btn-primary" onClick={() => openModal()}>
+                        <Plus size={18} />
+                        {isRTL ? 'إضافة دالوت' : 'Add Dalot'}
+                    </button>
+                </div>
             </div>
 
             {/* Stats Cards */}
@@ -920,6 +1068,137 @@ const Dalots = () => {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Import Modal */}
+            {showImportModal && (
+                <div className="dalot-modal-overlay" onClick={resetImportModal}>
+                    <div className="dalot-modal import-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="dalot-modal-header">
+                            <h2>{isRTL ? 'استيراد من CSV' : 'Import from CSV'}</h2>
+                            <button className="modal-close-btn" onClick={resetImportModal}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="dalot-modal-body">
+                            {importResult && (
+                                <div className={`import-result ${importResult.success ? 'success' : 'error'}`}>
+                                    {importResult.message}
+                                </div>
+                            )}
+
+                            <div className="form-group">
+                                <label className="form-label">{isRTL ? 'القسم المستهدف' : 'Target Section'} *</label>
+                                <CustomDropdown
+                                    value={importSection}
+                                    options={sectionFormOptions}
+                                    onChange={setImportSection}
+                                    placeholder={isRTL ? 'اختر القسم' : 'Select Section'}
+                                    isRTL={isRTL}
+                                />
+                            </div>
+
+                            <div
+                                className={`file-drop-zone ${dragOver ? 'drag-over' : ''} ${importFile ? 'has-file' : ''}`}
+                                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                                onDragLeave={() => setDragOver(false)}
+                                onDrop={handleDrop}
+                                onClick={() => fileInputRef.current?.click()}
+                            >
+                                <FileSpreadsheet size={48} className="file-drop-icon" />
+                                {importFile ? (
+                                    <>
+                                        <p className="file-drop-text">{isRTL ? 'الملف جاهز للاستيراد' : 'File ready for import'}</p>
+                                        <p className="file-name">{importFile.name}</p>
+                                    </>
+                                ) : (
+                                    <p className="file-drop-text">
+                                        {isRTL ? (
+                                            <>اسحب ملف CSV هنا أو <strong>اضغط للاختيار</strong></>
+                                        ) : (
+                                            <>Drag CSV file here or <strong>click to browse</strong></>
+                                        )}
+                                    </p>
+                                )}
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept=".csv"
+                                    style={{ display: 'none' }}
+                                    onChange={(e) => handleFileSelect(e.target.files[0])}
+                                />
+                            </div>
+
+                            {importData.length > 0 && (
+                                <div className="import-preview">
+                                    <h4>{isRTL ? `معاينة (${importData.length} صف)` : `Preview (${importData.length} rows)`}</h4>
+                                    <div className="import-preview-list">
+                                        {importData.slice(0, 5).map((row, i) => (
+                                            <div key={i} className="import-preview-row">
+                                                <span>#{i + 1}</span>
+                                                <span><strong>{row.ouvrage_transmis || row['N° Ouvrage Transmis'] || row.transmis || '-'}</strong></span>
+                                                <span>{row.dimension || row.Dimension || '-'}</span>
+                                                <span>{row.pk_etude || row["PK d'Étude"] || '-'}</span>
+                                            </div>
+                                        ))}
+                                        {importData.length > 5 && (
+                                            <div className="import-preview-row" style={{ opacity: 0.6 }}>
+                                                {isRTL ? `... و ${importData.length - 5} صف آخر` : `... and ${importData.length - 5} more rows`}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="import-help">
+                                <strong>{isRTL ? 'الأعمدة المدعومة:' : 'Supported columns:'}</strong><br />
+                                <code>ouvrage_transmis</code>, <code>ouvrage_etude</code>, <code>ouvrage_definitif</code>,
+                                <code>pk_etude</code>, <code>pk_transmis</code>, <code>dimension</code>,
+                                <code>length</code>, <code>status</code>, <code>notes</code>
+                            </div>
+                        </div>
+
+                        <div className="dalot-modal-footer">
+                            <button type="button" className="btn btn-secondary" onClick={resetImportModal}>
+                                {isRTL ? 'إلغاء' : 'Cancel'}
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={handleImport}
+                                disabled={!importSection || importData.length === 0 || importing}
+                            >
+                                {importing
+                                    ? (isRTL ? 'جاري الاستيراد...' : 'Importing...')
+                                    : (isRTL ? `استيراد ${importData.length} سجل` : `Import ${importData.length} Records`)}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Confirm Modal */}
+            {confirmModal.show && (
+                <div className="dalot-modal-overlay" onClick={closeConfirm}>
+                    <div className="dalot-modal confirm-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="confirm-modal-body">
+                            <div className={`confirm-modal-icon ${confirmModal.type}`}>
+                                {confirmModal.type === 'danger' ? <Trash2 size={32} /> : <AlertCircle size={32} />}
+                            </div>
+                            <h3 className="confirm-modal-title">{confirmModal.title}</h3>
+                            <p className="confirm-modal-message">{confirmModal.message}</p>
+                        </div>
+                        <div className="confirm-modal-footer">
+                            <button className="btn btn-secondary" onClick={closeConfirm}>
+                                {confirmModal.cancelText}
+                            </button>
+                            <button className="btn btn-danger" onClick={confirmModal.onConfirm}>
+                                {confirmModal.confirmText}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

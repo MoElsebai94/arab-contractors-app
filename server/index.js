@@ -1224,6 +1224,107 @@ app.put("/api/dalots/reorder", (req, res) => {
     });
 });
 
+// Bulk import dalots from CSV data
+app.post("/api/dalots/import", (req, res) => {
+    const { dalots, section_id } = req.body;
+
+    if (!dalots || !Array.isArray(dalots) || dalots.length === 0) {
+        res.status(400).json({ error: "No dalots data provided" });
+        return;
+    }
+
+    if (!section_id) {
+        res.status(400).json({ error: "Section ID is required" });
+        return;
+    }
+
+    // Get current max display_order for this section
+    db.get("SELECT MAX(display_order) as maxOrder FROM dalots WHERE section_id = ?", [section_id], (err, row) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+
+        let currentOrder = (row?.maxOrder ?? -1) + 1;
+        let imported = 0;
+        let errors = [];
+
+        db.serialize(() => {
+            const stmt = db.prepare(`INSERT INTO dalots 
+                (section_id, ouvrage_transmis, ouvrage_etude, ouvrage_definitif, pk_etude, pk_transmis, dimension, length, status, is_validated, notes, display_order)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+
+            dalots.forEach((dalot, index) => {
+                // Map common column name variations
+                const ouvrageTransmis = dalot.ouvrage_transmis || dalot['N° Ouvrage Transmis'] || dalot['N_Ouvrage_Transmis'] || dalot['N° ouvrages trasmis'] || dalot.transmis || '';
+                const ouvrageEtude = dalot.ouvrage_etude || dalot["N° d'Etude"] || dalot["N_Etude"] || dalot["N° ouvrages d'etude"] || dalot.etude || '';
+                const ouvrageDefinitif = dalot.ouvrage_definitif || dalot['N° Définitif'] || dalot['N_Definitif'] || dalot['N° ouvrages revis'] || dalot.definitif || '';
+                const pkEtude = dalot.pk_etude || dalot["PK d'Étude"] || dalot["PK_Etude"] || dalot["PK D'ETUDE"] || dalot.pk || '';
+                const pkTransmis = dalot.pk_transmis || dalot['PK Transmis'] || dalot['PK_Transmis'] || dalot['PK TRANSMIS'] || '';
+                const dimension = dalot.dimension || dalot.Dimension || dalot['Section du dalot'] || '';
+                const length = parseFloat(dalot.length || dalot.Length || dalot.longueur || dalot.Longueur || 0) || 0;
+
+                // Normalize status value
+                let rawStatus = dalot.status || dalot.Status || dalot.statut || dalot.Statut || '';
+                let status = 'pending';
+                if (rawStatus) {
+                    const statusLower = rawStatus.toLowerCase().trim();
+                    if (statusLower === 'finished' || statusLower === 'terminé' || statusLower === 'fini' || statusLower === 'complete' || statusLower === 'completed') {
+                        status = 'finished';
+                    } else if (statusLower === 'in progress' || statusLower === 'in_progress' || statusLower === 'en cours' || statusLower === 'inprogress') {
+                        status = 'in_progress';
+                    } else if (statusLower === 'cancelled' || statusLower === 'canceled' || statusLower === 'annulé' || statusLower === 'annule') {
+                        status = 'cancelled';
+                    } else if (statusLower === 'pending' || statusLower === 'en attente') {
+                        status = 'pending';
+                    }
+                }
+
+                const isValidated = dalot.is_validated || dalot.validated || dalot.Validated ? 1 : 0;
+                const notes = dalot.notes || dalot.Notes || dalot.observation || dalot.Observation || '';
+
+                if (ouvrageTransmis) {
+                    stmt.run([
+                        section_id,
+                        ouvrageTransmis,
+                        ouvrageEtude,
+                        ouvrageDefinitif,
+                        pkEtude,
+                        pkTransmis,
+                        dimension,
+                        length,
+                        status,
+                        isValidated,
+                        notes,
+                        currentOrder + index
+                    ], function (err) {
+                        if (err) {
+                            errors.push({ row: index + 1, error: err.message });
+                        } else {
+                            imported++;
+                        }
+                    });
+                } else {
+                    errors.push({ row: index + 1, error: "Missing ouvrage_transmis (required)" });
+                }
+            });
+
+            stmt.finalize((err) => {
+                if (err) {
+                    res.status(400).json({ error: err.message });
+                    return;
+                }
+                res.json({
+                    message: "Import completed",
+                    imported: imported,
+                    total: dalots.length,
+                    errors: errors.length > 0 ? errors : undefined
+                });
+            });
+        });
+    });
+});
+
 // --- Deployment Configuration ---
 const path = require('path');
 

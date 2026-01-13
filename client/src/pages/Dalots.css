@@ -850,3 +850,192 @@
 .filter-dropdown .custom-dropdown-trigger:hover {
   background: #e2e8f0;
 }
+
+/* Import Modal Styles */
+.import-modal {
+  max-width: 550px;
+}
+
+.file-drop-zone {
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  text-align: center;
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 1rem;
+}
+
+.file-drop-zone:hover {
+  border-color: var(--primary-color);
+  background: #f1f5f9;
+}
+
+.file-drop-zone.drag-over {
+  border-color: var(--primary-color);
+  background: #eff6ff;
+}
+
+.file-drop-zone.has-file {
+  border-color: var(--success-color);
+  background: #f0fdf4;
+}
+
+.file-drop-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 1rem;
+  color: var(--text-secondary);
+}
+
+.file-drop-zone.has-file .file-drop-icon {
+  color: var(--success-color);
+}
+
+.file-drop-text {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.file-drop-text strong {
+  color: var(--primary-color);
+}
+
+.file-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 0.5rem;
+}
+
+.import-preview {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.import-preview h4 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: var(--text-secondary);
+}
+
+.import-preview-list {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+}
+
+.import-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--border-color-light);
+}
+
+.import-preview-row:last-child {
+  border-bottom: none;
+}
+
+.import-result {
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1rem;
+}
+
+.import-result.success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.import-result.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.import-help {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #fffbeb;
+  border-radius: var(--radius-md);
+  border: 1px solid #fcd34d;
+}
+
+.import-help code {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+}
+
+/* Header actions */
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Custom Confirm Modal */
+.confirm-modal {
+  max-width: 400px;
+}
+
+.confirm-modal-body {
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.confirm-modal-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirm-modal-icon.danger {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.confirm-modal-icon.warning {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.confirm-modal-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.confirm-modal-message {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.confirm-modal-footer {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+  justify-content: flex-end;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+}
