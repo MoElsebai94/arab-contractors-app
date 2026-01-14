@@ -965,11 +965,11 @@ app.get("/api/dalots/sections", (req, res) => {
         SELECT 
             s.id, s.name, s.route_name, s.display_order,
             s.start_pk, s.end_pk, s.type, s.parent_section_id, s.branch_pk, s.row_index,
-            COUNT(d.id) as total_dalots,
+            COUNT(CASE WHEN d.status != 'cancelled' THEN d.id END) as total_dalots,
             SUM(CASE WHEN d.status = 'finished' THEN 1 ELSE 0 END) as finished_count,
             SUM(CASE WHEN d.status = 'in_progress' THEN 1 ELSE 0 END) as in_progress_count,
             SUM(CASE WHEN d.status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_count,
-            SUM(CASE WHEN d.is_validated = 1 THEN 1 ELSE 0 END) as validated_count
+            SUM(CASE WHEN d.is_validated = 1 AND d.status != 'cancelled' THEN 1 ELSE 0 END) as validated_count
         FROM dalot_sections s
         LEFT JOIN dalots d ON s.id = d.section_id
         GROUP BY s.id
@@ -1054,13 +1054,13 @@ app.delete("/api/dalots/sections/:id", (req, res) => {
 app.get("/api/dalots/stats", (req, res) => {
     const sql = `
         SELECT 
-            COUNT(*) as total,
+            COUNT(CASE WHEN status != 'cancelled' THEN 1 END) as total,
             SUM(CASE WHEN status = 'finished' THEN 1 ELSE 0 END) as finished,
             SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
             SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled,
             SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-            SUM(CASE WHEN is_validated = 1 THEN 1 ELSE 0 END) as validated,
-            SUM(length) as total_length
+            SUM(CASE WHEN is_validated = 1 AND status != 'cancelled' THEN 1 ELSE 0 END) as validated,
+            SUM(CASE WHEN status != 'cancelled' THEN length ELSE 0 END) as total_length
         FROM dalots
     `;
     db.get(sql, [], (err, row) => {

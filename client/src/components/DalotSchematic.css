@@ -148,3 +148,212 @@
     flex-direction: row-reverse;
     /* Ensure title is on right, controls on left if needed, or keep standard */
 }
+
+/* ============================================
+   MOBILE RESPONSIVE STYLES
+   ============================================ */
+
+/* Tablet and below */
+@media (max-width: 768px) {
+    .dalot-schematic-container {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 8px;
+    }
+
+    .schematic-controls {
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+    }
+
+    .schematic-title {
+        font-size: 1rem;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .zoom-controls {
+        width: 100%;
+        justify-content: center;
+        gap: 0.75rem;
+    }
+
+    .zoom-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+        /* Larger touch targets on mobile */
+    }
+
+    .schematic-viewport {
+        border-radius: 6px;
+        /* Enable momentum scrolling on iOS */
+        -webkit-overflow-scrolling: touch;
+        /* Show scroll hint */
+        scroll-snap-type: x proximity;
+    }
+
+    .schematic-svg {
+        min-height: 250px;
+    }
+
+    /* Tooltip adjustments for mobile */
+    .dalot-tooltip {
+        min-width: 160px;
+        max-width: 200px;
+        padding: 0.6rem;
+        font-size: 0.9rem;
+        /* Prevent tooltip from going off-screen */
+        transform: translateX(-50%);
+    }
+
+    .tooltip-header {
+        font-size: 0.95rem;
+    }
+
+    .tooltip-row {
+        font-size: 0.8rem;
+    }
+
+    /* Markers are sized via JavaScript based on isMobile state */
+
+    .axis-label {
+        font-size: 9px;
+    }
+
+    .track-label {
+        font-size: 10px;
+    }
+}
+
+/* Mobile phones */
+@media (max-width: 480px) {
+    .dalot-schematic-container {
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+        border-radius: 6px;
+    }
+
+    .schematic-controls {
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem;
+    }
+
+    .schematic-title {
+        font-size: 0.9rem;
+    }
+
+    .schematic-title svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .zoom-btn {
+        width: 40px;
+        height: 40px;
+    }
+
+    .schematic-svg {
+        min-height: 200px;
+    }
+
+    .dalot-tooltip {
+        min-width: 140px;
+        max-width: 180px;
+        padding: 0.5rem;
+    }
+
+    .tooltip-header {
+        font-size: 0.85rem;
+        padding-bottom: 0.2rem;
+        margin-bottom: 0.2rem;
+    }
+
+    .tooltip-row {
+        font-size: 0.75rem;
+        margin-bottom: 0.1rem;
+    }
+
+    .axis-label {
+        font-size: 8px;
+    }
+
+    .track-label {
+        font-size: 9px;
+    }
+}
+
+/* Touch device enhancements */
+@media (hover: none) and (pointer: coarse) {
+    .zoom-btn {
+        /* Ensure adequate touch target */
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .zoom-btn:active {
+        background: #e2e8f0;
+        transform: scale(0.95);
+    }
+
+    /* Remove hover effects that don't work well on touch */
+    .dalot-marker:hover {
+        stroke-width: 2px;
+    }
+
+    /* Add tap hint animation */
+    .schematic-viewport {
+        position: relative;
+    }
+}
+
+/* Landscape mobile optimization */
+@media (max-width: 768px) and (orientation: landscape) {
+    .dalot-schematic-container {
+        padding: 0.75rem;
+    }
+
+    .schematic-controls {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .schematic-title {
+        width: auto;
+    }
+
+    .zoom-controls {
+        width: auto;
+    }
+
+    .schematic-svg {
+        min-height: 180px;
+    }
+}
+
+/* Scroll indicator hint for mobile */
+.schematic-viewport::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 30px;
+    background: linear-gradient(to right, transparent, rgba(248, 250, 252, 0.8));
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+@media (max-width: 768px) {
+    .schematic-viewport::after {
+        opacity: 1;
+    }
+
+    .schematic-viewport::-webkit-scrollbar {
+        height: 6px;
+    }
+}

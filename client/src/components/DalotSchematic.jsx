@@ -26,7 +26,21 @@ const formatPK = (meters) => {
 const DalotSchematic = ({ dalots = [], topology = [], isRTL = false }) => {
     const [pixelsPerMeter, setPixelsPerMeter] = useState(0.2); // Default zoom level
     const [hoveredDalot, setHoveredDalot] = useState(null);
+    const [selectedDalot, setSelectedDalot] = useState(null); // For touch devices
+    const [isMobile, setIsMobile] = useState(false);
     const containerRef = useRef(null);
+    const viewportRef = useRef(null);
+
+    // Detect mobile/touch device
+    React.useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.matchMedia('(max-width: 768px)').matches ||
+                'ontouchstart' in window);
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     // Color mapping
     const getStatusColor = (status) => {
@@ -325,7 +339,11 @@ const DalotSchematic = ({ dalots = [], topology = [], isRTL = false }) => {
                 </div>
             </div>
 
-            <div className="schematic-viewport" ref={containerRef}>
+            <div
+                className="schematic-viewport"
+                ref={viewportRef}
+                onClick={() => isMobile && setSelectedDalot(null)}
+            >
                 <svg width={geometry.width} height={geometry.height} className="schematic-svg">
                     {/* Definitions */}
                     <defs>
@@ -417,64 +435,96 @@ const DalotSchematic = ({ dalots = [], topology = [], isRTL = false }) => {
 
                     {/* Markers */}
                     <g className="markers">
-                        {markers.map((d) => (
-                            <g
-                                key={d.id}
-                                transform={`translate(${d.x}, ${d.y})`}
-                                onMouseEnter={() => setHoveredDalot({ ...d, x: d.x, y: d.y })}
-                                onMouseLeave={() => setHoveredDalot(null)}
-                                style={{ cursor: 'pointer' }}
-                            >
-                                <circle
-                                    r={hoveredDalot?.id === d.id ? 8 : 5}
-                                    fill={d.color}
-                                    stroke="white"
-                                    strokeWidth="2"
-                                    className="dalot-marker"
-                                />
-                            </g>
-                        ))}
+                        {markers.map((d) => {
+                            const baseSize = isMobile ? 8 : 5;
+                            const activeSize = isMobile ? 12 : 8;
+                            const isActive = (hoveredDalot?.id === d.id) || (selectedDalot?.id === d.id);
+
+                            return (
+                                <g
+                                    key={d.id}
+                                    transform={`translate(${d.x}, ${d.y})`}
+                                    onMouseEnter={() => !isMobile && setHoveredDalot({ ...d, x: d.x, y: d.y })}
+                                    onMouseLeave={() => !isMobile && setHoveredDalot(null)}
+                                    onClick={(e) => {
+                                        if (isMobile) {
+                                            e.stopPropagation();
+                                            setSelectedDalot(selectedDalot?.id === d.id ? null : { ...d, x: d.x, y: d.y });
+                                        }
+                                    }}
+                                    style={{ cursor: 'pointer' }}
+                                >
+                                    <circle
+                                        r={isActive ? activeSize : baseSize}
+                                        fill={d.color}
+                                        stroke="white"
+                                        strokeWidth="2"
+                                        className="dalot-marker"
+                                    />
+                                </g>
+                            );
+                        })}
                     </g>
                 </svg>
 
                 {/* Tooltip Overlay */}
-                {hoveredDalot && (
-                    <div
-                        className="dalot-tooltip"
-                        style={{
-                            left: `${hoveredDalot.x}px`,
-                            top: `${hoveredDalot.y - 120}px`
-                        }}
-                    >
-                        <div className="tooltip-header">
-                            {hoveredDalot.ouvrage_transmis || hoveredDalot.ouvrage_etude}
+                {(hoveredDalot || selectedDalot) && (() => {
+                    const activeDalot = hoveredDalot || selectedDalot;
+                    // Smart tooltip positioning
+                    const viewportWidth = viewportRef.current?.clientWidth || 400;
+                    const tooltipWidth = isMobile ? 160 : 200;
+                    let leftPos = activeDalot.x;
+
+                    // Keep tooltip within viewport bounds
+                    if (leftPos - tooltipWidth / 2 < 10) {
+                        leftPos = tooltipWidth / 2 + 10;
+                    } else if (leftPos + tooltipWidth / 2 > viewportWidth - 10) {
+                        leftPos = viewportWidth - tooltipWidth / 2 - 10;
+                    }
+
+                    return (
+                        <div
+                            className="dalot-tooltip"
+                            style={{
+                                left: `${leftPos}px`,
+                                top: `${activeDalot.y - (isMobile ? 100 : 120)}px`
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="tooltip-header">
+                                {activeDalot.ouvrage_transmis || activeDalot.ouvrage_etude}
+                            </div>
+                            <div className="tooltip-row">
+                                <span>PK:</span>
+                                <span className="tooltip-val">{activeDalot.pk_transmis || activeDalot.pk_etude}</span>
+                            </div>
+                            <div className="tooltip-row">
+                                <span>Dimension:</span>
+                                <span className="tooltip-val">{activeDalot.dimension}</span>
+                            </div>
+                            <div className="tooltip-row">
+                                <span>Status:</span>
+                                <span
+                                    className="tooltip-val"
+                                    style={{ color: getStatusColor(activeDalot.status) }}
+                                >
+                                    {formatStatus(activeDalot.status)}
+                                </span>
+                            </div>
+                            <div className="tooltip-row">
+                                <span>Section:</span>
+                                <span className="tooltip-val">
+                                    {topology.find(s => s.id === String(activeDalot.section_id))?.name || activeDalot.section_id}
+                                </span>
+                            </div>
+                            {isMobile && (
+                                <div className="tooltip-row" style={{ marginTop: '0.5rem', justifyContent: 'center' }}>
+                                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Tap elsewhere to close</span>
+                                </div>
+                            )}
                         </div>
-                        <div className="tooltip-row">
-                            <span>PK:</span>
-                            <span className="tooltip-val">{hoveredDalot.pk_transmis || hoveredDalot.pk_etude}</span>
-                        </div>
-                        <div className="tooltip-row">
-                            <span>Dimension:</span>
-                            <span className="tooltip-val">{hoveredDalot.dimension}</span>
-                        </div>
-                        <div className="tooltip-row">
-                            <span>Status:</span>
-                            <span
-                                className="tooltip-val"
-                                style={{ color: getStatusColor(hoveredDalot.status) }}
-                            >
-                                {formatStatus(hoveredDalot.status)}
-                            </span>
-                        </div>
-                        <div className="tooltip-row">
-                            <span>Section:</span>
-                            {/* Find section name from topology */}
-                            <span className="tooltip-val">
-                                {topology.find(s => s.id === String(hoveredDalot.section_id))?.name || hoveredDalot.section_id}
-                            </span>
-                        </div>
-                    </div>
-                )}
+                    );
+                })()}
             </div>
         </div>
     );
