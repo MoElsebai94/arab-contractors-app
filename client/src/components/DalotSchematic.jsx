@@ -470,9 +470,75 @@ const DalotSchematic = ({ dalots = [], topology = [], isRTL = false }) => {
                 {/* Tooltip Overlay */}
                 {(hoveredDalot || selectedDalot) && (() => {
                     const activeDalot = hoveredDalot || selectedDalot;
-                    // Smart tooltip positioning
-                    const viewportWidth = viewportRef.current?.clientWidth || 400;
                     const tooltipWidth = isMobile ? 160 : 200;
+
+                    // For mobile, use fixed positioning relative to the screen
+                    // For desktop, use absolute positioning within the viewport
+                    if (isMobile) {
+                        // Get viewport rect to calculate screen position
+                        const viewportRect = viewportRef.current?.getBoundingClientRect() || { left: 0, top: 0, width: 400 };
+                        const scrollLeft = viewportRef.current?.scrollLeft || 0;
+
+                        // Calculate where the dalot is on screen
+                        const dalotScreenX = viewportRect.left + activeDalot.x - scrollLeft;
+                        const dalotScreenY = viewportRect.top + activeDalot.y;
+
+                        // Keep tooltip within screen bounds
+                        let leftPos = dalotScreenX;
+                        const screenWidth = window.innerWidth;
+
+                        if (leftPos - tooltipWidth / 2 < 10) {
+                            leftPos = tooltipWidth / 2 + 10;
+                        } else if (leftPos + tooltipWidth / 2 > screenWidth - 10) {
+                            leftPos = screenWidth - tooltipWidth / 2 - 10;
+                        }
+
+                        return (
+                            <div
+                                className="dalot-tooltip"
+                                style={{
+                                    position: 'fixed',
+                                    left: `${leftPos}px`,
+                                    top: `${dalotScreenY - 100}px`,
+                                    transform: 'translateX(-50%)'
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className="tooltip-header">
+                                    {activeDalot.ouvrage_transmis || activeDalot.ouvrage_etude}
+                                </div>
+                                <div className="tooltip-row">
+                                    <span>PK:</span>
+                                    <span className="tooltip-val">{activeDalot.pk_transmis || activeDalot.pk_etude}</span>
+                                </div>
+                                <div className="tooltip-row">
+                                    <span>Dimension:</span>
+                                    <span className="tooltip-val">{activeDalot.dimension}</span>
+                                </div>
+                                <div className="tooltip-row">
+                                    <span>Status:</span>
+                                    <span
+                                        className="tooltip-val"
+                                        style={{ color: getStatusColor(activeDalot.status) }}
+                                    >
+                                        {formatStatus(activeDalot.status)}
+                                    </span>
+                                </div>
+                                <div className="tooltip-row">
+                                    <span>Section:</span>
+                                    <span className="tooltip-val">
+                                        {topology.find(s => s.id === String(activeDalot.section_id))?.name || activeDalot.section_id}
+                                    </span>
+                                </div>
+                                <div className="tooltip-row" style={{ marginTop: '0.5rem', justifyContent: 'center' }}>
+                                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Tap elsewhere to close</span>
+                                </div>
+                            </div>
+                        );
+                    }
+
+                    // Desktop: use original absolute positioning
+                    const viewportWidth = viewportRef.current?.clientWidth || 400;
                     let leftPos = activeDalot.x;
 
                     // Keep tooltip within viewport bounds
@@ -487,7 +553,7 @@ const DalotSchematic = ({ dalots = [], topology = [], isRTL = false }) => {
                             className="dalot-tooltip"
                             style={{
                                 left: `${leftPos}px`,
-                                top: `${activeDalot.y - (isMobile ? 100 : 120)}px`
+                                top: `${activeDalot.y - 120}px`
                             }}
                             onClick={(e) => e.stopPropagation()}
                         >
