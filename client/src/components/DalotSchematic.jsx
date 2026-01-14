@@ -137,8 +137,8 @@ const DalotSchematic = ({ dalots = [], topology = [], isRTL = false }) => {
                 visualStartX: startX,
                 visualEndX: startX + length,
                 y,
-                // Give branches a distinct color for visual clarity
-                color: section.type === 'branch' ? '#3b82f6' : (section.color || '#94a3b8')
+                // Use consistent color for all lines (branches same as main)
+                color: section.color || '#94a3b8'
             };
         });
 
@@ -185,8 +185,46 @@ const DalotSchematic = ({ dalots = [], topology = [], isRTL = false }) => {
             const offset = pk - section.startPK;
             const visualX = section.visualStartX + offset;
 
-            const x = visualX * pixelsPerMeter + geometry.bufferX;
-            const y = section.y;
+            // For branches, handle curve positioning
+            const isBranch = section.type === 'branch';
+            const curveForwardPx = 50; // Must match the curve forward distance in rendering
+
+            let x, y;
+
+            if (isBranch) {
+                // Calculate how many meters the curve zone represents
+                const curveZoneMeters = curveForwardPx / pixelsPerMeter;
+
+                if (offset < curveZoneMeters) {
+                    // Dalot is within the curve zone - position along the curve
+                    // Find parent section to get the main line Y position
+                    const parentId = section.fromSection;
+                    const parentGeo = geometry.sectionGeo ? geometry.sectionGeo[parentId] : null;
+                    const parentY = parentGeo ? parentGeo.y : section.y - 100;
+                    const branchY = section.y;
+                    const startX = section.pxStart;
+
+                    // Calculate t (0 to 1) for position along curve
+                    const t = offset / curveZoneMeters;
+
+                    // Quadratic bezier: P = (1-t)²P0 + 2(1-t)tP1 + t²P2
+                    // P0 = (startX, parentY), P1 = (startX, branchY), P2 = (startX + curveForwardPx, branchY)
+                    const p0x = startX, p0y = parentY;
+                    const p1x = startX, p1y = branchY;
+                    const p2x = startX + curveForwardPx, p2y = branchY;
+
+                    x = Math.pow(1 - t, 2) * p0x + 2 * (1 - t) * t * p1x + Math.pow(t, 2) * p2x;
+                    y = Math.pow(1 - t, 2) * p0y + 2 * (1 - t) * t * p1y + Math.pow(t, 2) * p2y;
+                } else {
+                    // Dalot is past the curve zone - on the straight branch line
+                    x = visualX * pixelsPerMeter + geometry.bufferX + curveForwardPx;
+                    y = section.y;
+                }
+            } else {
+                // Main/continuous sections - straight line
+                x = visualX * pixelsPerMeter + geometry.bufferX;
+                y = section.y;
+            }
 
             return {
                 ...d,
@@ -214,18 +252,23 @@ const DalotSchematic = ({ dalots = [], topology = [], isRTL = false }) => {
             const start = section.startPK;
             const end = section.endPK;
 
-            // For branches, add PK 0 tick at the junction point (where curve starts from main line)
+            // Round start up to next interval for regular ticks
+            const firstTick = Math.ceil(start / tickInterval) * tickInterval;
+
+            // For branches, add PK 0 tick at the intersection point on the main line
             if (isBranch && start === 0) {
+                // Find parent section to get the main line Y position
+                const parentId = section.fromSection;
+                const parentGeo = geometry.sectionGeo ? geometry.sectionGeo[parentId] : null;
+                const mainLineY = parentGeo ? parentGeo.y : section.y - 100;
+
                 allTicks.push({
-                    x: section.pxStart,
-                    y: section.y - 40, // Position slightly above the curve
+                    x: section.pxStart, // At the junction point on the main line
+                    y: mainLineY,
                     label: formatPK(0),
                     id: `${section.id}-0-junction`
                 });
             }
-
-            // Round start up to next interval for regular ticks
-            const firstTick = Math.ceil(start / tickInterval) * tickInterval;
             // For branches, skip PK 0 in the regular loop since we added it separately above
             const startTick = isBranch && firstTick === 0 ? tickInterval : firstTick;
 
@@ -315,7 +358,7 @@ const DalotSchematic = ({ dalots = [], topology = [], isRTL = false }) => {
                                 <path
                                     key={`conn-${branch.id}`}
                                     d={junctionCurve}
-                                    stroke="#3b82f6"
+                                    stroke="#94a3b8"
                                     strokeWidth="4"
                                     fill="none"
                                     strokeLinecap="round"
