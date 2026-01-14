@@ -537,23 +537,32 @@ const DalotSchematic = ({ dalots = [], topology = [], isRTL = false }) => {
                         );
                     }
 
-                    // Desktop: use original absolute positioning
-                    const viewportWidth = viewportRef.current?.clientWidth || 400;
-                    let leftPos = activeDalot.x;
+                    // Desktop: use fixed positioning with scroll-aware coordinates
+                    const viewportRect = viewportRef.current?.getBoundingClientRect() || { left: 0, top: 0, width: 400 };
+                    const scrollLeft = viewportRef.current?.scrollLeft || 0;
 
-                    // Keep tooltip within viewport bounds
+                    // Calculate where the dalot is on screen
+                    const dalotScreenX = viewportRect.left + activeDalot.x - scrollLeft;
+                    const dalotScreenY = viewportRect.top + activeDalot.y;
+
+                    // Keep tooltip within screen bounds
+                    let leftPos = dalotScreenX;
+                    const screenWidth = window.innerWidth;
+
                     if (leftPos - tooltipWidth / 2 < 10) {
                         leftPos = tooltipWidth / 2 + 10;
-                    } else if (leftPos + tooltipWidth / 2 > viewportWidth - 10) {
-                        leftPos = viewportWidth - tooltipWidth / 2 - 10;
+                    } else if (leftPos + tooltipWidth / 2 > screenWidth - 10) {
+                        leftPos = screenWidth - tooltipWidth / 2 - 10;
                     }
 
                     return (
                         <div
                             className="dalot-tooltip"
                             style={{
+                                position: 'fixed',
                                 left: `${leftPos}px`,
-                                top: `${activeDalot.y - 120}px`
+                                top: `${dalotScreenY - 130}px`,
+                                transform: 'translateX(-50%)'
                             }}
                             onClick={(e) => e.stopPropagation()}
                         >
@@ -583,11 +592,6 @@ const DalotSchematic = ({ dalots = [], topology = [], isRTL = false }) => {
                                     {topology.find(s => s.id === String(activeDalot.section_id))?.name || activeDalot.section_id}
                                 </span>
                             </div>
-                            {isMobile && (
-                                <div className="tooltip-row" style={{ marginTop: '0.5rem', justifyContent: 'center' }}>
-                                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Tap elsewhere to close</span>
-                                </div>
-                            )}
                         </div>
                     );
                 })()}
