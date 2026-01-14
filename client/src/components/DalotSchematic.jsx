@@ -39,6 +39,15 @@ const DalotSchematic = ({ dalots = [], topology = [], isRTL = false }) => {
         }
     };
 
+    // Format status for display (e.g., "in_progress" -> "In Progress")
+    const formatStatus = (status) => {
+        if (!status) return '';
+        return status
+            .split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+    };
+
     // 1. Process Geometry
     const geometry = useMemo(() => {
         if (!Array.isArray(topology) || topology.length === 0) return { width: 800, height: 400, sections: [] };
@@ -168,7 +177,7 @@ const DalotSchematic = ({ dalots = [], topology = [], isRTL = false }) => {
             // If section not found in topology, we can't plot accurately
             if (!section) return null;
 
-            const pk = parsePK(d.pk_etude || d.pk_transmis);
+            const pk = parsePK(d.pk_transmis || d.pk_etude);
 
             // Calculate X based on section's visual start
             // Marker Offset = PK - SectionStartPK
@@ -399,7 +408,7 @@ const DalotSchematic = ({ dalots = [], topology = [], isRTL = false }) => {
                         </div>
                         <div className="tooltip-row">
                             <span>PK:</span>
-                            <span className="tooltip-val">{hoveredDalot.pk_etude || hoveredDalot.pk_transmis}</span>
+                            <span className="tooltip-val">{hoveredDalot.pk_transmis || hoveredDalot.pk_etude}</span>
                         </div>
                         <div className="tooltip-row">
                             <span>Dimension:</span>
@@ -411,7 +420,7 @@ const DalotSchematic = ({ dalots = [], topology = [], isRTL = false }) => {
                                 className="tooltip-val"
                                 style={{ color: getStatusColor(hoveredDalot.status) }}
                             >
-                                {hoveredDalot.status}
+                                {formatStatus(hoveredDalot.status)}
                             </span>
                         </div>
                         <div className="tooltip-row">
