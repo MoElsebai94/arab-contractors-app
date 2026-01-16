@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
     ChevronDown, Plus, Search, Filter, X, Check, Edit2, Trash2,
-    Construction, CheckCircle2, Clock, XCircle, AlertCircle, Upload, FileSpreadsheet
+    Construction, CheckCircle2, Clock, XCircle, AlertCircle, Upload, FileSpreadsheet,
+    ArrowUpDown, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import DalotStatistics from '../components/DalotStatistics';
@@ -32,6 +33,17 @@ const STATUS_OPTIONS = [
     { value: 'in_progress', label: 'In Progress', labelAr: 'قيد التنفيذ' },
     { value: 'finished', label: 'Finished', labelAr: 'مكتمل' },
     { value: 'cancelled', label: 'Cancelled', labelAr: 'ملغى' }
+];
+
+// Sort options for dalots
+const SORT_OPTIONS = [
+    { value: 'ouvrage_transmis', label: 'N° Transmis', labelAr: 'رقم المنشأة المرسل' },
+    { value: 'pk_transmis', label: 'PK Transmis', labelAr: 'نقطة المرسل' },
+    { value: 'pk_etude', label: "PK d'Étude", labelAr: 'نقطة الدراسة' },
+    { value: 'dimension', label: 'Dimension', labelAr: 'الأبعاد' },
+    { value: 'length', label: 'Length', labelAr: 'الطول' },
+    { value: 'status', label: 'Status', labelAr: 'الحالة' },
+    { value: 'is_validated', label: 'Validated', labelAr: 'تحقق' }
 ];
 
 // Topology Configuration for Schematic View
@@ -148,6 +160,10 @@ const Dalots = () => {
     const [statusFilter, setStatusFilter] = useState('');
     const [sectionFilter, setSectionFilter] = useState('');
     const [dimensionFilter, setDimensionFilter] = useState('');
+
+    // Sorting
+    const [sortField, setSortField] = useState('ouvrage_transmis');
+    const [sortDirection, setSortDirection] = useState('asc');
 
     // Modal state
     const [showModal, setShowModal] = useState(false);
@@ -582,13 +598,58 @@ const Dalots = () => {
         setImportResult(null);
     };
 
-    // Group dalots by section (with dimension filter applied)
+    // Helper to parse PK values (e.g., "00+055" -> 55, "12+345" -> 12345)
+    const parsePK = (pk) => {
+        if (!pk) return 0;
+        const match = pk.match(/(\d+)\+(\d+)/);
+        if (match) {
+            return parseInt(match[1]) * 1000 + parseInt(match[2]);
+        }
+        return 0;
+    };
+
+    // Sort comparator function
+    const sortDalots = (a, b) => {
+        let comparison = 0;
+
+        switch (sortField) {
+            case 'ouvrage_transmis':
+            case 'dimension':
+                // Natural sort for alphanumeric values (e.g., OH1, OH2, OH10)
+                const valA = (a[sortField] || '').toString();
+                const valB = (b[sortField] || '').toString();
+                comparison = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
+                break;
+            case 'pk_transmis':
+            case 'pk_etude':
+                comparison = parsePK(a[sortField]) - parsePK(b[sortField]);
+                break;
+            case 'length':
+                comparison = (a.length || 0) - (b.length || 0);
+                break;
+            case 'status':
+                const statusOrder = { 'pending': 0, 'in_progress': 1, 'finished': 2, 'cancelled': 3 };
+                comparison = (statusOrder[a.status] || 0) - (statusOrder[b.status] || 0);
+                break;
+            case 'is_validated':
+                comparison = (a.is_validated || 0) - (b.is_validated || 0);
+                break;
+            default:
+                comparison = 0;
+        }
+
+        return sortDirection === 'asc' ? comparison : -comparison;
+    };
+
+    // Group dalots by section (with dimension filter applied and sorting)
     const getDalotsBySection = (sectionId) => {
-        return dalots.filter(d => {
-            const matchesSection = d.section_id === sectionId;
-            const matchesDimension = !dimensionFilter || d.dimension === dimensionFilter;
-            return matchesSection && matchesDimension;
-        });
+        return dalots
+            .filter(d => {
+                const matchesSection = d.section_id === sectionId;
+                const matchesDimension = !dimensionFilter || d.dimension === dimensionFilter;
+                return matchesSection && matchesDimension;
+            })
+            .sort(sortDalots);
     };
 
     // Helper to get dimension CSS class
@@ -790,6 +851,26 @@ const Dalots = () => {
                             </>
                         )}
                     />
+                </div>
+
+                {/* Sort Controls */}
+                <div className="filter-group sort-group">
+                    <ArrowUpDown size={16} />
+                    <CustomDropdown
+                        className="filter-dropdown sort-dropdown"
+                        value={sortField}
+                        options={SORT_OPTIONS}
+                        onChange={setSortField}
+                        placeholder={isRTL ? 'ترتيب حسب' : 'Sort by'}
+                        isRTL={isRTL}
+                    />
+                    <button
+                        className="sort-direction-btn"
+                        onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
+                        title={sortDirection === 'asc' ? (isRTL ? 'تصاعدي' : 'Ascending') : (isRTL ? 'تنازلي' : 'Descending')}
+                    >
+                        {sortDirection === 'asc' ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+                    </button>
                 </div>
 
                 {(searchTerm || sectionFilter || statusFilter || dimensionFilter) && (

@@ -1104,3 +1104,65 @@
   color: white;
   border: none;
 }
+
+/* Sort Controls */
+.sort-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  margin-left: auto;
+}
+
+.sort-group svg:first-child {
+  color: var(--text-secondary);
+}
+
+.sort-dropdown {
+  min-width: 130px;
+}
+
+.sort-dropdown .custom-dropdown-trigger {
+  background: transparent;
+  border: none;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+  min-height: 32px;
+}
+
+.sort-dropdown .custom-dropdown-trigger:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.sort-direction-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: white;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+
+.sort-direction-btn:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+/* RTL Support for sort controls */
+[dir="rtl"] .sort-group {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+[dir="rtl"] .filter-actions {
+  margin-left: 0;
+  margin-right: auto;
+}
