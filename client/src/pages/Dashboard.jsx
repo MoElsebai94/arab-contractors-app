@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Users, Briefcase, Factory, AlertTriangle, CheckCircle, Clock, Activity, ArrowRight } from 'lucide-react';
+import { Users, Briefcase, Factory, AlertTriangle, CheckCircle, Clock, Activity, ArrowRight, UserCheck, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import LoadingScreen from '../components/LoadingScreen';
 import { useLanguage } from '../context/LanguageContext';
@@ -19,16 +19,20 @@ const Dashboard = () => {
     const [employeeRoles, setEmployeeRoles] = useState([]);
     const [recentProjects, setRecentProjects] = useState([]);
     const [lowStockItems, setLowStockItems] = useState([]);
+    const [employeeWorkload, setEmployeeWorkload] = useState([]);
+    const [materialSummary, setMaterialSummary] = useState([]);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [empsRes, projsRes, prodRes, ironRes, cementRes] = await Promise.all([
+                const [empsRes, projsRes, prodRes, ironRes, cementRes, workloadRes, materialSummaryRes] = await Promise.all([
                     axios.get('/api/employees'),
                     axios.get('/api/projects'),
                     axios.get('/api/storage/production'),
                     axios.get('/api/storage/iron'),
-                    axios.get('/api/storage/cement')
+                    axios.get('/api/storage/cement'),
+                    axios.get('/api/employees/workload').catch(() => ({ data: { data: [] } })),
+                    axios.get('/api/project-materials/summary').catch(() => ({ data: { data: [] } }))
                 ]);
 
                 const employees = empsRes.data.data;
@@ -80,6 +84,19 @@ const Dashboard = () => {
                 setEmployeeRoles(roleData);
                 setRecentProjects(projects.slice(0, 5)); // Assuming API returns newest first or we slice first 5
                 setLowStockItems(allLowStock.slice(0, 5));
+
+                // Process employee workload (show busy employees)
+                const workload = workloadRes.data.data || [];
+                const busyEmployees = workload
+                    .filter(w => w.active_projects >= 2)
+                    .sort((a, b) => b.active_projects - a.active_projects)
+                    .slice(0, 5);
+                setEmployeeWorkload(busyEmployees);
+
+                // Process material summary
+                const matSummary = materialSummaryRes.data.data || [];
+                setMaterialSummary(matSummary.slice(0, 5));
+
                 setLoading(false);
 
             } catch (error) {
@@ -252,6 +269,44 @@ const Dashboard = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Employee Workload Section */}
+            {employeeWorkload.length > 0 && (
+                <div className="workload-section">
+                    <div className="card list-card">
+                        <div className="card-header-row">
+                            <h3 className="card-title">
+                                <UserCheck size={20} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
+                                {t('employeeWorkload') || 'Employee Workload'}
+                            </h3>
+                            <button className="btn-link" onClick={() => navigate('/employees')}>{t('viewAll')} <ArrowRight size={16} /></button>
+                        </div>
+                        <div className="list-content">
+                            {employeeWorkload.map((emp, idx) => (
+                                <div key={idx} className="list-item">
+                                    <div className="list-item-icon" style={{
+                                        background: emp.active_projects >= 3 ? 'var(--danger-light)' : 'var(--warning-light)'
+                                    }}>
+                                        <Users size={18} style={{
+                                            color: emp.active_projects >= 3 ? 'var(--danger-color)' : 'var(--warning-color)'
+                                        }} />
+                                    </div>
+                                    <div className="list-item-details">
+                                        <p className="item-title">{emp.name}</p>
+                                        <p className="item-subtitle">{emp.role || 'No Role'}</p>
+                                    </div>
+                                    <span style={{
+                                        fontWeight: 600,
+                                        color: emp.active_projects >= 3 ? 'var(--danger-color)' : 'var(--warning-color)'
+                                    }}>
+                                        {emp.active_projects} {t('projects') || 'projects'}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <style>{`
                 .dashboard-container {

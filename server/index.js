@@ -984,6 +984,350 @@ app.post('/api/attendance/bulk', validate('bulkAttendance'), (req, res) => {
     });
 });
 
+// --- Project Materials API ---
+
+// Get all materials for a project
+app.get("/api/projects/:id/materials", (req, res) => {
+    const projectId = req.params.id;
+    const sql = `
+        SELECT
+            pm.*,
+            CASE
+                WHEN pm.material_type = 'production' THEN pi.name
+                WHEN pm.material_type = 'iron' THEN ii.diameter
+                WHEN pm.material_type = 'cement' THEN ci.type
+                WHEN pm.material_type = 'gasoline' THEN gi.type
+            END as material_name,
+            CASE
+                WHEN pm.material_type = 'production' THEN pi.current_quantity
+                WHEN pm.material_type = 'iron' THEN ii.quantity
+                WHEN pm.material_type = 'cement' THEN ci.quantity
+                WHEN pm.material_type = 'gasoline' THEN gi.quantity
+            END as available_quantity
+        FROM project_materials pm
+        LEFT JOIN production_items pi ON pm.material_type = 'production' AND pm.material_id = pi.id
+        LEFT JOIN iron_inventory ii ON pm.material_type = 'iron' AND pm.material_id = ii.id
+        LEFT JOIN cement_inventory ci ON pm.material_type = 'cement' AND pm.material_id = ci.id
+        LEFT JOIN gasoline_inventory gi ON pm.material_type = 'gasoline' AND pm.material_id = gi.id
+        WHERE pm.project_id = ?
+        ORDER BY pm.material_type, pm.created_at
+    `;
+    db.all(sql, [projectId], (err, rows) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ data: rows });
+    });
+});
+
+// Add material to project
+app.post("/api/projects/:id/materials", (req, res) => {
+    const projectId = req.params.id;
+    const { material_type, material_id, quantity_planned, unit, notes } = req.body;
+
+    if (!material_type || !material_id) {
+        return res.status(400).json({ error: "material_type and material_id are required" });
+    }
+
+    const sql = `INSERT INTO project_materials
+        (project_id, material_type, material_id, quantity_planned, unit, notes)
+        VALUES (?, ?, ?, ?, ?, ?)`;
+
+    db.run(sql, [projectId, material_type, material_id, quantity_planned || 0, unit || 'units', notes], function(err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ id: this.lastID, message: "Material added to project" });
+    });
+});
+
+// Update project material
+app.put("/api/projects/:projectId/materials/:materialId", (req, res) => {
+    const { projectId, materialId } = req.params;
+    const { quantity_planned, quantity_consumed, unit, notes } = req.body;
+
+    const sql = `UPDATE project_materials
+        SET quantity_planned = COALESCE(?, quantity_planned),
+            quantity_consumed = COALESCE(?, quantity_consumed),
+            unit = COALESCE(?, unit),
+            notes = COALESCE(?, notes),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND project_id = ?`;
+
+    db.run(sql, [quantity_planned, quantity_consumed, unit, notes, materialId, projectId], function(err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ changes: this.changes, message: "Material updated" });
+    });
+});
+
+// Remove material from project
+app.delete("/api/projects/:projectId/materials/:materialId", (req, res) => {
+    const { projectId, materialId } = req.params;
+
+    db.run("DELETE FROM project_materials WHERE id = ? AND project_id = ?", [materialId, projectId], function(err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ changes: this.changes, message: "Material removed from project" });
+    });
+});
+
+// Consume material (deduct from inventory)
+app.post("/api/projects/:projectId/materials/:materialId/consume", (req, res) => {
+    const { projectId, materialId } = req.params;
+    const { quantity, description } = req.body;
+
+    if (!quantity || quantity <= 0) {
+        return res.status(400).json({ error: "Valid quantity is required" });
+    }
+
+    // Get material details
+    db.get("SELECT * FROM project_materials WHERE id = ? AND project_id = ?", [materialId, projectId], (err, material) => {
+        if (err || !material) {
+            return res.status(404).json({ error: "Material not found" });
+        }
+
+        // Update consumed quantity in project_materials
+        const updatePM = `UPDATE project_materials
+            SET quantity_consumed = quantity_consumed + ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?`;
+
+        db.run(updatePM, [quantity, materialId], function(err) {
+            if (err) {
+                return res.status(400).json({ error: err.message });
+            }
+
+            // Also create a transaction record in the appropriate inventory
+            const today = new Date().toISOString().split('T')[0];
+            let transactionSql, transactionParams, updateInventorySql;
+
+            switch (material.material_type) {
+                case 'iron':
+                    transactionSql = `INSERT INTO iron_transactions (iron_id, type, quantity, description, transaction_date) VALUES (?, 'OUT', ?, ?, ?)`;
+                    transactionParams = [material.material_id, quantity, description || `Used in project #${projectId}`, today];
+                    updateInventorySql = `UPDATE iron_inventory SET quantity = quantity - ? WHERE id = ?`;
+                    break;
+                case 'cement':
+                    transactionSql = `INSERT INTO cement_transactions (cement_id, type, quantity, description, transaction_date) VALUES (?, 'OUT', ?, ?, ?)`;
+                    transactionParams = [material.material_id, quantity, description || `Used in project #${projectId}`, today];
+                    updateInventorySql = `UPDATE cement_inventory SET quantity = quantity - ? WHERE id = ?`;
+                    break;
+                case 'gasoline':
+                    transactionSql = `INSERT INTO gasoline_transactions (gasoline_id, type, quantity, description, transaction_date) VALUES (?, 'OUT', ?, ?, ?)`;
+                    transactionParams = [material.material_id, quantity, description || `Used in project #${projectId}`, today];
+                    updateInventorySql = `UPDATE gasoline_inventory SET quantity = quantity - ? WHERE id = ?`;
+                    break;
+                case 'production':
+                    updateInventorySql = `UPDATE production_items SET current_quantity = current_quantity - ? WHERE id = ?`;
+                    break;
+            }
+
+            // Update inventory
+            if (updateInventorySql) {
+                db.run(updateInventorySql, [quantity, material.material_id]);
+            }
+
+            // Create transaction if applicable
+            if (transactionSql) {
+                db.run(transactionSql, transactionParams);
+            }
+
+            res.json({ message: "Material consumed", quantity_consumed: quantity });
+        });
+    });
+});
+
+// Get material consumption summary for all projects
+app.get("/api/project-materials/summary", (req, res) => {
+    const sql = `
+        SELECT
+            p.id as project_id,
+            p.name as project_name,
+            pm.material_type,
+            SUM(pm.quantity_planned) as total_planned,
+            SUM(pm.quantity_consumed) as total_consumed,
+            COUNT(pm.id) as material_count
+        FROM projects p
+        LEFT JOIN project_materials pm ON p.id = pm.project_id
+        WHERE pm.id IS NOT NULL
+        GROUP BY p.id, pm.material_type
+        ORDER BY p.name, pm.material_type
+    `;
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ data: rows });
+    });
+});
+
+// --- Project Assignments API ---
+
+// Get all assignments for a project
+app.get("/api/projects/:id/assignments", (req, res) => {
+    const projectId = req.params.id;
+    const sql = `
+        SELECT
+            pa.*,
+            e.name as employee_name,
+            e.role as employee_role,
+            e.contact_info,
+            e.is_active as employee_is_active
+        FROM project_assignments pa
+        JOIN employees e ON pa.employee_id = e.id
+        WHERE pa.project_id = ?
+        ORDER BY pa.is_active DESC, e.name
+    `;
+    db.all(sql, [projectId], (err, rows) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ data: rows });
+    });
+});
+
+// Get all projects for an employee
+app.get("/api/employees/:id/assignments", (req, res) => {
+    const employeeId = req.params.id;
+    const sql = `
+        SELECT
+            pa.*,
+            p.name as project_name,
+            p.status as project_status,
+            p.priority as project_priority
+        FROM project_assignments pa
+        JOIN projects p ON pa.project_id = p.id
+        WHERE pa.employee_id = ?
+        ORDER BY pa.is_active DESC, p.name
+    `;
+    db.all(sql, [employeeId], (err, rows) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ data: rows });
+    });
+});
+
+// Get employee workload summary
+app.get("/api/employees/workload", (req, res) => {
+    const sql = `
+        SELECT
+            e.id,
+            e.name,
+            e.role,
+            e.is_active,
+            COUNT(CASE WHEN pa.is_active = 1 AND p.status = 'In Progress' THEN pa.id END) as active_projects,
+            SUM(CASE WHEN pa.is_active = 1 THEN pa.hours_allocated ELSE 0 END) as total_hours_allocated,
+            SUM(pa.hours_worked) as total_hours_worked
+        FROM employees e
+        LEFT JOIN project_assignments pa ON e.id = pa.employee_id
+        LEFT JOIN projects p ON pa.project_id = p.id
+        WHERE e.is_active = 1
+        GROUP BY e.id
+        ORDER BY active_projects DESC, e.name
+    `;
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ data: rows });
+    });
+});
+
+// Assign employee to project
+app.post("/api/projects/:id/assignments", (req, res) => {
+    const projectId = req.params.id;
+    const { employee_id, role_on_project, hours_allocated, start_date, end_date } = req.body;
+
+    if (!employee_id) {
+        return res.status(400).json({ error: "employee_id is required" });
+    }
+
+    const sql = `INSERT INTO project_assignments
+        (project_id, employee_id, role_on_project, hours_allocated, start_date, end_date)
+        VALUES (?, ?, ?, ?, ?, ?)`;
+
+    db.run(sql, [projectId, employee_id, role_on_project, hours_allocated || 0, start_date, end_date], function(err) {
+        if (err) {
+            if (err.message.includes('UNIQUE constraint')) {
+                return res.status(400).json({ error: "Employee is already assigned to this project" });
+            }
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ id: this.lastID, message: "Employee assigned to project" });
+    });
+});
+
+// Update assignment
+app.put("/api/projects/:projectId/assignments/:assignmentId", (req, res) => {
+    const { projectId, assignmentId } = req.params;
+    const { role_on_project, hours_allocated, hours_worked, start_date, end_date, is_active } = req.body;
+
+    const sql = `UPDATE project_assignments
+        SET role_on_project = COALESCE(?, role_on_project),
+            hours_allocated = COALESCE(?, hours_allocated),
+            hours_worked = COALESCE(?, hours_worked),
+            start_date = COALESCE(?, start_date),
+            end_date = COALESCE(?, end_date),
+            is_active = COALESCE(?, is_active),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND project_id = ?`;
+
+    db.run(sql, [role_on_project, hours_allocated, hours_worked, start_date, end_date, is_active, assignmentId, projectId], function(err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ changes: this.changes, message: "Assignment updated" });
+    });
+});
+
+// Remove assignment
+app.delete("/api/projects/:projectId/assignments/:assignmentId", (req, res) => {
+    const { projectId, assignmentId } = req.params;
+
+    db.run("DELETE FROM project_assignments WHERE id = ? AND project_id = ?", [assignmentId, projectId], function(err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ changes: this.changes, message: "Assignment removed" });
+    });
+});
+
+// Log hours worked
+app.post("/api/projects/:projectId/assignments/:assignmentId/log-hours", (req, res) => {
+    const { projectId, assignmentId } = req.params;
+    const { hours } = req.body;
+
+    if (!hours || hours <= 0) {
+        return res.status(400).json({ error: "Valid hours value is required" });
+    }
+
+    const sql = `UPDATE project_assignments
+        SET hours_worked = hours_worked + ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND project_id = ?`;
+
+    db.run(sql, [hours, assignmentId, projectId], function(err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ changes: this.changes, message: `${hours} hours logged` });
+    });
+});
+
 // --- Dalots API ---
 
 // Get all dalot sections with statistics

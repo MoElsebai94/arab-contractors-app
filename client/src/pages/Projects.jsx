@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import axios from 'axios';
-import { Pencil, X, Trash, Search, ChevronDown, Check, Users, ArrowRight } from 'lucide-react';
+import { Pencil, X, Trash, Search, ChevronDown, Check, Users, ArrowRight, Package, UserPlus } from 'lucide-react';
 import LoadingScreen from '../components/LoadingScreen';
+import { ProjectMaterialsModal, ProjectAssignmentsModal } from '../components/Projects';
 
 const ModernSelect = ({ options, value, onChange, placeholder = "Select...", renderOption }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -361,6 +362,8 @@ const Projects = () => {
     const [editingTask, setEditingTask] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [taskToDelete, setTaskToDelete] = useState(null);
+    const [materialsModal, setMaterialsModal] = useState({ show: false, project: null });
+    const [assignmentsModal, setAssignmentsModal] = useState({ show: false, project: null });
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -784,6 +787,22 @@ const Projects = () => {
                                             <td>
                                                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                     <button
+                                                        onClick={() => setMaterialsModal({ show: true, project: proj })}
+                                                        className="btn-icon-small"
+                                                        title={t('materials') || 'Materials'}
+                                                        style={{ color: 'var(--accent-color)' }}
+                                                    >
+                                                        <Package size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setAssignmentsModal({ show: true, project: proj })}
+                                                        className="btn-icon-small"
+                                                        title={t('team') || 'Team'}
+                                                        style={{ color: 'var(--success-color)' }}
+                                                    >
+                                                        <UserPlus size={16} />
+                                                    </button>
+                                                    <button
                                                         onClick={() => handleEdit(proj)}
                                                         className="btn-icon-small"
                                                         title="Edit Task"
@@ -843,7 +862,21 @@ const Projects = () => {
                                         <span className="arrow"><ArrowRight size={14} /></span>
                                         <span>{proj.end_date}</span>
                                     </div>
-                                    <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                                    <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                        <button
+                                            onClick={() => setMaterialsModal({ show: true, project: proj })}
+                                            className="btn-icon-small"
+                                            style={{ padding: '0.5rem', color: 'var(--accent-color)' }}
+                                        >
+                                            <Package size={16} /> {t('materials') || 'Materials'}
+                                        </button>
+                                        <button
+                                            onClick={() => setAssignmentsModal({ show: true, project: proj })}
+                                            className="btn-icon-small"
+                                            style={{ padding: '0.5rem', color: 'var(--success-color)' }}
+                                        >
+                                            <UserPlus size={16} /> {t('team') || 'Team'}
+                                        </button>
                                         <button
                                             onClick={() => handleEdit(proj)}
                                             className="btn-icon-small"
@@ -889,6 +922,24 @@ const Projects = () => {
                     </div>
                 </div>
             )}
+
+            {/* Project Materials Modal */}
+            <ProjectMaterialsModal
+                isOpen={materialsModal.show}
+                onClose={() => setMaterialsModal({ show: false, project: null })}
+                project={materialsModal.project}
+                isRTL={document.documentElement.dir === 'rtl'}
+                t={t}
+            />
+
+            {/* Project Assignments Modal */}
+            <ProjectAssignmentsModal
+                isOpen={assignmentsModal.show}
+                onClose={() => setAssignmentsModal({ show: false, project: null })}
+                project={assignmentsModal.project}
+                isRTL={document.documentElement.dir === 'rtl'}
+                t={t}
+            />
 
             <style>{`
         .content-grid {
