@@ -393,6 +393,51 @@ const db = new sqlite3.Database(dbPath, (err) => {
         }
       });
 
+      // Create Project Materials Table (links projects to materials)
+      db.run(`CREATE TABLE IF NOT EXISTS project_materials (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER NOT NULL,
+        material_type TEXT NOT NULL, -- 'production', 'iron', 'cement', 'gasoline'
+        material_id INTEGER NOT NULL,
+        quantity_planned INTEGER DEFAULT 0,
+        quantity_consumed INTEGER DEFAULT 0,
+        unit TEXT DEFAULT 'units', -- 'units', 'kg', 'bags', 'liters', etc.
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      )`, (err) => {
+        if (!err) {
+          console.log("Project materials table checked/created");
+        } else {
+          console.error("Error creating project_materials table", err);
+        }
+      });
+
+      // Create Project Assignments Table (links projects to employees)
+      db.run(`CREATE TABLE IF NOT EXISTS project_assignments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER NOT NULL,
+        employee_id INTEGER NOT NULL,
+        role_on_project TEXT, -- 'supervisor', 'worker', 'engineer', etc.
+        hours_allocated INTEGER DEFAULT 0,
+        hours_worked INTEGER DEFAULT 0,
+        start_date TEXT,
+        end_date TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+        FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+        UNIQUE(project_id, employee_id)
+      )`, (err) => {
+        if (!err) {
+          console.log("Project assignments table checked/created");
+        } else {
+          console.error("Error creating project_assignments table", err);
+        }
+      });
+
       // Create Dalots Table
       db.run(`CREATE TABLE IF NOT EXISTS dalots (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
