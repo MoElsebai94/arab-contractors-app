@@ -5,7 +5,9 @@ import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingScreen from './components/LoadingScreen';
+import { SkipLink } from './components/AccessibleComponents';
 import './index.css';
+import './styles/accessibility.css';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Employees = lazy(() => import('./pages/Employees'));
@@ -37,9 +39,10 @@ function App() {
     return (
         <ErrorBoundary>
             <Router>
+                <SkipLink targetId="main-content" />
                 <div className="app-container">
                     <Sidebar />
-                    <main className="main-content">
+                    <main id="main-content" className="main-content" role="main" tabIndex={-1}>
                         <Suspense fallback={<LoadingScreen />}>
                             <Routes>
                                 <Route path="/" element={<Dashboard />} />
