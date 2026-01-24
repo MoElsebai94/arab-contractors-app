@@ -5,11 +5,37 @@ const db = require('./database');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
+// Import security middleware
+const {
+    validate,
+    validateId,
+    sanitizeMiddleware,
+    loginLimiter,
+    apiLimiter,
+    writeLimiter,
+    importLimiter,
+    parseCookies,
+    csrfTokenEndpoint,
+    auditMiddleware,
+    logAuth
+} = require('./middleware');
+
 const app = express();
 const PORT = 3001;
 
 app.use(cors());
 app.use(bodyParser.json());
+
+// Security middleware
+app.use(parseCookies);           // Parse cookies for CSRF
+app.use(sanitizeMiddleware);     // Sanitize all inputs
+app.use(auditMiddleware({        // Audit logging
+    excludePaths: ['/api/health', '/api/csrf-token', '/'],
+    excludeMethods: ['OPTIONS']
+}));
+
+// CSRF token endpoint (client fetches token before making state-changing requests)
+app.get('/api/csrf-token', csrfTokenEndpoint);
 
 // Authentication Middleware
 const authenticateToken = (req, res, next) => {
@@ -28,8 +54,8 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-// Login Route
-app.post('/api/auth/login', (req, res) => {
+// Login Route - with rate limiting and validation
+app.post('/api/auth/login', loginLimiter, validate('login'), (req, res) => {
     const { passcode } = req.body;
     // Normalized comparison
     const normalizedInput = passcode ? passcode.toString().trim() : '';
@@ -37,8 +63,10 @@ app.post('/api/auth/login', (req, res) => {
 
     if (normalizedInput === normalizedTarget) {
         const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        logAuth(req, 'LOGIN', true, { role: 'admin' });
         res.json({ success: true, token });
     } else {
+        logAuth(req, 'LOGIN', false, { reason: 'Invalid passcode' });
         res.status(401).json({ success: false, error: 'Invalid passcode' });
     }
 });
@@ -59,8 +87,8 @@ app.get('/api/departments', (req, res) => {
     });
 });
 
-// Create a department
-app.post('/api/departments', (req, res) => {
+// Create a department - with validation
+app.post('/api/departments', validate('createDepartment'), (req, res) => {
     const { name, head_of_department, location } = req.body;
     const sql = 'INSERT INTO departments (name, head_of_department, location) VALUES (?,?,?)';
     const params = [name, head_of_department, location];
@@ -88,8 +116,8 @@ app.get('/api/employees', (req, res) => {
     });
 });
 
-// Create an employee
-app.post('/api/employees', (req, res) => {
+// Create an employee - with validation
+app.post('/api/employees', validate('createEmployee'), (req, res) => {
     const { name, role, department_id, contact_info } = req.body;
 
     // Get max order to append to end
@@ -147,7 +175,7 @@ app.put("/api/employees/reorder", (req, res) => {
     });
 });
 
-app.put('/api/employees/:id', (req, res) => {
+app.put('/api/employees/:id', validateId, validate('updateEmployee'), (req, res) => {
     const { name, role, contact_info, is_active } = req.body;
     const sql = `UPDATE employees SET 
                name = COALESCE(?, name), 
@@ -166,7 +194,7 @@ app.put('/api/employees/:id', (req, res) => {
 });
 
 // Delete an employee
-app.delete('/api/employees/:id', (req, res) => {
+app.delete('/api/employees/:id', validateId, (req, res) => {
     const sql = 'DELETE FROM employees WHERE id = ?';
     db.run(sql, req.params.id, function (err) {
         if (err) {
@@ -191,9 +219,8 @@ app.get('/api/projects', (req, res) => {
     });
 });
 
-// Create a project
-// Create a project
-app.post('/api/projects', (req, res) => {
+// Create a project - with validation
+app.post('/api/projects', validate('createProject'), (req, res) => {
     const { name, description, status, start_date, end_date, department_id, priority, assignee } = req.body;
     const sql = 'INSERT INTO projects (name, description, status, start_date, end_date, department_id, priority, assignee) VALUES (?,?,?,?,?,?,?,?)';
     const params = [name, description, status, start_date, end_date, department_id, priority, assignee];
@@ -211,7 +238,7 @@ app.post('/api/projects', (req, res) => {
 });
 
 // Update a project
-app.put('/api/projects/:id', (req, res) => {
+app.put('/api/projects/:id', validateId, validate('createProject'), (req, res) => {
     const { name, description, status, start_date, end_date, priority, assignee } = req.body;
     const sql = `UPDATE projects SET 
                name = COALESCE(?, name), 
@@ -233,7 +260,7 @@ app.put('/api/projects/:id', (req, res) => {
 });
 
 // Delete a project
-app.delete('/api/projects/:id', (req, res) => {
+app.delete('/api/projects/:id', validateId, (req, res) => {
     const sql = 'DELETE FROM projects WHERE id = ?';
     db.run(sql, req.params.id, function (err) {
         if (err) {
@@ -258,7 +285,7 @@ app.get("/api/storage/production", (req, res) => {
     });
 });
 
-app.post("/api/storage/production", (req, res) => {
+app.post("/api/storage/production", validate('createProduction'), (req, res) => {
     const { name, category, target_quantity, current_quantity, daily_rate, mold_count } = req.body;
 
     // Get max order to append to end
@@ -373,7 +400,7 @@ app.get("/api/storage/iron", (req, res) => {
     });
 });
 
-app.post("/api/storage/iron", (req, res) => {
+app.post("/api/storage/iron", validate('createIron'), (req, res) => {
     const { diameter, quantity } = req.body;
     // Get max order to append to end
     db.get("SELECT MAX(display_order) as maxOrder FROM iron_inventory", (err, row) => {
@@ -483,7 +510,7 @@ app.get("/api/storage/iron/transactions/all", (req, res) => {
     });
 });
 
-app.post("/api/storage/iron/transaction", (req, res) => {
+app.post("/api/storage/iron/transaction", validate('transaction'), (req, res) => {
     console.log("Received Iron Transaction Request:", req.body);
     const { iron_id, type, quantity, description, date } = req.body;
 
@@ -626,7 +653,7 @@ app.get("/api/storage/cement/transactions/all", (req, res) => {
     });
 });
 
-app.post("/api/storage/cement/transaction", (req, res) => {
+app.post("/api/storage/cement/transaction", validate('transaction'), (req, res) => {
     const { cement_id, type, quantity, description, date } = req.body;
     const timestamp = new Date().toISOString();
     const transaction_date = date || timestamp.split('T')[0];
@@ -779,7 +806,7 @@ app.get("/api/storage/gasoline/transactions/all", (req, res) => {
     });
 });
 
-app.post("/api/storage/gasoline/transaction", (req, res) => {
+app.post("/api/storage/gasoline/transaction", validate('transaction'), (req, res) => {
     const { gasoline_id, type, quantity, description, date } = req.body;
     const timestamp = new Date().toISOString();
     const transaction_date = date || timestamp.split('T')[0];
@@ -879,7 +906,7 @@ app.get('/api/attendance/:employeeId', (req, res) => {
     });
 });
 
-app.post('/api/attendance', (req, res) => {
+app.post('/api/attendance', validate('attendance'), (req, res) => {
     const { employee_id, date, status, start_time, end_time, notes } = req.body;
 
     // Upsert logic: Insert or Replace
@@ -904,7 +931,7 @@ app.post('/api/attendance', (req, res) => {
 });
 
 // Bulk attendance update for multiple employees
-app.post('/api/attendance/bulk', (req, res) => {
+app.post('/api/attendance/bulk', validate('bulkAttendance'), (req, res) => {
     const { employeeIds, date, status, start_time, end_time, notes } = req.body;
 
     if (!employeeIds || !Array.isArray(employeeIds) || employeeIds.length === 0) {
@@ -985,7 +1012,7 @@ app.get("/api/dalots/sections", (req, res) => {
 });
 
 // Create a dalot section
-app.post("/api/dalots/sections", (req, res) => {
+app.post("/api/dalots/sections", validate('createSection'), (req, res) => {
     const { name, route_name, start_pk, end_pk, type, parent_section_id, branch_pk, row_index } = req.body;
     db.get("SELECT MAX(display_order) as maxOrder FROM dalot_sections", (err, row) => {
         const newOrder = (row?.maxOrder ?? -1) + 1;
@@ -1123,8 +1150,8 @@ app.get("/api/dalots/section/:sectionId", (req, res) => {
     });
 });
 
-// Create a dalot
-app.post("/api/dalots", (req, res) => {
+// Create a dalot - with validation
+app.post("/api/dalots", validate('createDalot'), (req, res) => {
     const {
         section_id, ouvrage_transmis, ouvrage_etude, ouvrage_definitif,
         pk_etude, pk_transmis, dimension, length, status, is_validated, notes
@@ -1241,8 +1268,8 @@ app.put("/api/dalots/reorder", (req, res) => {
     });
 });
 
-// Bulk import dalots from CSV data
-app.post("/api/dalots/import", (req, res) => {
+// Bulk import dalots from CSV data - with rate limiting
+app.post("/api/dalots/import", importLimiter, (req, res) => {
     const { dalots, section_id } = req.body;
 
     if (!dalots || !Array.isArray(dalots) || dalots.length === 0) {

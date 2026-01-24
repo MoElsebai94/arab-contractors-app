@@ -24,9 +24,9 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="sidebar">
+    <aside className="sidebar" role="complementary" aria-label={t('navigation') || 'Main Navigation'}>
       <div className="logo-container">
-        <Link to="/" className="logo-content" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Link to="/" className="logo-content" style={{ textDecoration: 'none', color: 'inherit' }} aria-label="Go to Dashboard - Arab Contractors Cameroon">
           <img src="/logo.png" alt="Arab Contractors Logo" className="logo-img" />
           <div>
             <h2 className="logo-text">Arab Contractors</h2>
@@ -35,58 +35,85 @@ const Sidebar = () => {
           </div>
         </Link>
         <div className="mobile-actions">
-          <button onClick={toggleLanguage} className="mobile-lang-toggle">
-            <Globe size={20} />
+          <button
+            onClick={toggleLanguage}
+            className="mobile-lang-toggle"
+            aria-label={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
+          >
+            <Globe size={20} aria-hidden="true" />
           </button>
-          <button className="menu-toggle" onClick={toggleMenu}>
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          <button
+            className="menu-toggle"
+            onClick={toggleMenu}
+            aria-expanded={isMenuOpen}
+            aria-controls="nav-menu"
+            aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          >
+            {isMenuOpen ? <X size={24} aria-hidden="true" /> : <Menu size={24} aria-hidden="true" />}
           </button>
         </div>
       </div>
 
       {/* Mobile Backdrop */}
-      <div className={`mobile-backdrop ${isMenuOpen ? 'open' : ''}`} onClick={closeMenu}></div>
+      <div
+        className={`mobile-backdrop ${isMenuOpen ? 'open' : ''}`}
+        onClick={closeMenu}
+        aria-hidden="true"
+      ></div>
 
-      <nav className={`nav-menu ${isMenuOpen ? 'open' : ''}`}>
+      <nav
+        id="nav-menu"
+        className={`nav-menu ${isMenuOpen ? 'open' : ''}`}
+        role="navigation"
+        aria-label={t('mainNavigation') || 'Main Navigation'}
+      >
         <div className="nav-header-mobile">
-          <span className="nav-title-mobile">{t('menu')}</span>
-          <button className="menu-close-btn" onClick={closeMenu}>
-            <X size={24} />
+          <span className="nav-title-mobile" id="nav-menu-title">{t('menu')}</span>
+          <button
+            className="menu-close-btn"
+            onClick={closeMenu}
+            aria-label="Close navigation menu"
+          >
+            <X size={24} aria-hidden="true" />
           </button>
         </div>
-        <Link to="/" className={`nav-item ${isActive('/')}`} onClick={closeMenu}>
-          <LayoutDashboard className="nav-icon" size={24} />
+        <Link to="/" className={`nav-item ${isActive('/')}`} onClick={closeMenu} aria-current={location.pathname === '/' ? 'page' : undefined}>
+          <LayoutDashboard className="nav-icon" size={24} aria-hidden="true" />
           {t('dashboard')}
         </Link>
-        <Link to="/employees" className={`nav-item ${isActive('/employees')}`} onClick={closeMenu}>
-          <Users className="nav-icon" size={24} />
+        <Link to="/employees" className={`nav-item ${isActive('/employees')}`} onClick={closeMenu} aria-current={location.pathname === '/employees' ? 'page' : undefined}>
+          <Users className="nav-icon" size={24} aria-hidden="true" />
           {t('employees')}
         </Link>
-        <Link to="/tasks" className={`nav-item ${isActive('/tasks')}`} onClick={closeMenu}>
-          <Rocket className="nav-icon" size={24} />
+        <Link to="/tasks" className={`nav-item ${isActive('/tasks')}`} onClick={closeMenu} aria-current={location.pathname === '/tasks' ? 'page' : undefined}>
+          <Rocket className="nav-icon" size={24} aria-hidden="true" />
           {t('tasks')}
         </Link>
-        <Link to="/storage" className={`nav-item ${isActive('/storage')}`} onClick={closeMenu}>
-          <Package className="nav-icon" size={24} />
+        <Link to="/storage" className={`nav-item ${isActive('/storage')}`} onClick={closeMenu} aria-current={location.pathname === '/storage' ? 'page' : undefined}>
+          <Package className="nav-icon" size={24} aria-hidden="true" />
           {t('storage')}
         </Link>
-        <Link to="/calculator" className={`nav-item ${isActive('/calculator')}`} onClick={closeMenu}>
-          <Calculator className="nav-icon" size={24} />
+        <Link to="/calculator" className={`nav-item ${isActive('/calculator')}`} onClick={closeMenu} aria-current={location.pathname === '/calculator' ? 'page' : undefined}>
+          <Calculator className="nav-icon" size={24} aria-hidden="true" />
           {t('calculator')}
         </Link>
-        <Link to="/documents" className={`nav-item ${isActive('/documents')}`} onClick={closeMenu}>
-          <Files className="nav-icon" size={24} />
+        <Link to="/documents" className={`nav-item ${isActive('/documents')}`} onClick={closeMenu} aria-current={location.pathname === '/documents' ? 'page' : undefined}>
+          <Files className="nav-icon" size={24} aria-hidden="true" />
           {t('documents') || "Documents"}
         </Link>
-        <Link to="/dalots" className={`nav-item ${isActive('/dalots')}`} onClick={closeMenu}>
-          <Construction className="nav-icon" size={24} />
+        <Link to="/dalots" className={`nav-item ${isActive('/dalots')}`} onClick={closeMenu} aria-current={location.pathname === '/dalots' ? 'page' : undefined}>
+          <Construction className="nav-icon" size={24} aria-hidden="true" />
           {t('dalots') || "Dalots"}
         </Link>
       </nav>
 
       <div className="sidebar-footer">
-        <button onClick={toggleLanguage} className="lang-toggle">
-          <Globe size={16} />
+        <button
+          onClick={toggleLanguage}
+          className="lang-toggle"
+          aria-label={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
+        >
+          <Globe size={16} aria-hidden="true" />
           {t('toggleLanguage')}
         </button>
         <p>{t('copyright')}</p>
