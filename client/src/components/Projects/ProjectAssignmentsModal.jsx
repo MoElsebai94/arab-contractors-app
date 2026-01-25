@@ -322,6 +322,7 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
     const [showAddForm, setShowAddForm] = useState(false);
     const [logHoursModal, setLogHoursModal] = useState({ show: false, assignment: null });
     const [hoursToLog, setHoursToLog] = useState('');
+    const [confirmModal, setConfirmModal] = useState({ show: false, assignmentId: null });
 
     const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
     const [bulkRole, setBulkRole] = useState('worker');
@@ -418,14 +419,19 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
         setSelectedEmployeeIds(empIds);
     };
 
-    const handleRemoveAssignment = async (assignmentId) => {
-        if (!confirm(isRTL ? 'هل أنت متأكد من إزالة هذا التعيين؟' : 'Are you sure you want to remove this assignment?')) return;
+    const handleRemoveAssignment = (assignmentId) => {
+        setConfirmModal({ show: true, assignmentId });
+    };
+
+    const confirmRemoveAssignment = async () => {
         try {
-            await axios.delete(`/api/projects/${project.id}/assignments/${assignmentId}`);
+            await axios.delete(`/api/projects/${project.id}/assignments/${confirmModal.assignmentId}`);
             fetchAssignments();
             fetchWorkload();
         } catch (error) {
             console.error('Error removing assignment:', error);
+        } finally {
+            setConfirmModal({ show: false, assignmentId: null });
         }
     };
 
@@ -810,6 +816,54 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
                                 </button>
                                 <button className="btn btn-primary" onClick={handleLogHours} disabled={!hoursToLog || hoursToLog <= 0}>
                                     {isRTL ? 'تسجيل' : 'Log Hours'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Confirmation Modal */}
+                {confirmModal.show && (
+                    <div className="modal-overlay" onClick={() => setConfirmModal({ show: false, assignmentId: null })} style={{ zIndex: 1100 }}>
+                        <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px', textAlign: 'center' }}>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <div style={{
+                                    width: '60px',
+                                    height: '60px',
+                                    borderRadius: '50%',
+                                    background: 'var(--danger-light, #fee2e2)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    margin: '0 auto 1rem'
+                                }}>
+                                    <Trash2 size={28} style={{ color: 'var(--danger-color)' }} />
+                                </div>
+                                <h3 style={{ margin: '0 0 0.5rem' }}>
+                                    {isRTL ? 'تأكيد الحذف' : 'Confirm Removal'}
+                                </h3>
+                                <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
+                                    {isRTL ? 'هل أنت متأكد من إزالة هذا التعيين؟' : 'Are you sure you want to remove this assignment?'}
+                                </p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={() => setConfirmModal({ show: false, assignmentId: null })}
+                                    style={{ minWidth: '100px' }}
+                                >
+                                    {isRTL ? 'إلغاء' : 'Cancel'}
+                                </button>
+                                <button
+                                    className="btn"
+                                    onClick={confirmRemoveAssignment}
+                                    style={{
+                                        minWidth: '100px',
+                                        background: 'var(--danger-color)',
+                                        color: 'white'
+                                    }}
+                                >
+                                    {isRTL ? 'حذف' : 'Remove'}
                                 </button>
                             </div>
                         </div>

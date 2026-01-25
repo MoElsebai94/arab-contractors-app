@@ -146,6 +146,7 @@ const ProjectMaterialsModal = ({ isOpen, onClose, project, isRTL, t }) => {
     const [showAddForm, setShowAddForm] = useState(false);
     const [consumeModal, setConsumeModal] = useState({ show: false, material: null });
     const [consumeAmount, setConsumeAmount] = useState('');
+    const [confirmModal, setConfirmModal] = useState({ show: false, materialId: null });
 
     const [newMaterial, setNewMaterial] = useState({
         material_type: 'iron',
@@ -211,13 +212,18 @@ const ProjectMaterialsModal = ({ isOpen, onClose, project, isRTL, t }) => {
         }
     };
 
-    const handleRemoveMaterial = async (materialId) => {
-        if (!confirm(isRTL ? 'هل أنت متأكد؟' : 'Are you sure?')) return;
+    const handleRemoveMaterial = (materialId) => {
+        setConfirmModal({ show: true, materialId });
+    };
+
+    const confirmRemoveMaterial = async () => {
         try {
-            await axios.delete(`/api/projects/${project.id}/materials/${materialId}`);
+            await axios.delete(`/api/projects/${project.id}/materials/${confirmModal.materialId}`);
             fetchMaterials();
         } catch (error) {
             console.error('Error removing material:', error);
+        } finally {
+            setConfirmModal({ show: false, materialId: null });
         }
     };
 
@@ -513,6 +519,54 @@ const ProjectMaterialsModal = ({ isOpen, onClose, project, isRTL, t }) => {
                                 </button>
                                 <button className="btn btn-primary" onClick={handleConsume} disabled={!consumeAmount || consumeAmount <= 0}>
                                     {isRTL ? 'استهلاك' : 'Consume'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Confirmation Modal */}
+                {confirmModal.show && (
+                    <div className="modal-overlay" onClick={() => setConfirmModal({ show: false, materialId: null })} style={{ zIndex: 1100 }}>
+                        <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px', textAlign: 'center' }}>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <div style={{
+                                    width: '60px',
+                                    height: '60px',
+                                    borderRadius: '50%',
+                                    background: 'var(--danger-light, #fee2e2)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    margin: '0 auto 1rem'
+                                }}>
+                                    <Trash2 size={28} style={{ color: 'var(--danger-color)' }} />
+                                </div>
+                                <h3 style={{ margin: '0 0 0.5rem' }}>
+                                    {isRTL ? 'تأكيد الحذف' : 'Confirm Removal'}
+                                </h3>
+                                <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
+                                    {isRTL ? 'هل أنت متأكد من إزالة هذه المادة؟' : 'Are you sure you want to remove this material?'}
+                                </p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={() => setConfirmModal({ show: false, materialId: null })}
+                                    style={{ minWidth: '100px' }}
+                                >
+                                    {isRTL ? 'إلغاء' : 'Cancel'}
+                                </button>
+                                <button
+                                    className="btn"
+                                    onClick={confirmRemoveMaterial}
+                                    style={{
+                                        minWidth: '100px',
+                                        background: 'var(--danger-color)',
+                                        color: 'white'
+                                    }}
+                                >
+                                    {isRTL ? 'حذف' : 'Remove'}
                                 </button>
                             </div>
                         </div>
