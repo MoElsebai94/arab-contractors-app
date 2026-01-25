@@ -1099,52 +1099,75 @@ app.post("/api/projects/:projectId/materials/:materialId/consume", (req, res) =>
             return res.status(404).json({ error: "Material not found" });
         }
 
-        // Update consumed quantity in project_materials
-        const updatePM = `UPDATE project_materials
-            SET quantity_consumed = quantity_consumed + ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?`;
+        // Check available stock before consuming
+        let stockCheckSql;
+        switch (material.material_type) {
+            case 'iron':
+                stockCheckSql = `SELECT COALESCE(SUM(CASE WHEN type = 'IN' THEN quantity ELSE -quantity END), 0) as stock FROM iron_transactions WHERE iron_id = ?`;
+                break;
+            case 'cement':
+                stockCheckSql = `SELECT COALESCE(SUM(CASE WHEN type = 'IN' THEN quantity ELSE -quantity END), 0) as stock FROM cement_transactions WHERE cement_id = ?`;
+                break;
+            case 'gasoline':
+                stockCheckSql = `SELECT COALESCE(SUM(CASE WHEN type = 'IN' THEN quantity ELSE -quantity END), 0) as stock FROM gasoline_transactions WHERE gasoline_id = ?`;
+                break;
+            case 'production':
+                stockCheckSql = `SELECT current_quantity as stock FROM production_items WHERE id = ?`;
+                break;
+        }
 
-        db.run(updatePM, [quantity, materialId], function(err) {
+        db.get(stockCheckSql, [material.material_id], (err, stockRow) => {
             if (err) {
                 return res.status(400).json({ error: err.message });
             }
 
-            // Also create a transaction record in the appropriate inventory
-            const today = new Date().toISOString().split('T')[0];
-            let transactionSql, transactionParams, updateInventorySql;
-
-            switch (material.material_type) {
-                case 'iron':
-                    transactionSql = `INSERT INTO iron_transactions (iron_id, type, quantity, description, transaction_date) VALUES (?, 'OUT', ?, ?, ?)`;
-                    transactionParams = [material.material_id, quantity, description || `Used in project #${projectId}`, today];
-                    updateInventorySql = `UPDATE iron_inventory SET quantity = quantity - ? WHERE id = ?`;
-                    break;
-                case 'cement':
-                    transactionSql = `INSERT INTO cement_transactions (cement_id, type, quantity, description, transaction_date) VALUES (?, 'OUT', ?, ?, ?)`;
-                    transactionParams = [material.material_id, quantity, description || `Used in project #${projectId}`, today];
-                    updateInventorySql = `UPDATE cement_inventory SET quantity = quantity - ? WHERE id = ?`;
-                    break;
-                case 'gasoline':
-                    transactionSql = `INSERT INTO gasoline_transactions (gasoline_id, type, quantity, description, transaction_date) VALUES (?, 'OUT', ?, ?, ?)`;
-                    transactionParams = [material.material_id, quantity, description || `Used in project #${projectId}`, today];
-                    updateInventorySql = `UPDATE gasoline_inventory SET quantity = quantity - ? WHERE id = ?`;
-                    break;
-                case 'production':
-                    updateInventorySql = `UPDATE production_items SET current_quantity = current_quantity - ? WHERE id = ?`;
-                    break;
+            const currentStock = stockRow?.stock || 0;
+            if (currentStock < quantity) {
+                return res.status(400).json({
+                    error: `Insufficient stock. Available: ${currentStock}, Requested: ${quantity}`
+                });
             }
 
-            // Update inventory
-            if (updateInventorySql) {
-                db.run(updateInventorySql, [quantity, material.material_id]);
-            }
+            // Update consumed quantity in project_materials
+            const updatePM = `UPDATE project_materials
+                SET quantity_consumed = quantity_consumed + ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?`;
 
-            // Create transaction if applicable
-            if (transactionSql) {
-                db.run(transactionSql, transactionParams);
-            }
+            db.run(updatePM, [quantity, materialId], function(err) {
+                if (err) {
+                    return res.status(400).json({ error: err.message });
+                }
 
-            res.json({ message: "Material consumed", quantity_consumed: quantity });
+                // Also create a transaction record in the appropriate inventory
+                const today = new Date().toISOString().split('T')[0];
+                let transactionSql, transactionParams;
+
+                switch (material.material_type) {
+                    case 'iron':
+                        transactionSql = `INSERT INTO iron_transactions (iron_id, type, quantity, description, transaction_date) VALUES (?, 'OUT', ?, ?, ?)`;
+                        transactionParams = [material.material_id, quantity, description || `Used in project #${projectId}`, today];
+                        break;
+                    case 'cement':
+                        transactionSql = `INSERT INTO cement_transactions (cement_id, type, quantity, description, transaction_date) VALUES (?, 'OUT', ?, ?, ?)`;
+                        transactionParams = [material.material_id, quantity, description || `Used in project #${projectId}`, today];
+                        break;
+                    case 'gasoline':
+                        transactionSql = `INSERT INTO gasoline_transactions (gasoline_id, type, quantity, description, transaction_date) VALUES (?, 'OUT', ?, ?, ?)`;
+                        transactionParams = [material.material_id, quantity, description || `Used in project #${projectId}`, today];
+                        break;
+                    case 'production':
+                        // For production items, directly update the quantity
+                        db.run(`UPDATE production_items SET current_quantity = current_quantity - ? WHERE id = ?`, [quantity, material.material_id]);
+                        break;
+                }
+
+                // Create transaction if applicable
+                if (transactionSql) {
+                    db.run(transactionSql, transactionParams);
+                }
+
+                res.json({ message: "Material consumed", quantity_consumed: quantity });
+            });
         });
     });
 });

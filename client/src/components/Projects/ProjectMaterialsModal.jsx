@@ -154,6 +154,7 @@ const ProjectMaterialsModal = ({ isOpen, onClose, project, isRTL, t }) => {
     const [showAddForm, setShowAddForm] = useState(false);
     const [consumeModal, setConsumeModal] = useState({ show: false, material: null });
     const [consumeAmount, setConsumeAmount] = useState('');
+    const [consumeError, setConsumeError] = useState('');
     const [confirmModal, setConfirmModal] = useState({ show: false, materialId: null });
 
     const [newMaterial, setNewMaterial] = useState({
@@ -237,6 +238,7 @@ const ProjectMaterialsModal = ({ isOpen, onClose, project, isRTL, t }) => {
 
     const handleConsume = async () => {
         if (!consumeAmount || consumeAmount <= 0) return;
+        setConsumeError('');
         try {
             await axios.post(`/api/projects/${project.id}/materials/${consumeModal.material.id}/consume`, {
                 quantity: parseInt(consumeAmount),
@@ -248,6 +250,8 @@ const ProjectMaterialsModal = ({ isOpen, onClose, project, isRTL, t }) => {
             setConsumeAmount('');
         } catch (error) {
             console.error('Error consuming material:', error);
+            const errorMsg = error.response?.data?.error || (isRTL ? 'خطأ في استهلاك المادة' : 'Error consuming material');
+            setConsumeError(errorMsg);
         }
     };
 
@@ -501,7 +505,7 @@ const ProjectMaterialsModal = ({ isOpen, onClose, project, isRTL, t }) => {
 
                 {/* Consume Modal */}
                 {consumeModal.show && (
-                    <div className="modal-overlay" onClick={() => setConsumeModal({ show: false, material: null })} style={{ zIndex: 1100 }}>
+                    <div className="modal-overlay" onClick={() => { setConsumeModal({ show: false, material: null }); setConsumeError(''); }} style={{ zIndex: 1100 }}>
                         <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
                             <h3 style={{ marginBottom: '1rem' }}>
                                 {isRTL ? 'استهلاك مادة' : 'Consume Material'}: {consumeModal.material?.material_name}
@@ -512,7 +516,10 @@ const ProjectMaterialsModal = ({ isOpen, onClose, project, isRTL, t }) => {
                                     type="number"
                                     className="form-input"
                                     value={consumeAmount}
-                                    onChange={(e) => setConsumeAmount(e.target.value)}
+                                    onChange={(e) => {
+                                        setConsumeAmount(e.target.value);
+                                        setConsumeError('');
+                                    }}
                                     min="1"
                                     max={consumeModal.material?.available_quantity || 9999}
                                     autoFocus
@@ -521,8 +528,28 @@ const ProjectMaterialsModal = ({ isOpen, onClose, project, isRTL, t }) => {
                                     {isRTL ? 'المتوفر' : 'Available'}: {consumeModal.material?.available_quantity || 0} {consumeModal.material?.unit}
                                 </small>
                             </div>
+
+                            {/* Error Message */}
+                            {consumeError && (
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    padding: '0.75rem',
+                                    background: 'var(--danger-light, #fee2e2)',
+                                    border: '1px solid var(--danger-color)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    color: 'var(--danger-color)',
+                                    fontSize: '0.9rem',
+                                    marginTop: '0.5rem'
+                                }}>
+                                    <AlertCircle size={18} />
+                                    <span>{consumeError}</span>
+                                </div>
+                            )}
+
                             <div className="modal-actions" style={{ marginTop: '1rem' }}>
-                                <button className="btn btn-secondary" onClick={() => setConsumeModal({ show: false, material: null })}>
+                                <button className="btn btn-secondary" onClick={() => { setConsumeModal({ show: false, material: null }); setConsumeError(''); }}>
                                     {isRTL ? 'إلغاء' : 'Cancel'}
                                 </button>
                                 <button className="btn btn-primary" onClick={handleConsume} disabled={!consumeAmount || consumeAmount <= 0}>
