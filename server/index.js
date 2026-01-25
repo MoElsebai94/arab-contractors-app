@@ -1253,19 +1253,42 @@ app.post("/api/projects/:id/assignments", (req, res) => {
         return res.status(400).json({ error: "employee_id is required" });
     }
 
-    const sql = `INSERT INTO project_assignments
-        (project_id, employee_id, role_on_project, hours_allocated, start_date, end_date)
-        VALUES (?, ?, ?, ?, ?, ?)`;
+    // Check if employee is already assigned to another active project
+    const checkSql = `
+        SELECT pa.id, p.name as project_name
+        FROM project_assignments pa
+        JOIN projects p ON pa.project_id = p.id
+        WHERE pa.employee_id = ?
+        AND pa.is_active = 1
+        AND p.status = 'In Progress'
+        LIMIT 1
+    `;
 
-    db.run(sql, [projectId, employee_id, role_on_project, hours_allocated || 0, start_date, end_date], function(err) {
+    db.get(checkSql, [employee_id], (err, existingAssignment) => {
         if (err) {
-            if (err.message.includes('UNIQUE constraint')) {
-                return res.status(400).json({ error: "Employee is already assigned to this project" });
-            }
-            res.status(400).json({ error: err.message });
-            return;
+            return res.status(400).json({ error: err.message });
         }
-        res.json({ id: this.lastID, message: "Employee assigned to project" });
+
+        if (existingAssignment) {
+            return res.status(400).json({
+                error: `Employee is already assigned to another active project: ${existingAssignment.project_name}`
+            });
+        }
+
+        const sql = `INSERT INTO project_assignments
+            (project_id, employee_id, role_on_project, hours_allocated, start_date, end_date)
+            VALUES (?, ?, ?, ?, ?, ?)`;
+
+        db.run(sql, [projectId, employee_id, role_on_project, hours_allocated || 0, start_date, end_date], function(err) {
+            if (err) {
+                if (err.message.includes('UNIQUE constraint')) {
+                    return res.status(400).json({ error: "Employee is already assigned to this project" });
+                }
+                res.status(400).json({ error: err.message });
+                return;
+            }
+            res.json({ id: this.lastID, message: "Employee assigned to project" });
+        });
     });
 });
 

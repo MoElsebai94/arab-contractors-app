@@ -106,7 +106,7 @@ const ModernDropdown = ({ options, value, onChange, placeholder, renderOption, i
 };
 
 // Employee Multi-Select Dropdown with Bulk Options
-const EmployeeSelector = ({ employees, selectedIds, onSelect, onSelectAll, onClear, workloadData, getWorkloadStatus, isRTL }) => {
+const EmployeeSelector = ({ employees, selectedIds, onSelect, onSelectAll, onClear, workloadData, getWorkloadStatus, isRTL, currentProjectAssignments = [] }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
     const dropdownRef = useRef(null);
@@ -129,6 +129,21 @@ const EmployeeSelector = ({ employees, selectedIds, onSelect, onSelectAll, onCle
     const getEmployeeWorkload = (employeeId) => {
         return workloadData.find(w => w.id === employeeId);
     };
+
+    // Check if employee is available (not assigned to another active project)
+    const isEmployeeAvailable = (employeeId) => {
+        // If already assigned to this project, not available for re-selection
+        if (currentProjectAssignments.includes(employeeId)) return false;
+
+        // Check workload for other active projects
+        const workload = getEmployeeWorkload(employeeId);
+        if (workload && workload.active_projects > 0) return false;
+
+        return true;
+    };
+
+    // Get only available employees for "Select All"
+    const availableEmployees = filteredEmployees.filter(emp => isEmployeeAvailable(emp.id));
 
     return (
         <div ref={dropdownRef} style={{ position: 'relative', width: '100%' }}>
@@ -205,24 +220,26 @@ const EmployeeSelector = ({ employees, selectedIds, onSelect, onSelectAll, onCle
                     }}>
                         <button
                             type="button"
-                            onClick={() => onSelectAll(filteredEmployees.map(e => e.id))}
+                            onClick={() => onSelectAll(availableEmployees.map(e => e.id))}
+                            disabled={availableEmployees.length === 0}
                             style={{
                                 flex: 1,
                                 padding: '0.5rem',
-                                background: 'var(--primary-color)',
+                                background: availableEmployees.length === 0 ? 'var(--text-secondary)' : 'var(--primary-color)',
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: 'var(--radius-sm)',
-                                cursor: 'pointer',
+                                cursor: availableEmployees.length === 0 ? 'not-allowed' : 'pointer',
                                 fontSize: '0.8rem',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                gap: '0.35rem'
+                                gap: '0.35rem',
+                                opacity: availableEmployees.length === 0 ? 0.6 : 1
                             }}
                         >
                             <UsersRound size={14} />
-                            {isRTL ? 'تحديد الكل' : 'Select All'}
+                            {isRTL ? `تحديد المتاحين (${availableEmployees.length})` : `Select Available (${availableEmployees.length})`}
                         </button>
                         {selectedIds.length > 0 && (
                             <button
@@ -253,32 +270,34 @@ const EmployeeSelector = ({ employees, selectedIds, onSelect, onSelectAll, onCle
                         ) : (
                             filteredEmployees.map(emp => {
                                 const isSelected = selectedIds.includes(emp.id);
+                                const available = isEmployeeAvailable(emp.id);
                                 const workload = getEmployeeWorkload(emp.id);
-                                const status = getWorkloadStatus(workload);
+                                const isAssignedElsewhere = workload && workload.active_projects > 0;
 
                                 return (
                                     <div
                                         key={emp.id}
-                                        onClick={() => onSelect(emp.id)}
+                                        onClick={() => available && onSelect(emp.id)}
                                         style={{
                                             padding: '0.75rem 1rem',
-                                            cursor: 'pointer',
+                                            cursor: available ? 'pointer' : 'not-allowed',
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: '0.75rem',
-                                            background: isSelected ? 'rgba(30, 58, 95, 0.1)' : 'transparent',
+                                            background: isSelected ? 'rgba(30, 58, 95, 0.1)' : !available ? 'rgba(0,0,0,0.03)' : 'transparent',
                                             borderBottom: '1px solid var(--border-color-light)',
-                                            transition: 'background 0.15s'
+                                            transition: 'background 0.15s',
+                                            opacity: available ? 1 : 0.6
                                         }}
-                                        onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-secondary)'; }}
-                                        onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                                        onMouseEnter={(e) => { if (!isSelected && available) e.currentTarget.style.background = 'var(--bg-secondary)'; }}
+                                        onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = !available ? 'rgba(0,0,0,0.03)' : 'transparent'; }}
                                     >
                                         <div style={{
                                             width: '20px',
                                             height: '20px',
                                             borderRadius: '4px',
                                             border: isSelected ? 'none' : '2px solid var(--border-color)',
-                                            background: isSelected ? 'var(--primary-color)' : 'transparent',
+                                            background: isSelected ? 'var(--primary-color)' : !available ? 'var(--bg-secondary)' : 'transparent',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
@@ -296,12 +315,12 @@ const EmployeeSelector = ({ employees, selectedIds, onSelect, onSelectAll, onCle
                                             fontSize: '0.7rem',
                                             padding: '0.2rem 0.5rem',
                                             borderRadius: '10px',
-                                            background: status.color === 'var(--success-color)' ? 'rgba(34, 197, 94, 0.1)' :
-                                                        status.color === 'var(--warning-color)' ? 'rgba(245, 158, 11, 0.1)' :
-                                                        status.color === 'var(--danger-color)' ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-secondary)',
-                                            color: status.color
+                                            background: isAssignedElsewhere ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
+                                            color: isAssignedElsewhere ? 'var(--danger-color)' : 'var(--success-color)'
                                         }}>
-                                            {status.label}
+                                            {isAssignedElsewhere
+                                                ? (isRTL ? 'مشغول في مشروع آخر' : 'Assigned elsewhere')
+                                                : (isRTL ? 'متاح' : 'Available')}
                                         </span>
                                     </div>
                                 );
@@ -377,10 +396,6 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
         return workloadData.find(w => w.id === employeeId);
     };
 
-    const getAvailableEmployees = () => {
-        const assignedIds = assignments.map(a => a.employee_id);
-        return employees.filter(e => !assignedIds.includes(e.id));
-    };
 
     const handleAddAssignments = async (e) => {
         e.preventDefault();
@@ -473,8 +488,6 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
     };
 
     if (!isOpen) return null;
-
-    const availableEmployees = getAvailableEmployees();
 
     return (
         <div className="modal-overlay" onClick={onClose} role="presentation">
@@ -570,7 +583,7 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
                                     {isRTL ? 'اختر الموظفين' : 'Select Employees'}
                                 </label>
                                 <EmployeeSelector
-                                    employees={availableEmployees}
+                                    employees={employees}
                                     selectedIds={selectedEmployeeIds}
                                     onSelect={handleSelectEmployee}
                                     onSelectAll={handleSelectAllEmployees}
@@ -578,6 +591,7 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
                                     workloadData={workloadData}
                                     getWorkloadStatus={getWorkloadStatus}
                                     isRTL={isRTL}
+                                    currentProjectAssignments={assignments.map(a => a.employee_id)}
                                 />
                             </div>
 
