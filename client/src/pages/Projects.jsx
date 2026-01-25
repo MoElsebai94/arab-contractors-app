@@ -717,7 +717,6 @@ const Projects = () => {
                                 <thead>
                                     <tr>
                                         <th>{t('taskName')}</th>
-                                        <th>{t('assignees')}</th>
                                         <th>{t('priority')}</th>
                                         <th>{t('status')}</th>
                                         <th>{t('time')}</th>
@@ -728,12 +727,6 @@ const Projects = () => {
                                     {projects.map((proj) => (
                                         <tr key={proj.id} className={editingTask?.id === proj.id ? 'editing-row' : ''}>
                                             <td style={{ fontWeight: 500 }}>{proj.name}</td>
-                                            <td>
-                                                <AssigneeListPopover
-                                                    assigneeString={proj.assignee}
-                                                    employees={employees}
-                                                />
-                                            </td>
                                             <td>
                                                 <span style={{
                                                     color: getPriorityColor(proj.priority),
@@ -825,13 +818,6 @@ const Projects = () => {
                                 </div>
                                 <div className="mobile-card-body">
                                     <h4>{proj.name}</h4>
-                                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <Users size={14} />
-                                        <AssigneeListPopover
-                                            assigneeString={proj.assignee}
-                                            employees={employees}
-                                        />
-                                    </div>
                                     <div className="timeline">
                                         <span>{proj.start_date}</span>
                                         <span className="arrow"><ArrowRight size={14} /></span>
