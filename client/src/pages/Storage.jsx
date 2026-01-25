@@ -875,7 +875,7 @@ const Storage = () => {
                                             </span>
                                             <button
                                                 className="btn-delete-trans"
-                                                onClick={() => confirmDeleteTransaction(trans.id)}
+                                                onClick={() => confirmDeleteTransaction(trans.id, 'gasoline')}
                                                 title="Cancel Transaction"
                                             >
                                                 <X size={14} />

@@ -81,35 +81,43 @@ const ModernDropdown = ({ options, value, onChange, placeholder, renderOption, i
                             {isRTL ? 'لا توجد خيارات' : 'No options available'}
                         </div>
                     ) : (
-                        options.map((option) => (
-                            <div
-                                key={option.value}
-                                onClick={() => {
-                                    onChange(option.value);
-                                    setIsOpen(false);
-                                }}
-                                style={{
-                                    padding: '0.6rem 0.75rem',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    background: value === option.value ? 'var(--primary-light)' : 'transparent',
-                                    borderBottom: '1px solid var(--border-color)'
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (value !== option.value) e.target.style.background = 'var(--bg-secondary)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.target.style.background = value === option.value ? 'var(--primary-light)' : 'transparent';
-                                }}
-                            >
-                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {renderOption ? renderOption(option) : option.label}
-                                </span>
-                                {value === option.value && <Check size={16} style={{ color: 'var(--primary-color)', flexShrink: 0 }} />}
-                            </div>
-                        ))
+                        options.map((option) => {
+                            const isSelected = value === option.value;
+                            return (
+                                <div
+                                    key={option.value}
+                                    onClick={() => {
+                                        onChange(option.value);
+                                        setIsOpen(false);
+                                    }}
+                                    style={{
+                                        padding: '0.6rem 0.75rem',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        background: isSelected ? 'var(--primary-color)' : 'transparent',
+                                        color: isSelected ? 'white' : 'var(--text-primary)',
+                                        borderBottom: '1px solid var(--border-color)'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!isSelected) {
+                                            e.currentTarget.style.background = 'var(--bg-secondary)';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!isSelected) {
+                                            e.currentTarget.style.background = 'transparent';
+                                        }
+                                    }}
+                                >
+                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {renderOption ? renderOption(option) : option.label}
+                                    </span>
+                                    {isSelected && <Check size={16} style={{ color: 'white', flexShrink: 0 }} />}
+                                </div>
+                            );
+                        })
                     )}
                 </div>
             )}
@@ -146,6 +154,8 @@ const ProjectMaterialsModal = ({ isOpen, onClose, project, isRTL, t }) => {
     const [showAddForm, setShowAddForm] = useState(false);
     const [consumeModal, setConsumeModal] = useState({ show: false, material: null });
     const [consumeAmount, setConsumeAmount] = useState('');
+    const [consumeError, setConsumeError] = useState('');
+    const [confirmModal, setConfirmModal] = useState({ show: false, materialId: null });
 
     const [newMaterial, setNewMaterial] = useState({
         material_type: 'iron',
@@ -211,18 +221,24 @@ const ProjectMaterialsModal = ({ isOpen, onClose, project, isRTL, t }) => {
         }
     };
 
-    const handleRemoveMaterial = async (materialId) => {
-        if (!confirm(isRTL ? 'هل أنت متأكد؟' : 'Are you sure?')) return;
+    const handleRemoveMaterial = (materialId) => {
+        setConfirmModal({ show: true, materialId });
+    };
+
+    const confirmRemoveMaterial = async () => {
         try {
-            await axios.delete(`/api/projects/${project.id}/materials/${materialId}`);
+            await axios.delete(`/api/projects/${project.id}/materials/${confirmModal.materialId}`);
             fetchMaterials();
         } catch (error) {
             console.error('Error removing material:', error);
+        } finally {
+            setConfirmModal({ show: false, materialId: null });
         }
     };
 
     const handleConsume = async () => {
         if (!consumeAmount || consumeAmount <= 0) return;
+        setConsumeError('');
         try {
             await axios.post(`/api/projects/${project.id}/materials/${consumeModal.material.id}/consume`, {
                 quantity: parseInt(consumeAmount),
@@ -234,6 +250,8 @@ const ProjectMaterialsModal = ({ isOpen, onClose, project, isRTL, t }) => {
             setConsumeAmount('');
         } catch (error) {
             console.error('Error consuming material:', error);
+            const errorMsg = error.response?.data?.error || (isRTL ? 'خطأ في استهلاك المادة' : 'Error consuming material');
+            setConsumeError(errorMsg);
         }
     };
 
@@ -487,7 +505,7 @@ const ProjectMaterialsModal = ({ isOpen, onClose, project, isRTL, t }) => {
 
                 {/* Consume Modal */}
                 {consumeModal.show && (
-                    <div className="modal-overlay" onClick={() => setConsumeModal({ show: false, material: null })} style={{ zIndex: 1100 }}>
+                    <div className="modal-overlay" onClick={() => { setConsumeModal({ show: false, material: null }); setConsumeError(''); }} style={{ zIndex: 1100 }}>
                         <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
                             <h3 style={{ marginBottom: '1rem' }}>
                                 {isRTL ? 'استهلاك مادة' : 'Consume Material'}: {consumeModal.material?.material_name}
@@ -498,7 +516,10 @@ const ProjectMaterialsModal = ({ isOpen, onClose, project, isRTL, t }) => {
                                     type="number"
                                     className="form-input"
                                     value={consumeAmount}
-                                    onChange={(e) => setConsumeAmount(e.target.value)}
+                                    onChange={(e) => {
+                                        setConsumeAmount(e.target.value);
+                                        setConsumeError('');
+                                    }}
                                     min="1"
                                     max={consumeModal.material?.available_quantity || 9999}
                                     autoFocus
@@ -507,12 +528,80 @@ const ProjectMaterialsModal = ({ isOpen, onClose, project, isRTL, t }) => {
                                     {isRTL ? 'المتوفر' : 'Available'}: {consumeModal.material?.available_quantity || 0} {consumeModal.material?.unit}
                                 </small>
                             </div>
+
+                            {/* Error Message */}
+                            {consumeError && (
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    padding: '0.75rem',
+                                    background: 'var(--danger-light, #fee2e2)',
+                                    border: '1px solid var(--danger-color)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    color: 'var(--danger-color)',
+                                    fontSize: '0.9rem',
+                                    marginTop: '0.5rem'
+                                }}>
+                                    <AlertCircle size={18} />
+                                    <span>{consumeError}</span>
+                                </div>
+                            )}
+
                             <div className="modal-actions" style={{ marginTop: '1rem' }}>
-                                <button className="btn btn-secondary" onClick={() => setConsumeModal({ show: false, material: null })}>
+                                <button className="btn btn-secondary" onClick={() => { setConsumeModal({ show: false, material: null }); setConsumeError(''); }}>
                                     {isRTL ? 'إلغاء' : 'Cancel'}
                                 </button>
                                 <button className="btn btn-primary" onClick={handleConsume} disabled={!consumeAmount || consumeAmount <= 0}>
                                     {isRTL ? 'استهلاك' : 'Consume'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Confirmation Modal */}
+                {confirmModal.show && (
+                    <div className="modal-overlay" onClick={() => setConfirmModal({ show: false, materialId: null })} style={{ zIndex: 1100 }}>
+                        <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px', textAlign: 'center' }}>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <div style={{
+                                    width: '60px',
+                                    height: '60px',
+                                    borderRadius: '50%',
+                                    background: 'var(--danger-light, #fee2e2)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    margin: '0 auto 1rem'
+                                }}>
+                                    <Trash2 size={28} style={{ color: 'var(--danger-color)' }} />
+                                </div>
+                                <h3 style={{ margin: '0 0 0.5rem' }}>
+                                    {isRTL ? 'تأكيد الحذف' : 'Confirm Removal'}
+                                </h3>
+                                <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
+                                    {isRTL ? 'هل أنت متأكد من إزالة هذه المادة؟' : 'Are you sure you want to remove this material?'}
+                                </p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={() => setConfirmModal({ show: false, materialId: null })}
+                                    style={{ minWidth: '100px' }}
+                                >
+                                    {isRTL ? 'إلغاء' : 'Cancel'}
+                                </button>
+                                <button
+                                    className="btn"
+                                    onClick={confirmRemoveMaterial}
+                                    style={{
+                                        minWidth: '100px',
+                                        background: 'var(--danger-color)',
+                                        color: 'white'
+                                    }}
+                                >
+                                    {isRTL ? 'حذف' : 'Remove'}
                                 </button>
                             </div>
                         </div>

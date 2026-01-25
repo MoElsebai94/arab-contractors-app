@@ -77,28 +77,32 @@ const ModernDropdown = ({ options, value, onChange, placeholder, renderOption, i
                     maxHeight: '250px',
                     overflowY: 'auto'
                 }}>
-                    {options.map(option => (
-                        <div
-                            key={option.value}
-                            onClick={() => { onChange(option.value); setIsOpen(false); }}
-                            style={{
-                                padding: '0.75rem 1rem',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                background: value === option.value ? 'var(--bg-secondary)' : 'transparent',
-                                borderBottom: '1px solid var(--border-color-light)',
-                                fontSize: '0.9rem',
-                                transition: 'background 0.15s'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = value === option.value ? 'var(--bg-secondary)' : 'transparent'}
-                        >
-                            <span>{renderOption ? renderOption(option) : option.label}</span>
-                            {value === option.value && <Check size={16} style={{ color: 'var(--primary-color)' }} />}
-                        </div>
-                    ))}
+                    {options.map(option => {
+                        const isSelected = value === option.value;
+                        return (
+                            <div
+                                key={option.value}
+                                onClick={() => { onChange(option.value); setIsOpen(false); }}
+                                style={{
+                                    padding: '0.75rem 1rem',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    background: isSelected ? 'var(--primary-color)' : 'transparent',
+                                    color: isSelected ? 'white' : 'var(--text-primary)',
+                                    borderBottom: '1px solid var(--border-color-light)',
+                                    fontSize: '0.9rem',
+                                    transition: 'background 0.15s'
+                                }}
+                                onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-secondary)'; }}
+                                onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                            >
+                                <span>{renderOption ? renderOption(option) : option.label}</span>
+                                {isSelected && <Check size={16} style={{ color: 'white' }} />}
+                            </div>
+                        );
+                    })}
                 </div>
             )}
         </div>
@@ -106,7 +110,7 @@ const ModernDropdown = ({ options, value, onChange, placeholder, renderOption, i
 };
 
 // Employee Multi-Select Dropdown with Bulk Options
-const EmployeeSelector = ({ employees, selectedIds, onSelect, onSelectAll, onClear, workloadData, getWorkloadStatus, isRTL }) => {
+const EmployeeSelector = ({ employees, selectedIds, onSelect, onSelectAll, onClear, workloadData, getWorkloadStatus, isRTL, currentProjectAssignments = [] }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
     const dropdownRef = useRef(null);
@@ -121,14 +125,38 @@ const EmployeeSelector = ({ employees, selectedIds, onSelect, onSelectAll, onCle
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const filteredEmployees = employees.filter(emp =>
-        emp.name.toLowerCase().includes(search.toLowerCase()) ||
-        (emp.role || '').toLowerCase().includes(search.toLowerCase())
-    );
-
     const getEmployeeWorkload = (employeeId) => {
         return workloadData.find(w => w.id === employeeId);
     };
+
+    // Check if employee is available (not assigned to another active project)
+    const isEmployeeAvailable = (employeeId) => {
+        // If already assigned to this project, not available for re-selection
+        if (currentProjectAssignments.includes(employeeId)) return false;
+
+        // Check workload for other active projects
+        const workload = getEmployeeWorkload(employeeId);
+        if (workload && workload.active_projects > 0) return false;
+
+        return true;
+    };
+
+    // Filter by search and sort: available employees first, then alphabetically
+    const filteredEmployees = employees
+        .filter(emp =>
+            emp.name.toLowerCase().includes(search.toLowerCase()) ||
+            (emp.role || '').toLowerCase().includes(search.toLowerCase())
+        )
+        .sort((a, b) => {
+            const aAvailable = isEmployeeAvailable(a.id);
+            const bAvailable = isEmployeeAvailable(b.id);
+            if (aAvailable && !bAvailable) return -1;
+            if (!aAvailable && bAvailable) return 1;
+            return a.name.localeCompare(b.name);
+        });
+
+    // Get only available employees for "Select All"
+    const availableEmployees = filteredEmployees.filter(emp => isEmployeeAvailable(emp.id));
 
     return (
         <div ref={dropdownRef} style={{ position: 'relative', width: '100%' }}>
@@ -205,24 +233,26 @@ const EmployeeSelector = ({ employees, selectedIds, onSelect, onSelectAll, onCle
                     }}>
                         <button
                             type="button"
-                            onClick={() => onSelectAll(filteredEmployees.map(e => e.id))}
+                            onClick={() => onSelectAll(availableEmployees.map(e => e.id))}
+                            disabled={availableEmployees.length === 0}
                             style={{
                                 flex: 1,
                                 padding: '0.5rem',
-                                background: 'var(--primary-color)',
+                                background: availableEmployees.length === 0 ? 'var(--text-secondary)' : 'var(--primary-color)',
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: 'var(--radius-sm)',
-                                cursor: 'pointer',
+                                cursor: availableEmployees.length === 0 ? 'not-allowed' : 'pointer',
                                 fontSize: '0.8rem',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                gap: '0.35rem'
+                                gap: '0.35rem',
+                                opacity: availableEmployees.length === 0 ? 0.6 : 1
                             }}
                         >
                             <UsersRound size={14} />
-                            {isRTL ? 'تحديد الكل' : 'Select All'}
+                            {isRTL ? `تحديد المتاحين (${availableEmployees.length})` : `Select Available (${availableEmployees.length})`}
                         </button>
                         {selectedIds.length > 0 && (
                             <button
@@ -253,32 +283,34 @@ const EmployeeSelector = ({ employees, selectedIds, onSelect, onSelectAll, onCle
                         ) : (
                             filteredEmployees.map(emp => {
                                 const isSelected = selectedIds.includes(emp.id);
+                                const available = isEmployeeAvailable(emp.id);
                                 const workload = getEmployeeWorkload(emp.id);
-                                const status = getWorkloadStatus(workload);
+                                const isAssignedElsewhere = workload && workload.active_projects > 0;
 
                                 return (
                                     <div
                                         key={emp.id}
-                                        onClick={() => onSelect(emp.id)}
+                                        onClick={() => available && onSelect(emp.id)}
                                         style={{
                                             padding: '0.75rem 1rem',
-                                            cursor: 'pointer',
+                                            cursor: available ? 'pointer' : 'not-allowed',
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: '0.75rem',
-                                            background: isSelected ? 'rgba(30, 58, 95, 0.1)' : 'transparent',
+                                            background: isSelected ? 'rgba(30, 58, 95, 0.1)' : !available ? 'rgba(0,0,0,0.03)' : 'transparent',
                                             borderBottom: '1px solid var(--border-color-light)',
-                                            transition: 'background 0.15s'
+                                            transition: 'background 0.15s',
+                                            opacity: available ? 1 : 0.6
                                         }}
-                                        onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-secondary)'; }}
-                                        onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                                        onMouseEnter={(e) => { if (!isSelected && available) e.currentTarget.style.background = 'var(--bg-secondary)'; }}
+                                        onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = !available ? 'rgba(0,0,0,0.03)' : 'transparent'; }}
                                     >
                                         <div style={{
                                             width: '20px',
                                             height: '20px',
                                             borderRadius: '4px',
                                             border: isSelected ? 'none' : '2px solid var(--border-color)',
-                                            background: isSelected ? 'var(--primary-color)' : 'transparent',
+                                            background: isSelected ? 'var(--primary-color)' : !available ? 'var(--bg-secondary)' : 'transparent',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
@@ -296,12 +328,12 @@ const EmployeeSelector = ({ employees, selectedIds, onSelect, onSelectAll, onCle
                                             fontSize: '0.7rem',
                                             padding: '0.2rem 0.5rem',
                                             borderRadius: '10px',
-                                            background: status.color === 'var(--success-color)' ? 'rgba(34, 197, 94, 0.1)' :
-                                                        status.color === 'var(--warning-color)' ? 'rgba(245, 158, 11, 0.1)' :
-                                                        status.color === 'var(--danger-color)' ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-secondary)',
-                                            color: status.color
+                                            background: isAssignedElsewhere ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
+                                            color: isAssignedElsewhere ? 'var(--danger-color)' : 'var(--success-color)'
                                         }}>
-                                            {status.label}
+                                            {isAssignedElsewhere
+                                                ? (isRTL ? 'مشغول في مشروع آخر' : 'Assigned elsewhere')
+                                                : (isRTL ? 'متاح' : 'Available')}
                                         </span>
                                     </div>
                                 );
@@ -322,6 +354,7 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
     const [showAddForm, setShowAddForm] = useState(false);
     const [logHoursModal, setLogHoursModal] = useState({ show: false, assignment: null });
     const [hoursToLog, setHoursToLog] = useState('');
+    const [confirmModal, setConfirmModal] = useState({ show: false, assignmentId: null });
 
     const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
     const [bulkRole, setBulkRole] = useState('worker');
@@ -376,10 +409,6 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
         return workloadData.find(w => w.id === employeeId);
     };
 
-    const getAvailableEmployees = () => {
-        const assignedIds = assignments.map(a => a.employee_id);
-        return employees.filter(e => !assignedIds.includes(e.id));
-    };
 
     const handleAddAssignments = async (e) => {
         e.preventDefault();
@@ -418,14 +447,19 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
         setSelectedEmployeeIds(empIds);
     };
 
-    const handleRemoveAssignment = async (assignmentId) => {
-        if (!confirm(isRTL ? 'هل أنت متأكد من إزالة هذا التعيين؟' : 'Are you sure you want to remove this assignment?')) return;
+    const handleRemoveAssignment = (assignmentId) => {
+        setConfirmModal({ show: true, assignmentId });
+    };
+
+    const confirmRemoveAssignment = async () => {
         try {
-            await axios.delete(`/api/projects/${project.id}/assignments/${assignmentId}`);
+            await axios.delete(`/api/projects/${project.id}/assignments/${confirmModal.assignmentId}`);
             fetchAssignments();
             fetchWorkload();
         } catch (error) {
             console.error('Error removing assignment:', error);
+        } finally {
+            setConfirmModal({ show: false, assignmentId: null });
         }
     };
 
@@ -468,7 +502,15 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
 
     if (!isOpen) return null;
 
-    const availableEmployees = getAvailableEmployees();
+    // Check if there are any available employees (not assigned to this project or other active projects)
+    const hasAvailableEmployees = employees.some(emp => {
+        // If already assigned to this project, not available
+        if (assignments.some(a => a.employee_id === emp.id)) return false;
+        // Check workload - if they have active projects elsewhere, not available
+        const workload = workloadData.find(w => w.id === emp.id);
+        if (workload && workload.active_projects > 0) return false;
+        return true;
+    });
 
     return (
         <div className="modal-overlay" onClick={onClose} role="presentation">
@@ -540,7 +582,7 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
                     </div>
 
                     {/* Add Assignment Button */}
-                    {!showAddForm && availableEmployees.length > 0 && (
+                    {!showAddForm && hasAvailableEmployees && (
                         <button
                             className="btn btn-primary"
                             onClick={() => setShowAddForm(true)}
@@ -564,7 +606,7 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
                                     {isRTL ? 'اختر الموظفين' : 'Select Employees'}
                                 </label>
                                 <EmployeeSelector
-                                    employees={availableEmployees}
+                                    employees={employees}
                                     selectedIds={selectedEmployeeIds}
                                     onSelect={handleSelectEmployee}
                                     onSelectAll={handleSelectAllEmployees}
@@ -572,6 +614,7 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
                                     workloadData={workloadData}
                                     getWorkloadStatus={getWorkloadStatus}
                                     isRTL={isRTL}
+                                    currentProjectAssignments={assignments.map(a => a.employee_id)}
                                 />
                             </div>
 
@@ -810,6 +853,54 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
                                 </button>
                                 <button className="btn btn-primary" onClick={handleLogHours} disabled={!hoursToLog || hoursToLog <= 0}>
                                     {isRTL ? 'تسجيل' : 'Log Hours'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Confirmation Modal */}
+                {confirmModal.show && (
+                    <div className="modal-overlay" onClick={() => setConfirmModal({ show: false, assignmentId: null })} style={{ zIndex: 1100 }}>
+                        <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px', textAlign: 'center' }}>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <div style={{
+                                    width: '60px',
+                                    height: '60px',
+                                    borderRadius: '50%',
+                                    background: 'var(--danger-light, #fee2e2)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    margin: '0 auto 1rem'
+                                }}>
+                                    <Trash2 size={28} style={{ color: 'var(--danger-color)' }} />
+                                </div>
+                                <h3 style={{ margin: '0 0 0.5rem' }}>
+                                    {isRTL ? 'تأكيد الحذف' : 'Confirm Removal'}
+                                </h3>
+                                <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
+                                    {isRTL ? 'هل أنت متأكد من إزالة هذا التعيين؟' : 'Are you sure you want to remove this assignment?'}
+                                </p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={() => setConfirmModal({ show: false, assignmentId: null })}
+                                    style={{ minWidth: '100px' }}
+                                >
+                                    {isRTL ? 'إلغاء' : 'Cancel'}
+                                </button>
+                                <button
+                                    className="btn"
+                                    onClick={confirmRemoveAssignment}
+                                    style={{
+                                        minWidth: '100px',
+                                        background: 'var(--danger-color)',
+                                        color: 'white'
+                                    }}
+                                >
+                                    {isRTL ? 'حذف' : 'Remove'}
                                 </button>
                             </div>
                         </div>
