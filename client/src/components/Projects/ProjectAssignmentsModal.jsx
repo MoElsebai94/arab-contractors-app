@@ -77,28 +77,32 @@ const ModernDropdown = ({ options, value, onChange, placeholder, renderOption, i
                     maxHeight: '250px',
                     overflowY: 'auto'
                 }}>
-                    {options.map(option => (
-                        <div
-                            key={option.value}
-                            onClick={() => { onChange(option.value); setIsOpen(false); }}
-                            style={{
-                                padding: '0.75rem 1rem',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                background: value === option.value ? 'var(--bg-secondary)' : 'transparent',
-                                borderBottom: '1px solid var(--border-color-light)',
-                                fontSize: '0.9rem',
-                                transition: 'background 0.15s'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = value === option.value ? 'var(--bg-secondary)' : 'transparent'}
-                        >
-                            <span>{renderOption ? renderOption(option) : option.label}</span>
-                            {value === option.value && <Check size={16} style={{ color: 'var(--primary-color)' }} />}
-                        </div>
-                    ))}
+                    {options.map(option => {
+                        const isSelected = value === option.value;
+                        return (
+                            <div
+                                key={option.value}
+                                onClick={() => { onChange(option.value); setIsOpen(false); }}
+                                style={{
+                                    padding: '0.75rem 1rem',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    background: isSelected ? 'var(--primary-color)' : 'transparent',
+                                    color: isSelected ? 'white' : 'var(--text-primary)',
+                                    borderBottom: '1px solid var(--border-color-light)',
+                                    fontSize: '0.9rem',
+                                    transition: 'background 0.15s'
+                                }}
+                                onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-secondary)'; }}
+                                onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                            >
+                                <span>{renderOption ? renderOption(option) : option.label}</span>
+                                {isSelected && <Check size={16} style={{ color: 'white' }} />}
+                            </div>
+                        );
+                    })}
                 </div>
             )}
         </div>

@@ -81,35 +81,43 @@ const ModernDropdown = ({ options, value, onChange, placeholder, renderOption, i
                             {isRTL ? 'لا توجد خيارات' : 'No options available'}
                         </div>
                     ) : (
-                        options.map((option) => (
-                            <div
-                                key={option.value}
-                                onClick={() => {
-                                    onChange(option.value);
-                                    setIsOpen(false);
-                                }}
-                                style={{
-                                    padding: '0.6rem 0.75rem',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    background: value === option.value ? 'var(--primary-light)' : 'transparent',
-                                    borderBottom: '1px solid var(--border-color)'
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (value !== option.value) e.target.style.background = 'var(--bg-secondary)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.target.style.background = value === option.value ? 'var(--primary-light)' : 'transparent';
-                                }}
-                            >
-                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {renderOption ? renderOption(option) : option.label}
-                                </span>
-                                {value === option.value && <Check size={16} style={{ color: 'var(--primary-color)', flexShrink: 0 }} />}
-                            </div>
-                        ))
+                        options.map((option) => {
+                            const isSelected = value === option.value;
+                            return (
+                                <div
+                                    key={option.value}
+                                    onClick={() => {
+                                        onChange(option.value);
+                                        setIsOpen(false);
+                                    }}
+                                    style={{
+                                        padding: '0.6rem 0.75rem',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        background: isSelected ? 'var(--primary-color)' : 'transparent',
+                                        color: isSelected ? 'white' : 'var(--text-primary)',
+                                        borderBottom: '1px solid var(--border-color)'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!isSelected) {
+                                            e.currentTarget.style.background = 'var(--bg-secondary)';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!isSelected) {
+                                            e.currentTarget.style.background = 'transparent';
+                                        }
+                                    }}
+                                >
+                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {renderOption ? renderOption(option) : option.label}
+                                    </span>
+                                    {isSelected && <Check size={16} style={{ color: 'white', flexShrink: 0 }} />}
+                                </div>
+                            );
+                        })
                     )}
                 </div>
             )}
