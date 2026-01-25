@@ -1000,9 +1000,15 @@ app.get("/api/projects/:id/materials", (req, res) => {
             END as material_name,
             CASE
                 WHEN pm.material_type = 'production' THEN pi.current_quantity
-                WHEN pm.material_type = 'iron' THEN ii.quantity
-                WHEN pm.material_type = 'cement' THEN ci.quantity
-                WHEN pm.material_type = 'gasoline' THEN gi.quantity
+                WHEN pm.material_type = 'iron' THEN COALESCE(
+                    (SELECT SUM(CASE WHEN t.type = 'IN' THEN t.quantity ELSE -t.quantity END)
+                     FROM iron_transactions t WHERE t.iron_id = ii.id), 0)
+                WHEN pm.material_type = 'cement' THEN COALESCE(
+                    (SELECT SUM(CASE WHEN t.type = 'IN' THEN t.quantity ELSE -t.quantity END)
+                     FROM cement_transactions t WHERE t.cement_id = ci.id), 0)
+                WHEN pm.material_type = 'gasoline' THEN COALESCE(
+                    (SELECT SUM(CASE WHEN t.type = 'IN' THEN t.quantity ELSE -t.quantity END)
+                     FROM gasoline_transactions t WHERE t.gasoline_id = gi.id), 0)
             END as available_quantity
         FROM project_materials pm
         LEFT JOIN production_items pi ON pm.material_type = 'production' AND pm.material_id = pi.id
