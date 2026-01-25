@@ -121,11 +121,6 @@ const EmployeeSelector = ({ employees, selectedIds, onSelect, onSelectAll, onCle
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const filteredEmployees = employees.filter(emp =>
-        emp.name.toLowerCase().includes(search.toLowerCase()) ||
-        (emp.role || '').toLowerCase().includes(search.toLowerCase())
-    );
-
     const getEmployeeWorkload = (employeeId) => {
         return workloadData.find(w => w.id === employeeId);
     };
@@ -141,6 +136,20 @@ const EmployeeSelector = ({ employees, selectedIds, onSelect, onSelectAll, onCle
 
         return true;
     };
+
+    // Filter by search and sort: available employees first, then alphabetically
+    const filteredEmployees = employees
+        .filter(emp =>
+            emp.name.toLowerCase().includes(search.toLowerCase()) ||
+            (emp.role || '').toLowerCase().includes(search.toLowerCase())
+        )
+        .sort((a, b) => {
+            const aAvailable = isEmployeeAvailable(a.id);
+            const bAvailable = isEmployeeAvailable(b.id);
+            if (aAvailable && !bAvailable) return -1;
+            if (!aAvailable && bAvailable) return 1;
+            return a.name.localeCompare(b.name);
+        });
 
     // Get only available employees for "Select All"
     const availableEmployees = filteredEmployees.filter(emp => isEmployeeAvailable(emp.id));
