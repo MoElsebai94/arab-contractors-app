@@ -3,9 +3,119 @@
  * Manages material allocation and consumption for projects
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { X, Plus, Package, Minus, Trash2, AlertCircle } from 'lucide-react';
+import { X, Plus, Package, Minus, Trash2, AlertCircle, ChevronDown, Check } from 'lucide-react';
+
+/**
+ * Modern Dropdown Component
+ * Custom styled dropdown replacing browser default select
+ */
+const ModernDropdown = ({ options, value, onChange, placeholder, renderOption, isRTL, disabled }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selectedOption = options.find(opt => opt.value === value);
+
+    return (
+        <div ref={dropdownRef} style={{ position: 'relative' }}>
+            <button
+                type="button"
+                onClick={() => !disabled && setIsOpen(!isOpen)}
+                disabled={disabled}
+                style={{
+                    width: '100%',
+                    padding: '0.6rem 0.75rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    background: disabled ? 'var(--bg-secondary)' : 'white',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: disabled ? 'not-allowed' : 'pointer',
+                    fontSize: '0.9rem',
+                    textAlign: isRTL ? 'right' : 'left',
+                    color: selectedOption ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    opacity: disabled ? 0.6 : 1
+                }}
+            >
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {selectedOption ? (renderOption ? renderOption(selectedOption) : selectedOption.label) : placeholder}
+                </span>
+                <ChevronDown size={16} style={{
+                    flexShrink: 0,
+                    marginLeft: isRTL ? 0 : '0.5rem',
+                    marginRight: isRTL ? '0.5rem' : 0,
+                    transform: isOpen ? 'rotate(180deg)' : 'none',
+                    transition: 'transform 0.2s'
+                }} />
+            </button>
+
+            {isOpen && (
+                <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: 'white',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-sm)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    zIndex: 1000,
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                    marginTop: '4px'
+                }}>
+                    {options.length === 0 ? (
+                        <div style={{ padding: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                            {isRTL ? 'لا توجد خيارات' : 'No options available'}
+                        </div>
+                    ) : (
+                        options.map((option) => (
+                            <div
+                                key={option.value}
+                                onClick={() => {
+                                    onChange(option.value);
+                                    setIsOpen(false);
+                                }}
+                                style={{
+                                    padding: '0.6rem 0.75rem',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    background: value === option.value ? 'var(--primary-light)' : 'transparent',
+                                    borderBottom: '1px solid var(--border-color)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (value !== option.value) e.target.style.background = 'var(--bg-secondary)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.background = value === option.value ? 'var(--primary-light)' : 'transparent';
+                                }}
+                            >
+                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {renderOption ? renderOption(option) : option.label}
+                                </span>
+                                {value === option.value && <Check size={16} style={{ color: 'var(--primary-color)', flexShrink: 0 }} />}
+                            </div>
+                        ))
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
 
 const MATERIAL_TYPES = [
     { value: 'production', label: 'Production Items', labelAr: 'منتجات الإنتاج' },
@@ -195,34 +305,28 @@ const ProjectMaterialsModal = ({ isOpen, onClose, project, isRTL, t }) => {
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                                 <div className="form-group">
                                     <label className="form-label">{isRTL ? 'نوع المادة' : 'Material Type'}</label>
-                                    <select
-                                        className="form-input"
+                                    <ModernDropdown
+                                        options={MATERIAL_TYPES.map(type => ({
+                                            value: type.value,
+                                            label: isRTL ? type.labelAr : type.label
+                                        }))}
                                         value={newMaterial.material_type}
-                                        onChange={(e) => setNewMaterial({ ...newMaterial, material_type: e.target.value, material_id: '' })}
-                                    >
-                                        {MATERIAL_TYPES.map(type => (
-                                            <option key={type.value} value={type.value}>
-                                                {isRTL ? type.labelAr : type.label}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        onChange={(val) => setNewMaterial({ ...newMaterial, material_type: val, material_id: '' })}
+                                        placeholder={isRTL ? 'اختر نوع المادة...' : 'Select material type...'}
+                                        isRTL={isRTL}
+                                    />
                                 </div>
 
                                 <div className="form-group">
                                     <label className="form-label">{isRTL ? 'المادة' : 'Material'}</label>
-                                    <select
-                                        className="form-input"
+                                    <ModernDropdown
+                                        options={getMaterialOptions()}
                                         value={newMaterial.material_id}
-                                        onChange={(e) => setNewMaterial({ ...newMaterial, material_id: e.target.value })}
-                                        required
-                                    >
-                                        <option value="">{isRTL ? 'اختر...' : 'Select...'}</option>
-                                        {getMaterialOptions().map(opt => (
-                                            <option key={opt.value} value={opt.value}>
-                                                {opt.label} ({isRTL ? 'متوفر' : 'Available'}: {opt.quantity})
-                                            </option>
-                                        ))}
-                                    </select>
+                                        onChange={(val) => setNewMaterial({ ...newMaterial, material_id: val })}
+                                        placeholder={isRTL ? 'اختر المادة...' : 'Select material...'}
+                                        renderOption={(opt) => `${opt.label} (${isRTL ? 'متوفر' : 'Available'}: ${opt.quantity})`}
+                                        isRTL={isRTL}
+                                    />
                                 </div>
 
                                 <div className="form-group">
@@ -238,15 +342,13 @@ const ProjectMaterialsModal = ({ isOpen, onClose, project, isRTL, t }) => {
 
                                 <div className="form-group">
                                     <label className="form-label">{isRTL ? 'الوحدة' : 'Unit'}</label>
-                                    <select
-                                        className="form-input"
+                                    <ModernDropdown
+                                        options={UNITS}
                                         value={newMaterial.unit}
-                                        onChange={(e) => setNewMaterial({ ...newMaterial, unit: e.target.value })}
-                                    >
-                                        {UNITS.map(unit => (
-                                            <option key={unit.value} value={unit.value}>{unit.label}</option>
-                                        ))}
-                                    </select>
+                                        onChange={(val) => setNewMaterial({ ...newMaterial, unit: val })}
+                                        placeholder={isRTL ? 'اختر الوحدة...' : 'Select unit...'}
+                                        isRTL={isRTL}
+                                    />
                                 </div>
                             </div>
 

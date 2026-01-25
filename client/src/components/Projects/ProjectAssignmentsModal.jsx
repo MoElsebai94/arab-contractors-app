@@ -3,9 +3,9 @@
  * Manages employee assignments to projects with workload tracking
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { X, Plus, Users, Clock, Trash2, UserCheck, AlertTriangle } from 'lucide-react';
+import { X, Plus, Users, Clock, Trash2, UserCheck, AlertTriangle, ChevronDown, Check, Search, UsersRound } from 'lucide-react';
 
 const ROLE_OPTIONS = [
     { value: 'supervisor', label: 'Supervisor', labelAr: 'مشرف' },
@@ -17,6 +17,303 @@ const ROLE_OPTIONS = [
     { value: 'other', label: 'Other', labelAr: 'أخرى' }
 ];
 
+// Modern Dropdown Component
+const ModernDropdown = ({ options, value, onChange, placeholder, renderOption, isRTL }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selectedOption = options.find(opt => opt.value === value);
+
+    return (
+        <div ref={dropdownRef} style={{ position: 'relative', width: '100%' }}>
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                style={{
+                    width: '100%',
+                    padding: '0.6rem 1rem',
+                    background: 'white',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-md)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    color: 'var(--text-primary)',
+                    transition: 'all 0.2s',
+                    minHeight: '42px'
+                }}
+            >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {selectedOption ? (renderOption ? renderOption(selectedOption) : selectedOption.label) :
+                        <span style={{ color: 'var(--text-secondary)' }}>{placeholder}</span>}
+                </span>
+                <ChevronDown size={16} style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', color: 'var(--text-secondary)' }} />
+            </button>
+
+            {isOpen && (
+                <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    marginTop: '0.25rem',
+                    background: 'white',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    zIndex: 100,
+                    maxHeight: '250px',
+                    overflowY: 'auto'
+                }}>
+                    {options.map(option => (
+                        <div
+                            key={option.value}
+                            onClick={() => { onChange(option.value); setIsOpen(false); }}
+                            style={{
+                                padding: '0.75rem 1rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                background: value === option.value ? 'var(--bg-secondary)' : 'transparent',
+                                borderBottom: '1px solid var(--border-color-light)',
+                                fontSize: '0.9rem',
+                                transition: 'background 0.15s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = value === option.value ? 'var(--bg-secondary)' : 'transparent'}
+                        >
+                            <span>{renderOption ? renderOption(option) : option.label}</span>
+                            {value === option.value && <Check size={16} style={{ color: 'var(--primary-color)' }} />}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// Employee Multi-Select Dropdown with Bulk Options
+const EmployeeSelector = ({ employees, selectedIds, onSelect, onSelectAll, onClear, workloadData, getWorkloadStatus, isRTL }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const filteredEmployees = employees.filter(emp =>
+        emp.name.toLowerCase().includes(search.toLowerCase()) ||
+        (emp.role || '').toLowerCase().includes(search.toLowerCase())
+    );
+
+    const getEmployeeWorkload = (employeeId) => {
+        return workloadData.find(w => w.id === employeeId);
+    };
+
+    return (
+        <div ref={dropdownRef} style={{ position: 'relative', width: '100%' }}>
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                style={{
+                    width: '100%',
+                    padding: '0.6rem 1rem',
+                    background: 'white',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-md)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    color: 'var(--text-primary)',
+                    minHeight: '42px'
+                }}
+            >
+                <span style={{ color: selectedIds.length > 0 ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                    {selectedIds.length > 0
+                        ? `${selectedIds.length} ${isRTL ? 'موظف محدد' : 'employee(s) selected'}`
+                        : (isRTL ? 'اختر موظفين...' : 'Select employees...')}
+                </span>
+                <ChevronDown size={16} style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+            </button>
+
+            {isOpen && (
+                <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    marginTop: '0.25rem',
+                    background: 'white',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    zIndex: 100,
+                    maxHeight: '350px',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column'
+                }}>
+                    {/* Search */}
+                    <div style={{ padding: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>
+                        <div style={{ position: 'relative' }}>
+                            <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                            <input
+                                type="text"
+                                placeholder={isRTL ? 'بحث...' : 'Search...'}
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.5rem 0.75rem 0.5rem 2.25rem',
+                                    border: '1px solid var(--border-color)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    fontSize: '0.9rem'
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Bulk Actions */}
+                    <div style={{
+                        padding: '0.5rem 0.75rem',
+                        borderBottom: '1px solid var(--border-color)',
+                        display: 'flex',
+                        gap: '0.5rem',
+                        background: 'var(--bg-secondary)'
+                    }}>
+                        <button
+                            type="button"
+                            onClick={() => onSelectAll(filteredEmployees.map(e => e.id))}
+                            style={{
+                                flex: 1,
+                                padding: '0.5rem',
+                                background: 'var(--primary-color)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: 'var(--radius-sm)',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.35rem'
+                            }}
+                        >
+                            <UsersRound size={14} />
+                            {isRTL ? 'تحديد الكل' : 'Select All'}
+                        </button>
+                        {selectedIds.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={onClear}
+                                style={{
+                                    flex: 1,
+                                    padding: '0.5rem',
+                                    background: 'var(--text-secondary)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: 'var(--radius-sm)',
+                                    cursor: 'pointer',
+                                    fontSize: '0.8rem'
+                                }}
+                            >
+                                {isRTL ? 'إلغاء التحديد' : 'Clear'}
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Employee List */}
+                    <div style={{ flex: 1, overflowY: 'auto', maxHeight: '220px' }}>
+                        {filteredEmployees.length === 0 ? (
+                            <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                {isRTL ? 'لا يوجد موظفين' : 'No employees found'}
+                            </div>
+                        ) : (
+                            filteredEmployees.map(emp => {
+                                const isSelected = selectedIds.includes(emp.id);
+                                const workload = getEmployeeWorkload(emp.id);
+                                const status = getWorkloadStatus(workload);
+
+                                return (
+                                    <div
+                                        key={emp.id}
+                                        onClick={() => onSelect(emp.id)}
+                                        style={{
+                                            padding: '0.75rem 1rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.75rem',
+                                            background: isSelected ? 'rgba(30, 58, 95, 0.1)' : 'transparent',
+                                            borderBottom: '1px solid var(--border-color-light)',
+                                            transition: 'background 0.15s'
+                                        }}
+                                        onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-secondary)'; }}
+                                        onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                                    >
+                                        <div style={{
+                                            width: '20px',
+                                            height: '20px',
+                                            borderRadius: '4px',
+                                            border: isSelected ? 'none' : '2px solid var(--border-color)',
+                                            background: isSelected ? 'var(--primary-color)' : 'transparent',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            flexShrink: 0
+                                        }}>
+                                            {isSelected && <Check size={14} style={{ color: 'white' }} />}
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{emp.name}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                                {emp.role || 'No Role'}
+                                            </div>
+                                        </div>
+                                        <span style={{
+                                            fontSize: '0.7rem',
+                                            padding: '0.2rem 0.5rem',
+                                            borderRadius: '10px',
+                                            background: status.color === 'var(--success-color)' ? 'rgba(34, 197, 94, 0.1)' :
+                                                        status.color === 'var(--warning-color)' ? 'rgba(245, 158, 11, 0.1)' :
+                                                        status.color === 'var(--danger-color)' ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-secondary)',
+                                            color: status.color
+                                        }}>
+                                            {status.label}
+                                        </span>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
 const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
     const [assignments, setAssignments] = useState([]);
     const [employees, setEmployees] = useState([]);
@@ -26,13 +323,9 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
     const [logHoursModal, setLogHoursModal] = useState({ show: false, assignment: null });
     const [hoursToLog, setHoursToLog] = useState('');
 
-    const [newAssignment, setNewAssignment] = useState({
-        employee_id: '',
-        role_on_project: 'worker',
-        hours_allocated: 0,
-        start_date: '',
-        end_date: ''
-    });
+    const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
+    const [bulkRole, setBulkRole] = useState('worker');
+    const [bulkHours, setBulkHours] = useState(0);
 
     useEffect(() => {
         if (isOpen && project) {
@@ -41,6 +334,14 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
             fetchWorkload();
         }
     }, [isOpen, project]);
+
+    useEffect(() => {
+        if (!showAddForm) {
+            setSelectedEmployeeIds([]);
+            setBulkRole('worker');
+            setBulkHours(0);
+        }
+    }, [showAddForm]);
 
     const fetchAssignments = async () => {
         try {
@@ -80,26 +381,41 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
         return employees.filter(e => !assignedIds.includes(e.id));
     };
 
-    const handleAddAssignment = async (e) => {
+    const handleAddAssignments = async (e) => {
         e.preventDefault();
+        if (selectedEmployeeIds.length === 0) return;
+
         try {
-            await axios.post(`/api/projects/${project.id}/assignments`, newAssignment);
+            // Add all selected employees
+            await Promise.all(selectedEmployeeIds.map(empId =>
+                axios.post(`/api/projects/${project.id}/assignments`, {
+                    employee_id: empId,
+                    role_on_project: bulkRole,
+                    hours_allocated: bulkHours
+                })
+            ));
+
             fetchAssignments();
             fetchWorkload();
             setShowAddForm(false);
-            setNewAssignment({
-                employee_id: '',
-                role_on_project: 'worker',
-                hours_allocated: 0,
-                start_date: '',
-                end_date: ''
-            });
         } catch (error) {
-            console.error('Error adding assignment:', error);
+            console.error('Error adding assignments:', error);
             if (error.response?.data?.error) {
                 alert(error.response.data.error);
             }
         }
+    };
+
+    const handleSelectEmployee = (empId) => {
+        setSelectedEmployeeIds(prev =>
+            prev.includes(empId)
+                ? prev.filter(id => id !== empId)
+                : [...prev, empId]
+        );
+    };
+
+    const handleSelectAllEmployees = (empIds) => {
+        setSelectedEmployeeIds(empIds);
     };
 
     const handleRemoveAssignment = async (assignmentId) => {
@@ -140,7 +456,7 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
     };
 
     const getWorkloadStatus = (workload) => {
-        if (!workload) return { color: 'var(--text-secondary)', label: isRTL ? 'متاح' : 'Available' };
+        if (!workload) return { color: 'var(--success-color)', label: isRTL ? 'متاح' : 'Available' };
         if (workload.active_projects >= 3) {
             return { color: 'var(--danger-color)', label: isRTL ? 'محمّل بشكل زائد' : 'Overloaded' };
         }
@@ -151,6 +467,8 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
     };
 
     if (!isOpen) return null;
+
+    const availableEmployees = getAvailableEmployees();
 
     return (
         <div className="modal-overlay" onClick={onClose} role="presentation">
@@ -222,87 +540,78 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
                     </div>
 
                     {/* Add Assignment Button */}
-                    {!showAddForm && getAvailableEmployees().length > 0 && (
+                    {!showAddForm && availableEmployees.length > 0 && (
                         <button
                             className="btn btn-primary"
                             onClick={() => setShowAddForm(true)}
                             style={{ marginBottom: '1rem' }}
                         >
                             <Plus size={18} />
-                            {isRTL ? 'إضافة عضو' : 'Add Team Member'}
+                            {isRTL ? 'إضافة أعضاء' : 'Add Team Members'}
                         </button>
                     )}
 
                     {/* Add Assignment Form */}
                     {showAddForm && (
-                        <form onSubmit={handleAddAssignment} style={{
+                        <form onSubmit={handleAddAssignments} style={{
                             background: 'var(--bg-secondary)',
-                            padding: '1rem',
+                            padding: '1.25rem',
                             borderRadius: 'var(--radius-md)',
                             marginBottom: '1rem'
                         }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                                <div className="form-group">
-                                    <label className="form-label">{isRTL ? 'الموظف' : 'Employee'}</label>
-                                    <select
-                                        className="form-input"
-                                        value={newAssignment.employee_id}
-                                        onChange={(e) => setNewAssignment({ ...newAssignment, employee_id: e.target.value })}
-                                        required
-                                    >
-                                        <option value="">{isRTL ? 'اختر موظف...' : 'Select employee...'}</option>
-                                        {getAvailableEmployees().map(emp => {
-                                            const workload = getEmployeeWorkload(emp.id);
-                                            const status = getWorkloadStatus(workload);
-                                            return (
-                                                <option key={emp.id} value={emp.id}>
-                                                    {emp.name} ({emp.role || 'No Role'}) - {status.label}
-                                                </option>
-                                            );
-                                        })}
-                                    </select>
-                                </div>
+                            <div className="form-group" style={{ marginBottom: '1rem' }}>
+                                <label className="form-label" style={{ marginBottom: '0.5rem', display: 'block' }}>
+                                    {isRTL ? 'اختر الموظفين' : 'Select Employees'}
+                                </label>
+                                <EmployeeSelector
+                                    employees={availableEmployees}
+                                    selectedIds={selectedEmployeeIds}
+                                    onSelect={handleSelectEmployee}
+                                    onSelectAll={handleSelectAllEmployees}
+                                    onClear={() => setSelectedEmployeeIds([])}
+                                    workloadData={workloadData}
+                                    getWorkloadStatus={getWorkloadStatus}
+                                    isRTL={isRTL}
+                                />
+                            </div>
 
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
                                 <div className="form-group">
-                                    <label className="form-label">{isRTL ? 'الدور في المشروع' : 'Role on Project'}</label>
-                                    <select
-                                        className="form-input"
-                                        value={newAssignment.role_on_project}
-                                        onChange={(e) => setNewAssignment({ ...newAssignment, role_on_project: e.target.value })}
-                                    >
-                                        {ROLE_OPTIONS.map(role => (
-                                            <option key={role.value} value={role.value}>
-                                                {isRTL ? role.labelAr : role.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="form-group">
-                                    <label className="form-label">{isRTL ? 'الساعات المخصصة' : 'Hours Allocated'}</label>
-                                    <input
-                                        type="number"
-                                        className="form-input"
-                                        value={newAssignment.hours_allocated}
-                                        onChange={(e) => setNewAssignment({ ...newAssignment, hours_allocated: parseInt(e.target.value) || 0 })}
-                                        min="0"
+                                    <label className="form-label" style={{ marginBottom: '0.5rem', display: 'block' }}>
+                                        {isRTL ? 'الدور في المشروع' : 'Role on Project'}
+                                    </label>
+                                    <ModernDropdown
+                                        options={ROLE_OPTIONS.map(r => ({ value: r.value, label: isRTL ? r.labelAr : r.label }))}
+                                        value={bulkRole}
+                                        onChange={setBulkRole}
+                                        placeholder={isRTL ? 'اختر الدور...' : 'Select role...'}
+                                        isRTL={isRTL}
                                     />
                                 </div>
 
                                 <div className="form-group">
-                                    <label className="form-label">{isRTL ? 'تاريخ البدء' : 'Start Date'}</label>
+                                    <label className="form-label" style={{ marginBottom: '0.5rem', display: 'block' }}>
+                                        {isRTL ? 'الساعات المخصصة' : 'Hours Allocated'}
+                                    </label>
                                     <input
-                                        type="date"
+                                        type="number"
                                         className="form-input"
-                                        value={newAssignment.start_date}
-                                        onChange={(e) => setNewAssignment({ ...newAssignment, start_date: e.target.value })}
+                                        value={bulkHours}
+                                        onChange={(e) => setBulkHours(parseInt(e.target.value) || 0)}
+                                        min="0"
+                                        style={{ height: '42px' }}
                                     />
                                 </div>
                             </div>
 
                             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                                <button type="submit" className="btn btn-primary">
-                                    {isRTL ? 'إضافة' : 'Add'}
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    disabled={selectedEmployeeIds.length === 0}
+                                >
+                                    <Plus size={16} />
+                                    {isRTL ? `إضافة ${selectedEmployeeIds.length} موظف` : `Add ${selectedEmployeeIds.length} Employee(s)`}
                                 </button>
                                 <button type="button" className="btn btn-secondary" onClick={() => setShowAddForm(false)}>
                                     {isRTL ? 'إلغاء' : 'Cancel'}
@@ -344,7 +653,7 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
                                             opacity: assignment.is_active ? 1 : 0.6
                                         }}
                                     >
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                 <div style={{
                                                     width: '40px',
@@ -355,12 +664,13 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    fontWeight: 600
+                                                    fontWeight: 600,
+                                                    flexShrink: 0
                                                 }}>
                                                     {assignment.employee_name?.charAt(0) || '?'}
                                                 </div>
                                                 <div>
-                                                    <div style={{ fontWeight: 600, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    <div style={{ fontWeight: 600, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                                                         {assignment.employee_name}
                                                         {!assignment.is_active && (
                                                             <span style={{
@@ -396,7 +706,7 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
                                                     )}
                                                 </div>
                                             </div>
-                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                                 <button
                                                     className="btn btn-secondary"
                                                     style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}

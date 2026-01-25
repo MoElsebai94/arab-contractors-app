@@ -612,31 +612,6 @@ const Projects = () => {
                                 required
                             />
                         </div>
-                        {formData.status === 'In Progress' && (
-                            <div className="form-group">
-                                <label className="form-label">{t('assignees')}</label>
-                                <div className="assignee-selector">
-                                    <div className="selected-tags">
-                                        {selectedAssignees.map(name => (
-                                            <span key={name} className="assignee-tag">
-                                                {name}
-                                                <button type="button" onClick={() => removeAssignee(name)}>
-                                                    <X size={12} />
-                                                </button>
-                                            </span>
-                                        ))}
-                                    </div>
-                                    <ModernAssigneeDropdown
-                                        employees={employees.filter(emp =>
-                                            !selectedAssignees.includes(emp.name) &&
-                                            !busyEmployees.has(emp.name)
-                                        )}
-                                        onSelect={addAssignee}
-                                        onSelectAll={addAllAssignees}
-                                    />
-                                </div>
-                            </div>
-                        )}
                         <div className="form-group">
                             <label className="form-label">{t('description')}</label>
                             <textarea
