@@ -489,6 +489,16 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
 
     if (!isOpen) return null;
 
+    // Check if there are any available employees (not assigned to this project or other active projects)
+    const hasAvailableEmployees = employees.some(emp => {
+        // If already assigned to this project, not available
+        if (assignments.some(a => a.employee_id === emp.id)) return false;
+        // Check workload - if they have active projects elsewhere, not available
+        const workload = workloadData.find(w => w.id === emp.id);
+        if (workload && workload.active_projects > 0) return false;
+        return true;
+    });
+
     return (
         <div className="modal-overlay" onClick={onClose} role="presentation">
             <div
@@ -559,7 +569,7 @@ const ProjectAssignmentsModal = ({ isOpen, onClose, project, isRTL, t }) => {
                     </div>
 
                     {/* Add Assignment Button */}
-                    {!showAddForm && availableEmployees.length > 0 && (
+                    {!showAddForm && hasAvailableEmployees && (
                         <button
                             className="btn btn-primary"
                             onClick={() => setShowAddForm(true)}
