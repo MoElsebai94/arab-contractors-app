@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
     ChevronDown, Plus, Search, Filter, X, Check, Edit2, Trash2,
     Construction, CheckCircle2, Clock, XCircle, AlertCircle, Upload, FileSpreadsheet,
-    ArrowUpDown, ArrowUp, ArrowDown
+    ArrowUpDown, ArrowUp, ArrowDown, FileDown
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import DalotStatistics from '../components/DalotStatistics';
 import DalotSchematic from '../components/DalotSchematic';
+import { exportDalotsPDF } from './Dalots/utils/exportPDF';
 import './Dalots.css';
 
 const API_BASE = window.location.hostname === 'localhost'
@@ -598,6 +599,17 @@ const Dalots = () => {
         setImportResult(null);
     };
 
+    // PDF Export handler
+    const handleExportPDF = () => {
+        exportDalotsPDF({
+            sections,
+            dalots,
+            stats,
+            isRTL,
+            getDalotsBySection
+        });
+    };
+
     // Helper to parse PK values (e.g., "00+055" -> 55, "12+345" -> 12345)
     const parsePK = (pk) => {
         if (!pk) return 0;
@@ -711,6 +723,10 @@ const Dalots = () => {
             <div className="page-header">
                 <h1 className="page-title">{isRTL ? 'إدارة الدالوت' : 'Dalots Management'}</h1>
                 <div className="header-actions">
+                    <button className="btn btn-secondary" onClick={handleExportPDF}>
+                        <FileDown size={18} />
+                        {isRTL ? 'تصدير PDF' : 'Export PDF'}
+                    </button>
                     <button className="btn btn-secondary" onClick={() => setShowImportModal(true)}>
                         <Upload size={18} />
                         {isRTL ? 'استيراد CSV' : 'Import CSV'}
