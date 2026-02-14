@@ -23,7 +23,35 @@ const {
 const app = express();
 const PORT = 3001;
 
-app.use(cors());
+// CORS configuration: allow same-origin (no Origin header) + explicit allowlist
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+// Default development origins
+const defaultOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://accgc.onrender.com'
+];
+
+const allAllowedOrigins = [...new Set([...defaultOrigins, ...allowedOrigins])];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no Origin header (same-origin, server-to-server, mobile apps)
+        if (!origin) return callback(null, true);
+        if (allAllowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        console.warn(`[CORS] Blocked request from origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true
+}));
 app.use(bodyParser.json());
 
 // Security middleware
