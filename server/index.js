@@ -23,6 +23,20 @@ const {
 const app = express();
 const PORT = 3001;
 
+// JWT Secret validation
+const FALLBACK_JWT_SECRET = 'default-dev-secret-change-me-in-production-32ch';
+const JWT_SECRET = (() => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+        console.warn('[SECURITY] JWT_SECRET not set! Using fallback. Set JWT_SECRET env var in production.');
+        return FALLBACK_JWT_SECRET;
+    }
+    if (secret.length < 16) {
+        console.warn(`[SECURITY] JWT_SECRET is too short (${secret.length} chars). Minimum 16 recommended.`);
+    }
+    return secret;
+})();
+
 // CORS configuration: allow same-origin (no Origin header) + explicit allowlist
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
     .split(',')
@@ -75,7 +89,7 @@ const authenticateToken = (req, res, next) => {
 
     if (!token) return res.status(401).json({ error: 'Access denied' });
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    jwt.verify(token, JWT_SECRET, (err, user) => {
         if (err) return res.status(403).json({ error: 'Invalid token' });
         req.user = user;
         next();
@@ -90,7 +104,7 @@ app.post('/api/auth/login', loginLimiter, validate('login'), (req, res) => {
     const normalizedTarget = process.env.ADMIN_PASSCODE ? process.env.ADMIN_PASSCODE.toString().trim() : '';
 
     if (normalizedInput === normalizedTarget) {
-        const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
         logAuth(req, 'LOGIN', true, { role: 'admin' });
         res.json({ success: true, token });
     } else {
