@@ -5,17 +5,6 @@ const db = require('./database');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
-// --- CRITICAL FIX 2: Validate JWT_SECRET at startup ---
-let JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET || JWT_SECRET.length < 32) {
-    if (process.env.NODE_ENV === 'production') {
-        console.error('WARNING: JWT_SECRET is missing or too short (< 32 chars). Using fallback. SET THIS IN PRODUCTION!');
-    }
-    // Fallback for backwards compatibility — generate a stable secret from existing env
-    JWT_SECRET = JWT_SECRET || 'acc-cameroon-default-secret-key-min-32-chars-long';
-    console.warn('Using fallback JWT_SECRET. Please set a proper JWT_SECRET environment variable.');
-}
-
 // Import security middleware
 const {
     validate,
@@ -32,46 +21,14 @@ const {
 } = require('./middleware');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = 3001;
 
-// --- CRITICAL FIX 1: Lock down CORS origins ---
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:3001,http://localhost:5173')
-    .split(',')
-    .map(o => o.trim())
-    .filter(Boolean);
-
-app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (mobile apps, curl, same-origin)
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-        console.warn(`CORS blocked request from origin: ${origin}`);
-        return callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
-}));
+app.use(cors());
 app.use(bodyParser.json());
 
 // Security middleware
 app.use(parseCookies);           // Parse cookies for CSRF
 app.use(sanitizeMiddleware);     // Sanitize all inputs
-
-// --- CRITICAL FIX 4: CSRF protection — warning mode (gradual rollout) ---
-app.use((req, res, next) => {
-    const stateChangingMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
-    if (stateChangingMethods.includes(req.method)) {
-        const csrfToken = req.headers['x-csrf-token'] || req.body?._csrf;
-        if (!csrfToken) {
-            console.warn(`[CSRF-WARNING] ${req.method} ${req.path} — No CSRF token (from ${req.ip})`);
-        }
-    }
-    next();
-});
-
 app.use(auditMiddleware({        // Audit logging
     excludePaths: ['/api/health', '/api/csrf-token', '/'],
     excludeMethods: ['OPTIONS']
@@ -90,7 +47,7 @@ const authenticateToken = (req, res, next) => {
 
     if (!token) return res.status(401).json({ error: 'Access denied' });
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
         if (err) return res.status(403).json({ error: 'Invalid token' });
         req.user = user;
         next();
@@ -105,7 +62,7 @@ app.post('/api/auth/login', loginLimiter, validate('login'), (req, res) => {
     const normalizedTarget = process.env.ADMIN_PASSCODE ? process.env.ADMIN_PASSCODE.toString().trim() : '';
 
     if (normalizedInput === normalizedTarget) {
-        const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '24h' });
         logAuth(req, 'LOGIN', true, { role: 'admin' });
         res.json({ success: true, token });
     } else {
@@ -193,41 +150,27 @@ app.put("/api/employees/reorder", (req, res) => {
         return;
     }
 
-    // --- CRITICAL FIX 6: Reorder with proper error tracking and rollback ---
     const sql = "UPDATE employees SET display_order = ? WHERE id = ?";
 
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");
-        const stmt = db.prepare(sql);
-        let errorOccurred = null;
 
         items.forEach(item => {
-            stmt.run([item.display_order, item.id], function (err) {
-                if (err && !errorOccurred) {
-                    errorOccurred = err;
+            db.run(sql, [item.display_order, item.id], function (err) {
+                if (err) {
                     console.error("Error updating employee:", item.id, err);
                 }
             });
         });
 
-        stmt.finalize((finalizeErr) => {
-            const error = errorOccurred || finalizeErr;
-            if (error) {
-                db.run("ROLLBACK", () => {
-                    console.error("Employee reorder rolled back:", error.message);
-                    res.status(400).json({ "error": error.message });
-                });
-            } else {
-                db.run("COMMIT", (commitErr) => {
-                    if (commitErr) {
-                        console.error("Error committing employee reorder:", commitErr);
-                        res.status(400).json({ "error": commitErr.message });
-                        return;
-                    }
-                    console.log("Employee reorder successful");
-                    res.json({ "message": "success" });
-                });
+        db.run("COMMIT", (err) => {
+            if (err) {
+                console.error("Error committing employee reorder:", err);
+                res.status(400).json({ "error": err.message });
+                return;
             }
+            console.log("Employee reorder successful");
+            res.json({ "message": "success" });
         });
     });
 });
@@ -495,41 +438,27 @@ app.put("/api/storage/iron/reorder", (req, res) => {
         return;
     }
 
-    // --- CRITICAL FIX 6: Reorder with proper error tracking and rollback ---
     const sql = "UPDATE iron_inventory SET display_order = ? WHERE id = ?";
 
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");
-        const stmt = db.prepare(sql);
-        let errorOccurred = null;
 
         items.forEach(item => {
-            stmt.run([item.display_order, item.id], function (err) {
-                if (err && !errorOccurred) {
-                    errorOccurred = err;
+            db.run(sql, [item.display_order, item.id], function (err) {
+                if (err) {
                     console.error("Error updating iron item:", item.id, err);
                 }
             });
         });
 
-        stmt.finalize((finalizeErr) => {
-            const error = errorOccurred || finalizeErr;
-            if (error) {
-                db.run("ROLLBACK", () => {
-                    console.error("Iron reorder rolled back:", error.message);
-                    res.status(400).json({ "error": error.message });
-                });
-            } else {
-                db.run("COMMIT", (commitErr) => {
-                    if (commitErr) {
-                        console.error("Error committing iron reorder:", commitErr);
-                        res.status(400).json({ "error": commitErr.message });
-                        return;
-                    }
-                    console.log("Iron reorder successful");
-                    res.json({ "message": "success" });
-                });
+        db.run("COMMIT", (err) => {
+            if (err) {
+                console.error("Error committing iron reorder:", err);
+                res.status(400).json({ "error": err.message });
+                return;
             }
+            console.log("Iron reorder successful");
+            res.json({ "message": "success" });
         });
     });
 });
@@ -1013,45 +942,33 @@ app.post('/api/attendance/bulk', validate('bulkAttendance'), (req, res) => {
         return res.status(400).json({ error: 'date and status are required' });
     }
 
-    // --- CRITICAL FIX 5: Fix race condition — use prepared statement with serialized execution ---
     const sql = `INSERT INTO attendance (employee_id, date, status, start_time, end_time, notes) 
                  VALUES (?, ?, ?, ?, ?, ?) 
                  ON CONFLICT(employee_id, date) 
                  DO UPDATE SET status=excluded.status, start_time=excluded.start_time, end_time=excluded.end_time, notes=excluded.notes`;
 
-    let responseSent = false;
-
     db.serialize(() => {
         db.run('BEGIN TRANSACTION');
 
-        const stmt = db.prepare(sql);
-        let errorOccurred = null;
+        let completed = 0;
+        let hasError = false;
 
-        for (const employeeId of employeeIds) {
-            if (errorOccurred) break;
-            stmt.run(
-                [employeeId, date, status, start_time || null, end_time || null, notes || ''],
-                function (err) {
-                    if (err && !errorOccurred) {
-                        errorOccurred = err;
-                    }
+        employeeIds.forEach((employeeId, index) => {
+            if (hasError) return;
+
+            const params = [employeeId, date, status, start_time || null, end_time || null, notes || ''];
+
+            db.run(sql, params, function (err) {
+                if (err && !hasError) {
+                    hasError = true;
+                    db.run('ROLLBACK');
+                    return res.status(400).json({ error: err.message });
                 }
-            );
-        }
 
-        stmt.finalize((finalizeErr) => {
-            const error = errorOccurred || finalizeErr;
-            if (error) {
-                db.run('ROLLBACK', () => {
-                    if (!responseSent) {
-                        responseSent = true;
-                        return res.status(400).json({ error: error.message });
-                    }
-                });
-            } else {
-                db.run('COMMIT', (commitErr) => {
-                    if (!responseSent) {
-                        responseSent = true;
+                completed++;
+
+                if (completed === employeeIds.length && !hasError) {
+                    db.run('COMMIT', (commitErr) => {
                         if (commitErr) {
                             return res.status(400).json({ error: commitErr.message });
                         }
@@ -1060,9 +977,9 @@ app.post('/api/attendance/bulk', validate('bulkAttendance'), (req, res) => {
                             count: employeeIds.length,
                             data: { date, status, start_time, end_time, notes }
                         });
-                    }
-                });
-            }
+                    });
+                }
+            });
         });
     });
 });
@@ -1732,37 +1649,17 @@ app.put("/api/dalots/reorder", (req, res) => {
         return;
     }
 
-    // --- CRITICAL FIX 6: Reorder with proper error tracking and rollback ---
     db.serialize(() => {
-        db.run("BEGIN TRANSACTION");
         const stmt = db.prepare("UPDATE dalots SET display_order = ? WHERE id = ?");
-        let errorOccurred = null;
-
         items.forEach((item, index) => {
-            stmt.run(index, item.id, function (err) {
-                if (err && !errorOccurred) {
-                    errorOccurred = err;
-                    console.error("Error reordering dalot:", item.id, err);
-                }
-            });
+            stmt.run(index, item.id);
         });
-
-        stmt.finalize((finalizeErr) => {
-            const error = errorOccurred || finalizeErr;
-            if (error) {
-                db.run("ROLLBACK", () => {
-                    console.error("Dalot reorder rolled back:", error.message);
-                    res.status(400).json({ error: error.message });
-                });
-            } else {
-                db.run("COMMIT", (commitErr) => {
-                    if (commitErr) {
-                        res.status(400).json({ error: commitErr.message });
-                        return;
-                    }
-                    res.json({ message: "success" });
-                });
+        stmt.finalize((err) => {
+            if (err) {
+                res.status(400).json({ error: err.message });
+                return;
             }
+            res.json({ message: "success" });
         });
     });
 });

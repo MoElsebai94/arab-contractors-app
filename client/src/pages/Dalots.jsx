@@ -4,14 +4,24 @@ import {
     Construction, CheckCircle2, Clock, XCircle, AlertCircle, Upload, FileSpreadsheet,
     ArrowUpDown, ArrowUp, ArrowDown, FileDown
 } from 'lucide-react';
-import axios from 'axios';
 import { useLanguage } from '../context/LanguageContext';
 import DalotStatistics from '../components/DalotStatistics';
 import DalotSchematic from '../components/DalotSchematic';
 import { exportDalotsPDF } from './Dalots/utils/exportPDF';
 import './Dalots.css';
 
-// --- CRITICAL FIX 7: Removed manual API_BASE and getAuthHeaders — using axios with interceptors from main.jsx ---
+const API_BASE = window.location.hostname === 'localhost'
+    ? 'http://localhost:3001/api'
+    : '/api';
+
+// Helper to get auth headers
+const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` })
+    };
+};
 
 // Dimension presets based on the spreadsheet
 const DIMENSION_PRESETS = [
@@ -243,7 +253,10 @@ const Dalots = () => {
     // Fetch data
     const fetchSections = useCallback(async () => {
         try {
-            const { data } = await axios.get('/api/dalots/sections');
+            const res = await fetch(`${API_BASE}/dalots/sections`, {
+                headers: getAuthHeaders()
+            });
+            const data = await res.json();
             setSections(data.data || []);
             // Expand all sections by default
             const expanded = {};
@@ -256,12 +269,15 @@ const Dalots = () => {
 
     const fetchDalots = useCallback(async () => {
         try {
-            const params = {};
-            if (sectionFilter) params.section_id = sectionFilter;
-            if (statusFilter) params.status = statusFilter;
-            if (searchTerm) params.search = searchTerm;
+            let url = `${API_BASE}/dalots?`;
+            if (sectionFilter) url += `section_id=${sectionFilter}&`;
+            if (statusFilter) url += `status=${statusFilter}&`;
+            if (searchTerm) url += `search=${encodeURIComponent(searchTerm)}&`;
 
-            const { data } = await axios.get('/api/dalots', { params });
+            const res = await fetch(url, {
+                headers: getAuthHeaders()
+            });
+            const data = await res.json();
             setDalots(data.data || []);
         } catch (err) {
             console.error('Error fetching dalots:', err);
@@ -270,7 +286,10 @@ const Dalots = () => {
 
     const fetchStats = useCallback(async () => {
         try {
-            const { data } = await axios.get('/api/dalots/stats');
+            const res = await fetch(`${API_BASE}/dalots/stats`, {
+                headers: getAuthHeaders()
+            });
+            const data = await res.json();
             setStats(data.data || { total: 0, finished: 0, in_progress: 0, cancelled: 0, validated: 0 });
         } catch (err) {
             console.error('Error fetching stats:', err);
@@ -297,7 +316,11 @@ const Dalots = () => {
     // Handle status change
     const handleStatusChange = async (dalotId, newStatus) => {
         try {
-            await axios.put(`/api/dalots/${dalotId}/status`, { status: newStatus });
+            await fetch(`${API_BASE}/dalots/${dalotId}/status`, {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ status: newStatus })
+            });
             fetchDalots();
             fetchStats();
             fetchSections();
@@ -309,7 +332,10 @@ const Dalots = () => {
     // Handle validation toggle
     const handleValidationToggle = async (dalotId) => {
         try {
-            await axios.put(`/api/dalots/${dalotId}/validate`);
+            await fetch(`${API_BASE}/dalots/${dalotId}/validate`, {
+                method: 'PUT',
+                headers: getAuthHeaders()
+            });
             fetchDalots();
             fetchStats();
             fetchSections();
@@ -327,7 +353,10 @@ const Dalots = () => {
             type: 'danger',
             onConfirm: async () => {
                 try {
-                    await axios.delete(`/api/dalots/${dalotId}`);
+                    await fetch(`${API_BASE}/dalots/${dalotId}`, {
+                        method: 'DELETE',
+                        headers: getAuthHeaders()
+                    });
                     fetchDalots();
                     fetchStats();
                     fetchSections();
@@ -379,11 +408,16 @@ const Dalots = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            if (editingDalot) {
-                await axios.put(`/api/dalots/${editingDalot.id}`, formData);
-            } else {
-                await axios.post('/api/dalots', formData);
-            }
+            const url = editingDalot
+                ? `${API_BASE}/dalots/${editingDalot.id}`
+                : `${API_BASE}/dalots`;
+            const method = editingDalot ? 'PUT' : 'POST';
+
+            await fetch(url, {
+                method,
+                headers: getAuthHeaders(),
+                body: JSON.stringify(formData)
+            });
 
             setShowModal(false);
             fetchDalots();
@@ -427,11 +461,16 @@ const Dalots = () => {
     const handleSectionSubmit = async (e) => {
         e.preventDefault();
         try {
-            if (editingSection) {
-                await axios.put(`/api/dalots/sections/${editingSection.id}`, sectionFormData);
-            } else {
-                await axios.post('/api/dalots/sections', sectionFormData);
-            }
+            const url = editingSection
+                ? `${API_BASE}/dalots/sections/${editingSection.id}`
+                : `${API_BASE}/dalots/sections`;
+            const method = editingSection ? 'PUT' : 'POST';
+
+            await fetch(url, {
+                method,
+                headers: getAuthHeaders(),
+                body: JSON.stringify(sectionFormData)
+            });
 
             setShowSectionModal(false);
             fetchSections();
@@ -458,7 +497,10 @@ const Dalots = () => {
             type: sectionDalots.length > 0 ? 'danger' : 'warning',
             onConfirm: async () => {
                 try {
-                    await axios.delete(`/api/dalots/sections/${sectionId}`);
+                    await fetch(`${API_BASE}/dalots/sections/${sectionId}`, {
+                        method: 'DELETE',
+                        headers: getAuthHeaders()
+                    });
                     fetchSections();
                     fetchDalots();
                     fetchStats();
@@ -520,23 +562,31 @@ const Dalots = () => {
         setImportResult(null);
 
         try {
-            const { data: result } = await axios.post('/api/dalots/import', {
-                section_id: importSection,
-                dalots: importData
+            const res = await fetch(`${API_BASE}/dalots/import`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    section_id: importSection,
+                    dalots: importData
+                })
             });
+            const result = await res.json();
 
-            setImportResult({
-                success: true,
-                message: isRTL
-                    ? `تم استيراد ${result.imported} من ${result.total} سجل بنجاح`
-                    : `Successfully imported ${result.imported} of ${result.total} records`
-            });
-            fetchDalots();
-            fetchStats();
-            fetchSections();
+            if (res.ok) {
+                setImportResult({
+                    success: true,
+                    message: isRTL
+                        ? `تم استيراد ${result.imported} من ${result.total} سجل بنجاح`
+                        : `Successfully imported ${result.imported} of ${result.total} records`
+                });
+                fetchDalots();
+                fetchStats();
+                fetchSections();
+            } else {
+                setImportResult({ success: false, message: result.error });
+            }
         } catch (err) {
-            const errorMsg = err.response?.data?.error || err.message;
-            setImportResult({ success: false, message: errorMsg });
+            setImportResult({ success: false, message: err.message });
         }
         setImporting(false);
     };

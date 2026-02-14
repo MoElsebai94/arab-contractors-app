@@ -20,40 +20,16 @@ const Dalots = lazy(() => import('./pages/Dalots'));
 function App() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-    // --- CRITICAL FIX 3: Single source of truth — JWT token in localStorage ---
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            try {
-                // Decode JWT payload to check expiry (no verification needed client-side)
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                if (payload.exp * 1000 > Date.now()) {
-                    setIsAuthenticated(true);
-                } else {
-                    // Token expired — clean up
-                    localStorage.removeItem('token');
-                    sessionStorage.removeItem('isAuthenticated');
-                }
-            } catch {
-                // Malformed token — clean up
-                localStorage.removeItem('token');
-                sessionStorage.removeItem('isAuthenticated');
-            }
-        } else {
-            // No token — ensure sessionStorage is also cleared
-            sessionStorage.removeItem('isAuthenticated');
+        const auth = sessionStorage.getItem('isAuthenticated');
+        if (auth === 'true') {
+            setIsAuthenticated(true);
         }
     }, []);
 
     const handleLogin = () => {
         sessionStorage.setItem('isAuthenticated', 'true');
         setIsAuthenticated(true);
-    };
-
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        sessionStorage.removeItem('isAuthenticated');
-        setIsAuthenticated(false);
     };
 
     if (!isAuthenticated) {

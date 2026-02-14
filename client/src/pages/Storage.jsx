@@ -457,8 +457,6 @@ const Storage = () => {
 
     const handleDragEnd = async (event) => {
         const { active, over } = event;
-        // --- CRITICAL FIX 9: Null check — over is null when dropping outside a droppable area ---
-        if (!over) return;
 
         if (active.id !== over.id) {
             const oldIndex = ironInventory.findIndex((item) => String(item.id) === String(active.id));
