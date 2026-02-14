@@ -205,26 +205,47 @@ app.put("/api/employees/reorder", (req, res) => {
     }
 
     const sql = "UPDATE employees SET display_order = ? WHERE id = ?";
+    let responseSent = false;
 
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");
 
+        const stmt = db.prepare(sql);
+        let errorOccurred = false;
+        let completed = 0;
+
         items.forEach(item => {
-            db.run(sql, [item.display_order, item.id], function (err) {
+            if (errorOccurred) return;
+            stmt.run([item.display_order, item.id], function (err) {
+                if (errorOccurred) return;
                 if (err) {
+                    errorOccurred = true;
                     console.error("Error updating employee:", item.id, err);
+                    stmt.finalize();
+                    db.run("ROLLBACK", () => {
+                        if (!responseSent) {
+                            responseSent = true;
+                            res.status(400).json({ "error": err.message });
+                        }
+                    });
+                    return;
+                }
+                completed++;
+                if (completed === items.length) {
+                    stmt.finalize();
+                    db.run("COMMIT", (commitErr) => {
+                        if (!responseSent) {
+                            responseSent = true;
+                            if (commitErr) {
+                                console.error("Error committing employee reorder:", commitErr);
+                                return res.status(400).json({ "error": commitErr.message });
+                            }
+                            console.log("Employee reorder successful");
+                            res.json({ "message": "success" });
+                        }
+                    });
                 }
             });
-        });
-
-        db.run("COMMIT", (err) => {
-            if (err) {
-                console.error("Error committing employee reorder:", err);
-                res.status(400).json({ "error": err.message });
-                return;
-            }
-            console.log("Employee reorder successful");
-            res.json({ "message": "success" });
         });
     });
 });
@@ -493,26 +514,47 @@ app.put("/api/storage/iron/reorder", (req, res) => {
     }
 
     const sql = "UPDATE iron_inventory SET display_order = ? WHERE id = ?";
+    let responseSent = false;
 
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");
 
+        const stmt = db.prepare(sql);
+        let errorOccurred = false;
+        let completed = 0;
+
         items.forEach(item => {
-            db.run(sql, [item.display_order, item.id], function (err) {
+            if (errorOccurred) return;
+            stmt.run([item.display_order, item.id], function (err) {
+                if (errorOccurred) return;
                 if (err) {
+                    errorOccurred = true;
                     console.error("Error updating iron item:", item.id, err);
+                    stmt.finalize();
+                    db.run("ROLLBACK", () => {
+                        if (!responseSent) {
+                            responseSent = true;
+                            res.status(400).json({ "error": err.message });
+                        }
+                    });
+                    return;
+                }
+                completed++;
+                if (completed === items.length) {
+                    stmt.finalize();
+                    db.run("COMMIT", (commitErr) => {
+                        if (!responseSent) {
+                            responseSent = true;
+                            if (commitErr) {
+                                console.error("Error committing iron reorder:", commitErr);
+                                return res.status(400).json({ "error": commitErr.message });
+                            }
+                            console.log("Iron reorder successful");
+                            res.json({ "message": "success" });
+                        }
+                    });
                 }
             });
-        });
-
-        db.run("COMMIT", (err) => {
-            if (err) {
-                console.error("Error committing iron reorder:", err);
-                res.status(400).json({ "error": err.message });
-                return;
-            }
-            console.log("Iron reorder successful");
-            res.json({ "message": "success" });
         });
     });
 });
@@ -1727,17 +1769,45 @@ app.put("/api/dalots/reorder", (req, res) => {
         return;
     }
 
+    let responseSent = false;
+
     db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+
         const stmt = db.prepare("UPDATE dalots SET display_order = ? WHERE id = ?");
+        let errorOccurred = false;
+        let completed = 0;
+
         items.forEach((item, index) => {
-            stmt.run(index, item.id);
-        });
-        stmt.finalize((err) => {
-            if (err) {
-                res.status(400).json({ error: err.message });
-                return;
-            }
-            res.json({ message: "success" });
+            if (errorOccurred) return;
+            stmt.run(index, item.id, function (err) {
+                if (errorOccurred) return;
+                if (err) {
+                    errorOccurred = true;
+                    console.error("Error reordering dalot:", item.id, err);
+                    stmt.finalize();
+                    db.run("ROLLBACK", () => {
+                        if (!responseSent) {
+                            responseSent = true;
+                            res.status(400).json({ error: err.message });
+                        }
+                    });
+                    return;
+                }
+                completed++;
+                if (completed === items.length) {
+                    stmt.finalize();
+                    db.run("COMMIT", (commitErr) => {
+                        if (!responseSent) {
+                            responseSent = true;
+                            if (commitErr) {
+                                return res.status(400).json({ error: commitErr.message });
+                            }
+                            res.json({ message: "success" });
+                        }
+                    });
+                }
+            });
         });
     });
 });
