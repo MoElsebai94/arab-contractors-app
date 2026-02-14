@@ -457,6 +457,7 @@ const Storage = () => {
 
     const handleDragEnd = async (event) => {
         const { active, over } = event;
+        if (!over) return;
 
         if (active.id !== over.id) {
             const oldIndex = ironInventory.findIndex((item) => String(item.id) === String(active.id));
