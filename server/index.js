@@ -79,6 +79,18 @@ app.use(auditMiddleware({        // Audit logging
 // CSRF token endpoint (client fetches token before making state-changing requests)
 app.get('/api/csrf-token', csrfTokenEndpoint);
 
+// CSRF warning middleware (warn-only, does NOT block requests)
+const CSRF_STATE_CHANGING_METHODS = ['POST', 'PUT', 'DELETE', 'PATCH'];
+app.use((req, res, next) => {
+    if (CSRF_STATE_CHANGING_METHODS.includes(req.method)) {
+        const csrfToken = req.headers['x-csrf-token'] || req.headers['x-xsrf-token'];
+        if (!csrfToken) {
+            console.warn(`[CSRF-WARN] ${req.method} ${req.path} — no CSRF token (from ${req.ip})`);
+        }
+    }
+    next();
+});
+
 // Authentication Middleware
 const authenticateToken = (req, res, next) => {
     // Skip auth for login
