@@ -1001,38 +1001,62 @@ app.post('/api/attendance/bulk', validate('bulkAttendance'), (req, res) => {
                  ON CONFLICT(employee_id, date) 
                  DO UPDATE SET status=excluded.status, start_time=excluded.start_time, end_time=excluded.end_time, notes=excluded.notes`;
 
+    let responseSent = false;
+
     db.serialize(() => {
-        db.run('BEGIN TRANSACTION');
-
-        let completed = 0;
-        let hasError = false;
-
-        employeeIds.forEach((employeeId, index) => {
-            if (hasError) return;
-
-            const params = [employeeId, date, status, start_time || null, end_time || null, notes || ''];
-
-            db.run(sql, params, function (err) {
-                if (err && !hasError) {
-                    hasError = true;
-                    db.run('ROLLBACK');
-                    return res.status(400).json({ error: err.message });
+        db.run('BEGIN TRANSACTION', (beginErr) => {
+            if (beginErr) {
+                if (!responseSent) {
+                    responseSent = true;
+                    return res.status(500).json({ error: 'Failed to begin transaction' });
                 }
+                return;
+            }
 
-                completed++;
+            const stmt = db.prepare(sql);
+            let errorOccurred = false;
+            let completed = 0;
+            const total = employeeIds.length;
 
-                if (completed === employeeIds.length && !hasError) {
-                    db.run('COMMIT', (commitErr) => {
-                        if (commitErr) {
-                            return res.status(400).json({ error: commitErr.message });
-                        }
-                        res.json({
-                            message: 'success',
-                            count: employeeIds.length,
-                            data: { date, status, start_time, end_time, notes }
+            employeeIds.forEach((employeeId) => {
+                if (errorOccurred) return;
+
+                const params = [employeeId, date, status, start_time || null, end_time || null, notes || ''];
+
+                stmt.run(params, function (err) {
+                    if (errorOccurred) return;
+
+                    if (err) {
+                        errorOccurred = true;
+                        stmt.finalize();
+                        db.run('ROLLBACK', () => {
+                            if (!responseSent) {
+                                responseSent = true;
+                                res.status(400).json({ error: err.message });
+                            }
                         });
-                    });
-                }
+                        return;
+                    }
+
+                    completed++;
+
+                    if (completed === total) {
+                        stmt.finalize();
+                        db.run('COMMIT', (commitErr) => {
+                            if (!responseSent) {
+                                responseSent = true;
+                                if (commitErr) {
+                                    return res.status(500).json({ error: commitErr.message });
+                                }
+                                res.json({
+                                    message: 'success',
+                                    count: total,
+                                    data: { date, status, start_time, end_time, notes }
+                                });
+                            }
+                        });
+                    }
+                });
             });
         });
     });
