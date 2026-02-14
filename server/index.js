@@ -23,7 +23,49 @@ const {
 const app = express();
 const PORT = 3001;
 
-app.use(cors());
+// JWT Secret validation
+const FALLBACK_JWT_SECRET = 'default-dev-secret-change-me-in-production-32ch';
+const JWT_SECRET = (() => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+        console.warn('[SECURITY] JWT_SECRET not set! Using fallback. Set JWT_SECRET env var in production.');
+        return FALLBACK_JWT_SECRET;
+    }
+    if (secret.length < 16) {
+        console.warn(`[SECURITY] JWT_SECRET is too short (${secret.length} chars). Minimum 16 recommended.`);
+    }
+    return secret;
+})();
+
+// CORS configuration: allow same-origin (no Origin header) + explicit allowlist
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+// Default development origins
+const defaultOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://accgc.onrender.com'
+];
+
+const allAllowedOrigins = [...new Set([...defaultOrigins, ...allowedOrigins])];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no Origin header (same-origin, server-to-server, mobile apps)
+        if (!origin) return callback(null, true);
+        if (allAllowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        console.warn(`[CORS] Blocked request from origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true
+}));
 app.use(bodyParser.json());
 
 // Security middleware
@@ -37,6 +79,18 @@ app.use(auditMiddleware({        // Audit logging
 // CSRF token endpoint (client fetches token before making state-changing requests)
 app.get('/api/csrf-token', csrfTokenEndpoint);
 
+// CSRF warning middleware (warn-only, does NOT block requests)
+const CSRF_STATE_CHANGING_METHODS = ['POST', 'PUT', 'DELETE', 'PATCH'];
+app.use((req, res, next) => {
+    if (CSRF_STATE_CHANGING_METHODS.includes(req.method)) {
+        const csrfToken = req.headers['x-csrf-token'] || req.headers['x-xsrf-token'];
+        if (!csrfToken) {
+            console.warn(`[CSRF-WARN] ${req.method} ${req.path} — no CSRF token (from ${req.ip})`);
+        }
+    }
+    next();
+});
+
 // Authentication Middleware
 const authenticateToken = (req, res, next) => {
     // Skip auth for login
@@ -47,7 +101,7 @@ const authenticateToken = (req, res, next) => {
 
     if (!token) return res.status(401).json({ error: 'Access denied' });
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    jwt.verify(token, JWT_SECRET, (err, user) => {
         if (err) return res.status(403).json({ error: 'Invalid token' });
         req.user = user;
         next();
@@ -62,7 +116,7 @@ app.post('/api/auth/login', loginLimiter, validate('login'), (req, res) => {
     const normalizedTarget = process.env.ADMIN_PASSCODE ? process.env.ADMIN_PASSCODE.toString().trim() : '';
 
     if (normalizedInput === normalizedTarget) {
-        const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
         logAuth(req, 'LOGIN', true, { role: 'admin' });
         res.json({ success: true, token });
     } else {
@@ -151,26 +205,47 @@ app.put("/api/employees/reorder", (req, res) => {
     }
 
     const sql = "UPDATE employees SET display_order = ? WHERE id = ?";
+    let responseSent = false;
 
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");
 
+        const stmt = db.prepare(sql);
+        let errorOccurred = false;
+        let completed = 0;
+
         items.forEach(item => {
-            db.run(sql, [item.display_order, item.id], function (err) {
+            if (errorOccurred) return;
+            stmt.run([item.display_order, item.id], function (err) {
+                if (errorOccurred) return;
                 if (err) {
+                    errorOccurred = true;
                     console.error("Error updating employee:", item.id, err);
+                    stmt.finalize();
+                    db.run("ROLLBACK", () => {
+                        if (!responseSent) {
+                            responseSent = true;
+                            res.status(400).json({ "error": err.message });
+                        }
+                    });
+                    return;
+                }
+                completed++;
+                if (completed === items.length) {
+                    stmt.finalize();
+                    db.run("COMMIT", (commitErr) => {
+                        if (!responseSent) {
+                            responseSent = true;
+                            if (commitErr) {
+                                console.error("Error committing employee reorder:", commitErr);
+                                return res.status(400).json({ "error": commitErr.message });
+                            }
+                            console.log("Employee reorder successful");
+                            res.json({ "message": "success" });
+                        }
+                    });
                 }
             });
-        });
-
-        db.run("COMMIT", (err) => {
-            if (err) {
-                console.error("Error committing employee reorder:", err);
-                res.status(400).json({ "error": err.message });
-                return;
-            }
-            console.log("Employee reorder successful");
-            res.json({ "message": "success" });
         });
     });
 });
@@ -439,26 +514,47 @@ app.put("/api/storage/iron/reorder", (req, res) => {
     }
 
     const sql = "UPDATE iron_inventory SET display_order = ? WHERE id = ?";
+    let responseSent = false;
 
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");
 
+        const stmt = db.prepare(sql);
+        let errorOccurred = false;
+        let completed = 0;
+
         items.forEach(item => {
-            db.run(sql, [item.display_order, item.id], function (err) {
+            if (errorOccurred) return;
+            stmt.run([item.display_order, item.id], function (err) {
+                if (errorOccurred) return;
                 if (err) {
+                    errorOccurred = true;
                     console.error("Error updating iron item:", item.id, err);
+                    stmt.finalize();
+                    db.run("ROLLBACK", () => {
+                        if (!responseSent) {
+                            responseSent = true;
+                            res.status(400).json({ "error": err.message });
+                        }
+                    });
+                    return;
+                }
+                completed++;
+                if (completed === items.length) {
+                    stmt.finalize();
+                    db.run("COMMIT", (commitErr) => {
+                        if (!responseSent) {
+                            responseSent = true;
+                            if (commitErr) {
+                                console.error("Error committing iron reorder:", commitErr);
+                                return res.status(400).json({ "error": commitErr.message });
+                            }
+                            console.log("Iron reorder successful");
+                            res.json({ "message": "success" });
+                        }
+                    });
                 }
             });
-        });
-
-        db.run("COMMIT", (err) => {
-            if (err) {
-                console.error("Error committing iron reorder:", err);
-                res.status(400).json({ "error": err.message });
-                return;
-            }
-            console.log("Iron reorder successful");
-            res.json({ "message": "success" });
         });
     });
 });
@@ -947,38 +1043,62 @@ app.post('/api/attendance/bulk', validate('bulkAttendance'), (req, res) => {
                  ON CONFLICT(employee_id, date) 
                  DO UPDATE SET status=excluded.status, start_time=excluded.start_time, end_time=excluded.end_time, notes=excluded.notes`;
 
+    let responseSent = false;
+
     db.serialize(() => {
-        db.run('BEGIN TRANSACTION');
-
-        let completed = 0;
-        let hasError = false;
-
-        employeeIds.forEach((employeeId, index) => {
-            if (hasError) return;
-
-            const params = [employeeId, date, status, start_time || null, end_time || null, notes || ''];
-
-            db.run(sql, params, function (err) {
-                if (err && !hasError) {
-                    hasError = true;
-                    db.run('ROLLBACK');
-                    return res.status(400).json({ error: err.message });
+        db.run('BEGIN TRANSACTION', (beginErr) => {
+            if (beginErr) {
+                if (!responseSent) {
+                    responseSent = true;
+                    return res.status(500).json({ error: 'Failed to begin transaction' });
                 }
+                return;
+            }
 
-                completed++;
+            const stmt = db.prepare(sql);
+            let errorOccurred = false;
+            let completed = 0;
+            const total = employeeIds.length;
 
-                if (completed === employeeIds.length && !hasError) {
-                    db.run('COMMIT', (commitErr) => {
-                        if (commitErr) {
-                            return res.status(400).json({ error: commitErr.message });
-                        }
-                        res.json({
-                            message: 'success',
-                            count: employeeIds.length,
-                            data: { date, status, start_time, end_time, notes }
+            employeeIds.forEach((employeeId) => {
+                if (errorOccurred) return;
+
+                const params = [employeeId, date, status, start_time || null, end_time || null, notes || ''];
+
+                stmt.run(params, function (err) {
+                    if (errorOccurred) return;
+
+                    if (err) {
+                        errorOccurred = true;
+                        stmt.finalize();
+                        db.run('ROLLBACK', () => {
+                            if (!responseSent) {
+                                responseSent = true;
+                                res.status(400).json({ error: err.message });
+                            }
                         });
-                    });
-                }
+                        return;
+                    }
+
+                    completed++;
+
+                    if (completed === total) {
+                        stmt.finalize();
+                        db.run('COMMIT', (commitErr) => {
+                            if (!responseSent) {
+                                responseSent = true;
+                                if (commitErr) {
+                                    return res.status(500).json({ error: commitErr.message });
+                                }
+                                res.json({
+                                    message: 'success',
+                                    count: total,
+                                    data: { date, status, start_time, end_time, notes }
+                                });
+                            }
+                        });
+                    }
+                });
             });
         });
     });
@@ -1649,17 +1769,45 @@ app.put("/api/dalots/reorder", (req, res) => {
         return;
     }
 
+    let responseSent = false;
+
     db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+
         const stmt = db.prepare("UPDATE dalots SET display_order = ? WHERE id = ?");
+        let errorOccurred = false;
+        let completed = 0;
+
         items.forEach((item, index) => {
-            stmt.run(index, item.id);
-        });
-        stmt.finalize((err) => {
-            if (err) {
-                res.status(400).json({ error: err.message });
-                return;
-            }
-            res.json({ message: "success" });
+            if (errorOccurred) return;
+            stmt.run(index, item.id, function (err) {
+                if (errorOccurred) return;
+                if (err) {
+                    errorOccurred = true;
+                    console.error("Error reordering dalot:", item.id, err);
+                    stmt.finalize();
+                    db.run("ROLLBACK", () => {
+                        if (!responseSent) {
+                            responseSent = true;
+                            res.status(400).json({ error: err.message });
+                        }
+                    });
+                    return;
+                }
+                completed++;
+                if (completed === items.length) {
+                    stmt.finalize();
+                    db.run("COMMIT", (commitErr) => {
+                        if (!responseSent) {
+                            responseSent = true;
+                            if (commitErr) {
+                                return res.status(400).json({ error: commitErr.message });
+                            }
+                            res.json({ message: "success" });
+                        }
+                    });
+                }
+            });
         });
     });
 });
