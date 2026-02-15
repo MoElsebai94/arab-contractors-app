@@ -5,6 +5,8 @@ import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingScreen from './components/LoadingScreen';
+import OfflineIndicator from './components/OfflineIndicator';
+import InstallPrompt from './components/InstallPrompt';
 import { SkipLink } from './components/AccessibleComponents';
 import './index.css';
 import './styles/accessibility.css';
@@ -76,6 +78,8 @@ function App() {
     return (
         <ErrorBoundary>
             <Router>
+                <OfflineIndicator />
+                <InstallPrompt />
                 <SkipLink targetId="main-content" />
                 <div className="app-container">
                     <Sidebar />
