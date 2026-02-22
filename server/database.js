@@ -438,6 +438,68 @@ const db = new sqlite3.Database(dbPath, (err) => {
         }
       });
 
+      // Create DQE Projects Table
+      db.run(`CREATE TABLE IF NOT EXISTS dqe_projects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        contract_number TEXT,
+        client TEXT,
+        contractor TEXT DEFAULT 'Arab Contractors Cameroon LTD',
+        total_ht REAL DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`, (err) => {
+        if (!err) {
+          console.log("DQE projects table checked/created");
+        } else {
+          console.error("Error creating dqe_projects table:", err);
+        }
+      });
+
+      // Create DQE Sections Table
+      db.run(`CREATE TABLE IF NOT EXISTS dqe_sections (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER NOT NULL,
+        code TEXT NOT NULL,
+        name TEXT NOT NULL,
+        length_km REAL,
+        FOREIGN KEY (project_id) REFERENCES dqe_projects(id) ON DELETE CASCADE
+      )`, (err) => {
+        if (!err) {
+          console.log("DQE sections table checked/created");
+        } else {
+          console.error("Error creating dqe_sections table:", err);
+        }
+      });
+
+      // Create DQE Items Table
+      db.run(`CREATE TABLE IF NOT EXISTS dqe_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER NOT NULL,
+        code TEXT NOT NULL,
+        designation TEXT NOT NULL,
+        unite TEXT NOT NULL,
+        prix_unitaire REAL NOT NULL DEFAULT 0,
+        serie TEXT,
+        serie_label TEXT,
+        qty_s1 REAL DEFAULT 0,
+        qty_s2 REAL DEFAULT 0,
+        qty_s3 REAL DEFAULT 0,
+        qty_total REAL DEFAULT 0,
+        montant_s1 REAL DEFAULT 0,
+        montant_s2 REAL DEFAULT 0,
+        montant_s3 REAL DEFAULT 0,
+        montant_total REAL DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES dqe_projects(id) ON DELETE CASCADE
+      )`, (err) => {
+        if (!err) {
+          console.log("DQE items table checked/created");
+        } else {
+          console.error("Error creating dqe_items table:", err);
+        }
+      });
+
       // Create Dalots Table
       db.run(`CREATE TABLE IF NOT EXISTS dalots (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

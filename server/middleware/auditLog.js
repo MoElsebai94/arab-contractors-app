@@ -128,7 +128,7 @@ const writeAuditLog = (entry) => {
 
     // Log to console in development
     if (config.logToConsole) {
-        const statusIcon = entry.response.status === 'success' ? '\x1b[32m\u2713\x1b[0m' : '\x1b[31m\u2717\x1b[0m';
+        const statusIcon = entry.response?.status === 'success' ? '\x1b[32m\u2713\x1b[0m' : '\x1b[31m\u2717\x1b[0m';
         console.log(`[AUDIT] ${statusIcon} ${entry.action} | User: ${entry.user.role} | IP: ${entry.user.ip}`);
     }
 

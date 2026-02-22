@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Rocket, Package, Calculator, Menu, X, Globe, Files, Construction } from 'lucide-react';
+import { LayoutDashboard, Users, Rocket, Package, Calculator, Menu, X, Globe, Files, Construction, Receipt } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import useScrollLock from '../hooks/useScrollLock';
 
@@ -104,6 +104,10 @@ const Sidebar = () => {
         <Link to="/dalots" className={`nav-item ${isActive('/dalots')}`} onClick={closeMenu} aria-current={location.pathname === '/dalots' ? 'page' : undefined}>
           <Construction className="nav-icon" size={24} aria-hidden="true" />
           {t('dalots') || "Dalots"}
+        </Link>
+        <Link to="/dqe" className={`nav-item ${isActive('/dqe')}`} onClick={closeMenu} aria-current={location.pathname === '/dqe' ? 'page' : undefined}>
+          <Receipt className="nav-icon" size={24} aria-hidden="true" />
+          {"DQE / Prix"}
         </Link>
       </nav>
 

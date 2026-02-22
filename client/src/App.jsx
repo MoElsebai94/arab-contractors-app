@@ -18,6 +18,7 @@ const Storage = lazy(() => import('./pages/Storage'));
 const CalculatorPage = lazy(() => import('./pages/Calculator'));
 const Documents = lazy(() => import('./pages/Documents'));
 const Dalots = lazy(() => import('./pages/Dalots'));
+const DQE = lazy(() => import('./pages/DQE'));
 
 // Decode JWT payload without a library (base64url)
 function decodeJwtPayload(token) {
@@ -93,6 +94,7 @@ function App() {
                                 <Route path="/calculator" element={<CalculatorPage />} />
                                 <Route path="/documents" element={<Documents />} />
                                 <Route path="/dalots" element={<Dalots />} />
+                                <Route path="/dqe" element={<DQE />} />
                                 <Route path="*" element={<NotFound />} />
                             </Routes>
                         </Suspense>

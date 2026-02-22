@@ -1,0 +1,818 @@
+/* DQE / Price Calculator Page Styles */
+
+.dqe-page {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.dqe-page h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dqe-page h1 svg {
+  color: var(--accent-color);
+}
+
+/* Top Actions Bar */
+.dqe-actions-bar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.dqe-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dqe-btn-primary {
+  background: var(--accent-color);
+  color: white;
+}
+
+.dqe-btn-primary:hover {
+  background: var(--accent-hover, #d97706);
+  transform: translateY(-1px);
+}
+
+.dqe-btn-secondary {
+  background: var(--bg-secondary, #f1f5f9);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.dqe-btn-secondary:hover {
+  background: var(--bg-hover, #e2e8f0);
+}
+
+.dqe-btn-danger {
+  background: #ef4444;
+  color: white;
+}
+
+.dqe-btn-danger:hover {
+  background: #dc2626;
+}
+
+.dqe-btn-sm {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+}
+
+/* Project Cards Grid */
+.dqe-projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.dqe-project-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+
+.dqe-project-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.dqe-project-card h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.dqe-project-card .project-contract {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+  word-break: break-word;
+}
+
+.dqe-project-card .project-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.dqe-project-card .project-total {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent-color);
+}
+
+.dqe-project-card .project-client {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  background: var(--bg-secondary, #f1f5f9);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm, 4px);
+}
+
+.dqe-project-card .project-delete-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+  opacity: 0;
+}
+
+.dqe-project-card:hover .project-delete-btn {
+  opacity: 1;
+}
+
+.dqe-project-card .project-delete-btn:hover {
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+/* Empty State */
+.dqe-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary);
+}
+
+.dqe-empty svg {
+  margin-bottom: 1rem;
+  opacity: 0.4;
+}
+
+.dqe-empty h3 {
+  font-size: 1.2rem;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.dqe-empty p {
+  margin-bottom: 1.5rem;
+}
+
+/* ============ Project Detail View ============ */
+
+.dqe-detail-header {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  margin-bottom: 1.5rem;
+}
+
+.dqe-detail-header .back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+  background: none;
+  border: none;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.dqe-detail-header .back-link:hover {
+  color: var(--accent-color);
+}
+
+.dqe-detail-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.25rem 0;
+}
+
+.dqe-detail-header .header-contract {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+}
+
+.dqe-detail-header .header-stats {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.dqe-detail-header .header-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.dqe-detail-header .header-stat label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.dqe-detail-header .header-stat span {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent-color);
+}
+
+/* Filter bar */
+.dqe-filter-bar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dqe-filter-bar select,
+.dqe-filter-bar input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  background: white;
+  min-width: 160px;
+}
+
+.dqe-filter-bar select:focus,
+.dqe-filter-bar input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.dqe-filter-bar .search-input {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Items Table */
+.dqe-table-container {
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dqe-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.dqe-table thead {
+  background: var(--bg-secondary, #f8fafc);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.dqe-table th {
+  padding: 0.75rem 0.6rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.dqe-table td {
+  padding: 0.6rem;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.dqe-table tr:hover {
+  background: var(--bg-hover, #f8fafc);
+}
+
+.dqe-table .col-code {
+  font-weight: 600;
+  white-space: nowrap;
+  width: 80px;
+}
+
+.dqe-table .col-designation {
+  min-width: 200px;
+}
+
+.dqe-table .col-unite {
+  text-align: center;
+  white-space: nowrap;
+  width: 60px;
+}
+
+.dqe-table .col-prix,
+.dqe-table .col-qty,
+.dqe-table .col-montant {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.dqe-table .col-prix {
+  width: 120px;
+}
+
+.dqe-table .col-qty {
+  width: 90px;
+}
+
+.dqe-table .col-montant {
+  width: 140px;
+  font-weight: 600;
+}
+
+.dqe-table .col-actions {
+  width: 80px;
+  text-align: center;
+}
+
+/* Serie group header row */
+.dqe-table .serie-header td {
+  background: var(--primary-light, #1e3a5f);
+  color: white;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 0.5rem 0.6rem;
+  border-bottom: none;
+}
+
+/* Color-coded series */
+.serie-tag {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+}
+
+.serie-tag.s-000 { background: #6366f1; }
+.serie-tag.s-100 { background: #10b981; }
+.serie-tag.s-200 { background: #f59e0b; }
+.serie-tag.s-300 { background: #3b82f6; }
+.serie-tag.s-400 { background: #8b5cf6; }
+.serie-tag.s-500 { background: #ef4444; }
+.serie-tag.s-550 { background: #dc2626; }
+.serie-tag.s-600 { background: #0ea5e9; }
+.serie-tag.s-700 { background: #64748b; }
+
+/* Summary bar */
+.dqe-summary-bar {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.dqe-summary-bar .summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dqe-summary-bar .summary-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.dqe-summary-bar .summary-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.dqe-summary-bar .summary-value.total {
+  color: var(--accent-color);
+  font-size: 1.3rem;
+}
+
+/* Item actions buttons */
+.dqe-item-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.dqe-item-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.dqe-item-actions button:hover {
+  color: var(--accent-color);
+  background: var(--bg-secondary, #f1f5f9);
+}
+
+.dqe-item-actions button.delete-btn:hover {
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+/* ============ Calculator Widget ============ */
+
+.dqe-calculator {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  margin-bottom: 1.5rem;
+}
+
+.dqe-calculator h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dqe-calculator .calc-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.dqe-calculator .calc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 180px;
+}
+
+.dqe-calculator .calc-field label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dqe-calculator .calc-field input,
+.dqe-calculator .calc-field select {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  background: white;
+}
+
+.dqe-calculator .calc-field input:focus,
+.dqe-calculator .calc-field select:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.dqe-calculator .calc-result {
+  background: var(--bg-secondary, #f8fafc);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.dqe-calculator .calc-result .prix-u {
+  color: var(--text-secondary);
+}
+
+.dqe-calculator .calc-result .multiply {
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.dqe-calculator .calc-result .qty {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.dqe-calculator .calc-result .equals {
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.dqe-calculator .calc-result .total {
+  color: var(--accent-color);
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+/* ============ Modal ============ */
+
+.dqe-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.dqe-modal {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 550px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+
+.dqe-modal h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 1.25rem 0;
+}
+
+.dqe-modal .form-group {
+  margin-bottom: 1rem;
+}
+
+.dqe-modal .form-group label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.3rem;
+}
+
+.dqe-modal .form-group input,
+.dqe-modal .form-group select {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  box-sizing: border-box;
+}
+
+.dqe-modal .form-group input:focus,
+.dqe-modal .form-group select:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.dqe-modal .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.dqe-modal .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Import zone */
+.dqe-import-zone {
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg-secondary, #f8fafc);
+  margin-bottom: 1rem;
+}
+
+.dqe-import-zone:hover,
+.dqe-import-zone.drag-over {
+  border-color: var(--accent-color);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.dqe-import-zone svg {
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+}
+
+.dqe-import-zone p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.dqe-import-zone .file-info {
+  color: var(--accent-color);
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+/* Toast / Alert */
+.dqe-toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: #10b981;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 2000;
+  animation: slideUp 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.dqe-toast.error {
+  background: #ef4444;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Confirm dialog */
+.dqe-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
+.dqe-confirm {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+.dqe-confirm h4 {
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.dqe-confirm p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 1.25rem;
+}
+
+.dqe-confirm .confirm-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+/* Loading */
+.dqe-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+  gap: 0.5rem;
+}
+
+.dqe-loading .spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============ Responsive ============ */
+
+@media (max-width: 768px) {
+  .dqe-projects-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dqe-filter-bar {
+    flex-direction: column;
+  }
+
+  .dqe-filter-bar select,
+  .dqe-filter-bar input {
+    min-width: unset;
+    width: 100%;
+  }
+
+  .dqe-summary-bar {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .dqe-calculator .calc-row {
+    flex-direction: column;
+  }
+
+  .dqe-calculator .calc-field {
+    min-width: unset;
+    width: 100%;
+  }
+
+  .dqe-detail-header .header-stats {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .dqe-modal .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .dqe-actions-bar {
+    flex-direction: column;
+  }
+
+  .dqe-btn {
+    justify-content: center;
+  }
+}

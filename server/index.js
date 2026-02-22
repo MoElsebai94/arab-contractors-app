@@ -21,7 +21,7 @@ const {
 } = require('./middleware');
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3005;
 
 // JWT Secret validation
 const FALLBACK_JWT_SECRET = 'default-dev-secret-change-me-in-production-32ch';
@@ -47,6 +47,7 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
 const defaultOrigins = [
     'http://localhost:3000',
     'http://localhost:3001',
+    'http://localhost:3005',
     'http://localhost:5173',
     'http://localhost:5174',
     'https://accgc.onrender.com'
@@ -1910,6 +1911,362 @@ app.post("/api/dalots/import", importLimiter, (req, res) => {
                 });
             });
         });
+    });
+});
+
+// --- DQE / Price Calculator API ---
+
+// Get all DQE projects
+app.get('/api/dqe/projects', (req, res) => {
+    db.all('SELECT * FROM dqe_projects ORDER BY created_at DESC', [], (err, rows) => {
+        if (err) return res.status(400).json({ error: err.message });
+        res.json({ data: rows });
+    });
+});
+
+// Create a DQE project
+app.post('/api/dqe/projects', (req, res) => {
+    const { name, contract_number, client, contractor, total_ht } = req.body;
+    if (!name) return res.status(400).json({ error: 'Le nom du projet est requis' });
+    const sql = `INSERT INTO dqe_projects (name, contract_number, client, contractor, total_ht) VALUES (?, ?, ?, ?, ?)`;
+    db.run(sql, [name, contract_number || null, client || null, contractor || 'Arab Contractors Cameroon LTD', total_ht || 0], function(err) {
+        if (err) return res.status(400).json({ error: err.message });
+        res.json({ message: 'success', id: this.lastID });
+    });
+});
+
+// Update a DQE project
+app.put('/api/dqe/projects/:id', validateId, (req, res) => {
+    const { name, contract_number, client, contractor, total_ht } = req.body;
+    const sql = `UPDATE dqe_projects SET 
+        name = COALESCE(?, name),
+        contract_number = COALESCE(?, contract_number),
+        client = COALESCE(?, client),
+        contractor = COALESCE(?, contractor),
+        total_ht = COALESCE(?, total_ht),
+        updated_at = datetime('now')
+        WHERE id = ?`;
+    db.run(sql, [name, contract_number, client, contractor, total_ht, req.params.id], function(err) {
+        if (err) return res.status(400).json({ error: err.message });
+        res.json({ message: 'success', changes: this.changes });
+    });
+});
+
+// Delete a DQE project (cascade delete items and sections)
+app.delete('/api/dqe/projects/:id', validateId, (req, res) => {
+    const projectId = req.params.id;
+    db.run('DELETE FROM dqe_items WHERE project_id = ?', [projectId], (err) => {
+        if (err) return res.status(400).json({ error: err.message });
+        db.run('DELETE FROM dqe_sections WHERE project_id = ?', [projectId], (err) => {
+            if (err) return res.status(400).json({ error: err.message });
+            db.run('DELETE FROM dqe_projects WHERE id = ?', [projectId], function(err) {
+                if (err) return res.status(400).json({ error: err.message });
+                res.json({ message: 'deleted', changes: this.changes });
+            });
+        });
+    });
+});
+
+// Get items for a DQE project (with filters)
+app.get('/api/dqe/projects/:projectId/items', (req, res) => {
+    const { projectId } = req.params;
+    const { serie, section, search } = req.query;
+    
+    let sql = 'SELECT * FROM dqe_items WHERE project_id = ?';
+    const params = [projectId];
+    
+    if (serie) {
+        sql += ' AND serie = ?';
+        params.push(serie);
+    }
+    if (search) {
+        sql += ' AND (designation LIKE ? OR code LIKE ?)';
+        params.push(`%${search}%`, `%${search}%`);
+    }
+    
+    sql += ' ORDER BY serie ASC, code ASC';
+    
+    db.all(sql, params, (err, rows) => {
+        if (err) return res.status(400).json({ error: err.message });
+        res.json({ data: rows });
+    });
+});
+
+// Add a single DQE item
+app.post('/api/dqe/projects/:projectId/items', (req, res) => {
+    const { projectId } = req.params;
+    const { code, designation, unite, prix_unitaire, serie, serie_label, qty_s1, qty_s2, qty_s3, qty_total, montant_s1, montant_s2, montant_s3, montant_total } = req.body;
+    
+    if (!code || !designation || !unite) {
+        return res.status(400).json({ error: 'Code, désignation et unité sont requis' });
+    }
+    
+    const sql = `INSERT INTO dqe_items 
+        (project_id, code, designation, unite, prix_unitaire, serie, serie_label, qty_s1, qty_s2, qty_s3, qty_total, montant_s1, montant_s2, montant_s3, montant_total)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    
+    db.run(sql, [
+        projectId, code, designation, unite, prix_unitaire || 0,
+        serie || null, serie_label || null,
+        qty_s1 || 0, qty_s2 || 0, qty_s3 || 0, qty_total || 0,
+        montant_s1 || 0, montant_s2 || 0, montant_s3 || 0, montant_total || 0
+    ], function(err) {
+        if (err) return res.status(400).json({ error: err.message });
+        res.json({ message: 'success', id: this.lastID });
+    });
+});
+
+// Update a DQE item
+app.put('/api/dqe/items/:id', validateId, (req, res) => {
+    const { code, designation, unite, prix_unitaire, serie, serie_label, qty_s1, qty_s2, qty_s3, qty_total, montant_s1, montant_s2, montant_s3, montant_total } = req.body;
+    
+    const sql = `UPDATE dqe_items SET
+        code = COALESCE(?, code),
+        designation = COALESCE(?, designation),
+        unite = COALESCE(?, unite),
+        prix_unitaire = COALESCE(?, prix_unitaire),
+        serie = COALESCE(?, serie),
+        serie_label = COALESCE(?, serie_label),
+        qty_s1 = COALESCE(?, qty_s1),
+        qty_s2 = COALESCE(?, qty_s2),
+        qty_s3 = COALESCE(?, qty_s3),
+        qty_total = COALESCE(?, qty_total),
+        montant_s1 = COALESCE(?, montant_s1),
+        montant_s2 = COALESCE(?, montant_s2),
+        montant_s3 = COALESCE(?, montant_s3),
+        montant_total = COALESCE(?, montant_total)
+        WHERE id = ?`;
+    
+    db.run(sql, [
+        code, designation, unite, prix_unitaire,
+        serie, serie_label,
+        qty_s1, qty_s2, qty_s3, qty_total,
+        montant_s1, montant_s2, montant_s3, montant_total,
+        req.params.id
+    ], function(err) {
+        if (err) return res.status(400).json({ error: err.message });
+        res.json({ message: 'success', changes: this.changes });
+    });
+});
+
+// Delete a DQE item
+app.delete('/api/dqe/items/:id', validateId, (req, res) => {
+    db.run('DELETE FROM dqe_items WHERE id = ?', [req.params.id], function(err) {
+        if (err) return res.status(400).json({ error: err.message });
+        res.json({ message: 'deleted', changes: this.changes });
+    });
+});
+
+// Import full project + items from JSON
+app.post('/api/dqe/import-full', (req, res) => {
+    const { project, items } = req.body;
+    
+    if (!project || !items || !Array.isArray(items)) {
+        return res.status(400).json({ error: 'Format invalide: projet et items requis' });
+    }
+    
+    // Create project
+    const projectSql = `INSERT INTO dqe_projects (name, contract_number, client, contractor, total_ht) VALUES (?, ?, ?, ?, ?)`;
+    db.run(projectSql, [
+        project.name,
+        project.contract || project.contract_number || null,
+        project.client || null,
+        project.contractor || 'Arab Contractors Cameroon LTD',
+        project.total_ht || 0
+    ], function(err) {
+        if (err) return res.status(400).json({ error: err.message });
+        
+        const projectId = this.lastID;
+        
+        // Insert sections if provided
+        if (project.sections && Array.isArray(project.sections)) {
+            const sectionSql = `INSERT INTO dqe_sections (project_id, code, name, length_km) VALUES (?, ?, ?, ?)`;
+            project.sections.forEach(s => {
+                db.run(sectionSql, [projectId, s.id || s.code, s.name, s.length_km || null]);
+            });
+        }
+        
+        // Insert items
+        let imported = 0;
+        let errors = [];
+        
+        const itemSql = `INSERT INTO dqe_items 
+            (project_id, code, designation, unite, prix_unitaire, serie, serie_label, qty_s1, qty_s2, qty_s3, qty_total, montant_s1, montant_s2, montant_s3, montant_total)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        
+        db.serialize(() => {
+            const stmt = db.prepare(itemSql);
+            
+            items.forEach((item, index) => {
+                const qty = item.quantities || {};
+                const mont = item.montants || {};
+                
+                stmt.run([
+                    projectId,
+                    item.code,
+                    item.designation,
+                    item.unite,
+                    item.prix_unitaire || 0,
+                    item.serie || null,
+                    item.serie_label || null,
+                    qty.S1 || 0,
+                    qty.S2 || 0,
+                    qty.S3 || 0,
+                    qty.total || 0,
+                    mont.S1 || 0,
+                    mont.S2 || 0,
+                    mont.S3 || 0,
+                    mont.total || 0
+                ], function(err) {
+                    if (err) {
+                        errors.push({ row: index + 1, code: item.code, error: err.message });
+                    } else {
+                        imported++;
+                    }
+                });
+            });
+            
+            stmt.finalize((err) => {
+                if (err) return res.status(400).json({ error: err.message });
+                res.json({
+                    message: 'Import réussi',
+                    projectId,
+                    imported,
+                    total: items.length,
+                    errors: errors.length > 0 ? errors : undefined
+                });
+            });
+        });
+    });
+});
+
+// Import items into an existing project
+app.post('/api/dqe/projects/:projectId/import', (req, res) => {
+    const { projectId } = req.params;
+    const { items } = req.body;
+    
+    if (!items || !Array.isArray(items)) {
+        return res.status(400).json({ error: 'Format invalide: tableau d\'items requis' });
+    }
+    
+    let imported = 0;
+    let errors = [];
+    
+    const itemSql = `INSERT INTO dqe_items 
+        (project_id, code, designation, unite, prix_unitaire, serie, serie_label, qty_s1, qty_s2, qty_s3, qty_total, montant_s1, montant_s2, montant_s3, montant_total)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    
+    db.serialize(() => {
+        const stmt = db.prepare(itemSql);
+        
+        items.forEach((item, index) => {
+            const qty = item.quantities || {};
+            const mont = item.montants || {};
+            
+            stmt.run([
+                projectId,
+                item.code,
+                item.designation,
+                item.unite,
+                item.prix_unitaire || 0,
+                item.serie || null,
+                item.serie_label || null,
+                qty.S1 || 0,
+                qty.S2 || 0,
+                qty.S3 || 0,
+                qty.total || 0,
+                mont.S1 || 0,
+                mont.S2 || 0,
+                mont.S3 || 0,
+                mont.total || 0
+            ], function(err) {
+                if (err) {
+                    errors.push({ row: index + 1, code: item.code, error: err.message });
+                } else {
+                    imported++;
+                }
+            });
+        });
+        
+        stmt.finalize((err) => {
+            if (err) return res.status(400).json({ error: err.message });
+            res.json({
+                message: 'Import réussi',
+                imported,
+                total: items.length,
+                errors: errors.length > 0 ? errors : undefined
+            });
+        });
+    });
+});
+
+// Calculator endpoint
+app.post('/api/dqe/calculate', (req, res) => {
+    const { itemId, quantity } = req.body;
+    
+    if (!itemId || quantity === undefined) {
+        return res.status(400).json({ error: 'itemId et quantité requis' });
+    }
+    
+    db.get('SELECT * FROM dqe_items WHERE id = ?', [itemId], (err, item) => {
+        if (err) return res.status(400).json({ error: err.message });
+        if (!item) return res.status(404).json({ error: 'Article non trouvé' });
+        
+        const total = item.prix_unitaire * quantity;
+        res.json({
+            data: {
+                code: item.code,
+                designation: item.designation,
+                unite: item.unite,
+                prix_unitaire: item.prix_unitaire,
+                quantity,
+                total
+            }
+        });
+    });
+});
+
+// Get project summary (totals by serie and section)
+app.get('/api/dqe/projects/:projectId/summary', (req, res) => {
+    const { projectId } = req.params;
+    
+    const sql = `SELECT 
+        serie, serie_label,
+        COUNT(*) as item_count,
+        SUM(montant_s1) as total_s1,
+        SUM(montant_s2) as total_s2,
+        SUM(montant_s3) as total_s3,
+        SUM(montant_total) as total
+        FROM dqe_items 
+        WHERE project_id = ?
+        GROUP BY serie, serie_label
+        ORDER BY serie ASC`;
+    
+    db.all(sql, [projectId], (err, rows) => {
+        if (err) return res.status(400).json({ error: err.message });
+        
+        // Also get grand totals
+        const grandSql = `SELECT 
+            COUNT(*) as total_items,
+            SUM(montant_s1) as grand_s1,
+            SUM(montant_s2) as grand_s2,
+            SUM(montant_s3) as grand_s3,
+            SUM(montant_total) as grand_total
+            FROM dqe_items WHERE project_id = ?`;
+        
+        db.get(grandSql, [projectId], (err2, grand) => {
+            if (err2) return res.status(400).json({ error: err2.message });
+            res.json({ data: { series: rows, grand } });
+        });
+    });
+});
+
+// Get DQE sections for a project
+app.get('/api/dqe/projects/:projectId/sections', (req, res) => {
+    const { projectId } = req.params;
+    db.all('SELECT * FROM dqe_sections WHERE project_id = ? ORDER BY code ASC', [projectId], (err, rows) => {
+        if (err) return res.status(400).json({ error: err.message });
+        res.json({ data: rows });
     });
 });
 
