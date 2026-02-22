@@ -27,102 +27,78 @@
     {
       "code": "001",
       "designation": "Installation de l'Entreprise",
-      "unite": "Ft",
+      "unite": "ff",
       "prix_unitaire": 1392126751,
       "serie": "000",
       "serie_label": "000 - Installation de Chantier",
       "quantities": {
-        "S1": 1,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
-        "total": 1
+        "total": 1.0
       },
       "montants": {
-        "S1": 1392126751,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
         "total": 1392126751
-      },
-      "sous_detail": {
-        "code": "001",
-        "category": "INSTALLATIONS DE CHANTIER",
-        "description": "Installation de chantier (amenée, mise en place, terrains, plateformes)",
-        "unit": "Forfait",
-        "prix_ht": 1392126751,
-        "prix_lettres": "Un Milliard Trois Cent Quatre Vingt Douze Millions Cent Vingt Six Mille Sept Cent Cinquante-Un FCFA"
       }
     },
     {
       "code": "002",
       "designation": "Repli Installation de chantier",
-      "unite": "Ft",
+      "unite": "ff",
       "prix_unitaire": 7000000,
       "serie": "000",
       "serie_label": "000 - Installation de Chantier",
       "quantities": {
-        "S1": 1,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
-        "total": 1
+        "total": 1.0
       },
       "montants": {
-        "S1": 7000000,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
         "total": 7000000
-      },
-      "sous_detail": {
-        "code": "002",
-        "category": "INSTALLATIONS DE CHANTIER",
-        "description": "Repli d'installation de chantier",
-        "unit": "Forfait",
-        "prix_ht": 7000000,
-        "prix_lettres": "Sept Millions FCFA"
       }
     },
     {
       "code": "003",
       "designation": "Locaux et moyens de l'Administration et de la MDC",
-      "unite": "Ft",
+      "unite": "ff",
       "prix_unitaire": 315000000,
       "serie": "000",
       "serie_label": "000 - Installation de Chantier",
       "quantities": {
-        "S1": 1,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
-        "total": 1
+        "total": 1.0
       },
       "montants": {
-        "S1": 315000000,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
         "total": 315000000
-      },
-      "sous_detail": {
-        "code": "003",
-        "category": "INSTALLATIONS DE CHANTIER",
-        "description": "Locaux de l'Administration et de la Mission de Contrôle",
-        "unit": "Forfait",
-        "prix_ht": null,
-        "prix_lettres": "voir bordereau"
       }
     },
     {
       "code": "004",
-      "designation": "Laboratoire de la Mission de Contrôle",
-      "unite": "Ft",
+      "designation": "Laboratoire de la Mission de contrôle",
+      "unite": "ff",
       "prix_unitaire": 100000000,
       "serie": "000",
       "serie_label": "000 - Installation de Chantier",
       "quantities": {
-        "S1": 1,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
-        "total": 1
+        "total": 1.0
       },
       "montants": {
-        "S1": 100000000,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
         "total": 100000000
@@ -131,46 +107,38 @@
     {
       "code": "005",
       "designation": "Installation de la centrale de concassage",
-      "unite": "Ft",
+      "unite": "ff",
       "prix_unitaire": 2000000,
       "serie": "000",
       "serie_label": "000 - Installation de Chantier",
       "quantities": {
-        "S1": 1,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
-        "total": 1
+        "total": 1.0
       },
       "montants": {
-        "S1": 2000000,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
         "total": 2000000
-      },
-      "sous_detail": {
-        "code": "005",
-        "category": "INSTALLATIONS DE CHANTIER",
-        "description": "Construction et équipement laboratoire 150m² pour Mission de Contrôle",
-        "unit": "Forfait",
-        "prix_ht": null,
-        "prix_lettres": "voir bordereau"
       }
     },
     {
       "code": "006",
       "designation": "Installation de la centrale d'enrobage",
-      "unite": "Ft",
+      "unite": "ff",
       "prix_unitaire": 2000000,
       "serie": "000",
       "serie_label": "000 - Installation de Chantier",
       "quantities": {
-        "S1": 1,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
-        "total": 1
+        "total": 1.0
       },
       "montants": {
-        "S1": 2000000,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
         "total": 2000000
@@ -178,67 +146,59 @@
     },
     {
       "code": "007",
-      "designation": "Installation de la centrale à béton de ciment",
-      "unite": "Ft",
+      "designation": "Installation de la centrale de béton de ciment",
+      "unite": "ff",
       "prix_unitaire": 2000000,
       "serie": "000",
       "serie_label": "000 - Installation de Chantier",
       "quantities": {
-        "S1": 1,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
-        "total": 1
+        "total": 1.0
       },
       "montants": {
-        "S1": 2000000,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
         "total": 2000000
-      },
-      "sous_detail": {
-        "code": "007",
-        "category": "INSTALLATIONS DE CHANTIER",
-        "description": "Installation de la centrale à béton de ciment",
-        "unit": "Forfait",
-        "prix_ht": 2000000,
-        "prix_lettres": "Deux Millions FCFA"
       }
     },
     {
       "code": "008",
-      "designation": "Études d'exécution",
-      "unite": "Ft",
-      "prix_unitaire": 7406842,
+      "designation": "Etudes d'exécution et plans de récolement",
+      "unite": "ff",
+      "prix_unitaire": 7406642,
       "serie": "000",
       "serie_label": "000 - Installation de Chantier",
       "quantities": {
-        "S1": 1,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
-        "total": 1
+        "total": 1.0
       },
       "montants": {
-        "S1": 7406842,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
-        "total": 7406842
+        "total": 7406642
       }
     },
     {
       "code": "009",
       "designation": "Plan Assurance Qualité",
-      "unite": "Ft",
+      "unite": "ff",
       "prix_unitaire": 7000000,
       "serie": "000",
       "serie_label": "000 - Installation de Chantier",
       "quantities": {
-        "S1": 1,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
-        "total": 1
+        "total": 1.0
       },
       "montants": {
-        "S1": 7000000,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
         "total": 7000000
@@ -246,174 +206,142 @@
     },
     {
       "code": "010",
-      "designation": "Mesures en faveur de la visibilité",
+      "designation": "Mesures en faveur de visibilité",
       "unite": "Prov",
       "prix_unitaire": 70000000,
       "serie": "000",
       "serie_label": "000 - Installation de Chantier",
       "quantities": {
-        "S1": 1,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
-        "total": 1
+        "total": 1.0
       },
       "montants": {
-        "S1": 70000000,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
         "total": 70000000
-      },
-      "sous_detail": {
-        "code": "010",
-        "category": "INSTALLATIONS DE CHANTIER",
-        "description": "Mesures en faveur de la visibilité (cérémonie, photos, films)",
-        "unit": "Provision",
-        "prix_ht": 70000000,
-        "prix_lettres": "Soixante Dix Millions FCFA"
       }
     },
     {
       "code": "011",
-      "designation": "Mise en œuvre du Plan de Gestion Environnementale et Social",
+      "designation": "Mise en œuvre du Plan de Gestion Environnementale et social",
       "unite": "Prov",
       "prix_unitaire": 165000000,
       "serie": "000",
       "serie_label": "000 - Installation de Chantier",
       "quantities": {
-        "S1": 1,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
-        "total": 1
+        "total": 1.0
       },
       "montants": {
-        "S1": 165000000,
+        "S1": 0,
         "S2": 0,
         "S3": 0,
         "total": 165000000
-      },
-      "sous_detail": {
-        "code": "011",
-        "category": "INSTALLATIONS DE CHANTIER",
-        "description": "Contrôle externe des ouvrages par organisme agréé",
-        "unit": "Forfait",
-        "prix_ht": 165000000,
-        "prix_lettres": "Cent Soixante Cinq Millions FCFA"
       }
     },
     {
       "code": "101",
       "designation": "Nettoyage et débroussaillage de l'emprise",
       "unite": "m2",
-      "prix_unitaire": 407,
+      "prix_unitaire": 966,
       "serie": "100",
       "serie_label": "100 - Dégagement d'Emprises",
       "quantities": {
-        "S1": 266000,
-        "S2": 107400,
-        "S3": 521800,
-        "total": 895200
+        "S1": 45250,
+        "S2": 219750,
+        "S3": 142500,
+        "total": 407500
       },
       "montants": {
-        "S1": 393645000,
-        "S2": 43711500,
-        "S3": 212278500,
-        "total": 649635000
+        "S1": 43711500,
+        "S2": 212278500,
+        "S3": 137655000,
+        "total": 393645000
       }
     },
     {
       "code": "102",
-      "designation": "Abattage d'arbres",
-      "unite": "U",
-      "prix_unitaire": 21810,
+      "designation": "Nettoyage exutoire naturel",
+      "unite": "ml",
+      "prix_unitaire": 7270,
       "serie": "100",
       "serie_label": "100 - Dégagement d'Emprises",
       "quantities": {
-        "S1": 100,
-        "S2": 0,
-        "S3": 0,
-        "total": 100
+        "S1": 200,
+        "S2": 3000,
+        "S3": 300,
+        "total": 3500
       },
       "montants": {
-        "S1": 2181000,
-        "S2": 0,
-        "S3": 0,
-        "total": 2181000
-      },
-      "sous_detail": {
-        "code": "102",
-        "category": "PREPARATION DU TERRAIN",
-        "description": "Nettoyage d'exutoires naturels (curage manuel ou mécanique)",
-        "unit": "ML",
-        "prix_ht": 7270,
-        "prix_lettres": "Sept Mille Deux Cent Soixante Dix FCFA"
+        "S1": 1454000,
+        "S2": 21810000,
+        "S3": 2181000,
+        "total": 25445000
       }
     },
     {
-      "code": "210",
-      "designation": "Déblais mis en remblai en grave latéritique",
+      "code": "203",
+      "designation": "Remblais d'emprunt en grave latéritique",
       "unite": "m3",
-      "prix_unitaire": 1393,
+      "prix_unitaire": 4896,
       "serie": "200",
       "serie_label": "200 - Terrassements Généraux",
       "quantities": {
-        "S1": 55787,
+        "S1": 11322,
         "S2": 40704,
         "S3": 3761,
-        "total": 100252
+        "total": 55787
       },
       "montants": {
-        "S1": 273133152,
+        "S1": 55432512,
         "S2": 199286784,
         "S3": 18413856,
-        "total": 490833792
+        "total": 273133152
       }
     },
     {
       "code": "312",
-      "designation": "Scarification, recyclage et remise en forme en couche de forme",
+      "designation": "Scarification, recyclage et remise en forme générale en couche de forme",
       "unite": "m3",
       "prix_unitaire": 1885,
       "serie": "300",
       "serie_label": "300 - Chaussée et Accotement",
       "quantities": {
-        "S1": 218203,
-        "S2": 34951,
+        "S1": 34951,
+        "S2": 104296,
         "S3": 78956,
-        "total": 332110
+        "total": 218203
       },
       "montants": {
-        "S1": 411312655,
-        "S2": 65882635,
+        "S1": 65882635,
+        "S2": 196597960,
         "S3": 148832060,
-        "total": 626027350
-      },
-      "sous_detail": {
-        "code": "312",
-        "category": "CHAUSSEES",
-        "description": "Scarification, recyclage et remise en forme en couche de forme",
-        "unit": "M3",
-        "prix_ht": 1885,
-        "prix_lettres": "Mille Huit Cent Quatre Vingt Cinq FCFA"
+        "total": 411312655
       }
     },
     {
       "code": "313",
-      "designation": "Apport en grave latéritique d'emprunt en couche de forme",
+      "designation": "Apport en grave latéritique provenant d'emprunt en Couche de forme",
       "unite": "m3",
-      "prix_unitaire": 4892,
+      "prix_unitaire": 4896,
       "serie": "300",
       "serie_label": "300 - Chaussée et Accotement",
       "quantities": {
-        "S1": 41813.5,
-        "S2": 3928,
+        "S1": 3928,
+        "S2": 23220,
         "S3": 14666,
-        "total": 60407.5
+        "total": 41813.5
       },
       "montants": {
-        "S1": 204718896,
-        "S2": 19231488,
+        "S1": 19231488,
+        "S2": 113685120,
         "S3": 71802288,
-        "total": 295752672
+        "total": 204718896
       }
     },
     {
@@ -424,14 +352,14 @@
       "serie": "300",
       "serie_label": "300 - Chaussée et Accotement",
       "quantities": {
-        "S1": 178767,
-        "S2": 13575,
+        "S1": 13575,
+        "S2": 178767,
         "S3": 91280,
         "total": 283622
       },
       "montants": {
-        "S1": 278518986,
-        "S2": 21149850,
+        "S1": 21149850,
+        "S2": 278518986,
         "S3": 142214240,
         "total": 441883076
       }
@@ -444,72 +372,56 @@
       "serie": "300",
       "serie_label": "300 - Chaussée et Accotement",
       "quantities": {
-        "S1": 178767,
-        "S2": 13575,
+        "S1": 13575,
+        "S2": 178767,
         "S3": 91280,
         "total": 283622
       },
       "montants": {
-        "S1": 708274854,
-        "S2": 53784150,
+        "S1": 53784150,
+        "S2": 708274854,
         "S3": 361651360,
         "total": 1123710364
-      },
-      "sous_detail": {
-        "code": "323",
-        "category": "CHAUSSEES",
-        "description": "Enduit bicouche sur accotement",
-        "unit": "M2",
-        "prix_ht": 3962,
-        "prix_lettres": "Trois Mille Neuf Cent Soixante Deux FCFA"
       }
     },
     {
       "code": "331",
-      "designation": "Grave concassée 0/40 (25 cm) - couche drainante",
+      "designation": "Couche drainante de en grave concassée 0/40 (25 cm)",
       "unite": "m3",
       "prix_unitaire": 34818,
       "serie": "300",
       "serie_label": "300 - Chaussée et Accotement",
       "quantities": {
         "S1": 2000,
-        "S2": 2000,
+        "S2": 0,
         "S3": 0,
-        "total": 4000
+        "total": 2000
       },
       "montants": {
         "S1": 69636000,
-        "S2": 69636000,
+        "S2": 0,
         "S3": 0,
-        "total": 139272000
+        "total": 69636000
       }
     },
     {
       "code": "332",
-      "designation": "Couche de base/fondation en grave concassée 0/31.5 (20 cm)",
+      "designation": "Couche de base/fondation en grave concassée 0/31.5 (20cm)",
       "unite": "m3",
       "prix_unitaire": 39010,
       "serie": "300",
       "serie_label": "300 - Chaussée et Accotement",
       "quantities": {
-        "S1": 31514,
-        "S2": 19150,
-        "S3": 34200,
+        "S1": 19150,
+        "S2": 31513,
+        "S3": 34201,
         "total": 84864
       },
       "montants": {
-        "S1": 1229161140,
-        "S2": 747041500,
+        "S1": 747041500,
+        "S2": 1229322130,
         "S3": 1334181010,
-        "total": 3310383650
-      },
-      "sous_detail": {
-        "code": "332",
-        "category": "CHAUSSEES",
-        "description": "Couche de base/fondation en grave concassée 0/31.5",
-        "unit": "M3",
-        "prix_ht": 39010,
-        "prix_lettres": "Trente Neuf Mille Dix FCFA"
+        "total": 3310544640
       }
     },
     {
@@ -520,21 +432,21 @@
       "serie": "300",
       "serie_label": "300 - Chaussée et Accotement",
       "quantities": {
-        "S1": 263700,
-        "S2": 95780,
+        "S1": 95780,
+        "S2": 263700,
         "S3": 171000,
         "total": 530480
       },
       "montants": {
-        "S1": 201994200,
-        "S2": 73367480,
+        "S1": 73367480,
+        "S2": 201994200,
         "S3": 130986000,
         "total": 406347680
       }
     },
     {
       "code": "336",
-      "designation": "Renforcement avec grille fibre de verre imprégnée latex SBR",
+      "designation": "Renforcement avec grille en fibre de verre imprégnée de latex SBR",
       "unite": "m2",
       "prix_unitaire": 5731,
       "serie": "300",
@@ -554,30 +466,22 @@
     },
     {
       "code": "337",
-      "designation": "Revêtement en béton bitumineux épaisseur 5 cm",
+      "designation": "Revêtement en Beton bitumineux 5 cm",
       "unite": "m2",
       "prix_unitaire": 13415,
       "serie": "300",
       "serie_label": "300 - Chaussée et Accotement",
       "quantities": {
-        "S1": 263700,
-        "S2": 95780,
+        "S1": 95780,
+        "S2": 263700,
         "S3": 171000,
         "total": 530480
       },
       "montants": {
-        "S1": 3537535500,
-        "S2": 1284888700,
+        "S1": 1284888700,
+        "S2": 3537535500,
         "S3": 2293965000,
         "total": 7116389200
-      },
-      "sous_detail": {
-        "code": "337",
-        "category": "CHAUSSEES",
-        "description": "Revêtement en béton bitumineux épaisseur 5 cm (BBSG)",
-        "unit": "M2",
-        "prix_ht": 13415,
-        "prix_lettres": "Treize Mille Quatre Cent Quinze FCFA"
       }
     },
     {
@@ -588,24 +492,16 @@
       "serie": "400",
       "serie_label": "400 - Assainissement et Drainage",
       "quantities": {
-        "S1": 29880,
-        "S2": 8379,
+        "S1": 8379,
+        "S2": 6996,
         "S3": 14505,
-        "total": 52764
+        "total": 29880
       },
       "montants": {
-        "S1": 410252400,
-        "S2": 115043670,
+        "S1": 115043670,
+        "S2": 96055080,
         "S3": 199153650,
-        "total": 724449720
-      },
-      "sous_detail": {
-        "code": "411",
-        "category": "ASSAINISSEMENT ET DRAINAGE",
-        "description": "Bordures type T2",
-        "unit": "ML",
-        "prix_ht": 13730,
-        "prix_lettres": "Treize Mille Sept Cent Trente FCFA"
+        "total": 410252400
       }
     },
     {
@@ -616,98 +512,130 @@
       "serie": "400",
       "serie_label": "400 - Assainissement et Drainage",
       "quantities": {
-        "S1": 26028,
-        "S2": 4543,
-        "S3": 14505,
-        "total": 45076
+        "S1": 4529,
+        "S2": 6995,
+        "S3": 14504,
+        "total": 26028
       },
       "montants": {
-        "S1": 152705496,
-        "S2": 61532993,
-        "S3": 196543170,
-        "total": 410781659
-      },
-      "sous_detail": {
-        "code": "412",
-        "category": "ASSAINISSEMENT ET DRAINAGE",
-        "description": "Bordures type C2",
-        "unit": "ML",
-        "prix_ht": 13551,
-        "prix_lettres": "Treize Mille Cinq Cent Cinquante-Un FCFA"
+        "S1": 61372479,
+        "S2": 94789245,
+        "S3": 196543704,
+        "total": 352705428
       }
     },
     {
-      "code": "421",
-      "designation": "Caniveaux section 50 x 50 cm (ép. 12 cm)",
+      "code": "413",
+      "designation": "Descente d'eau bétonnée",
+      "unite": "ml",
+      "prix_unitaire": 58722,
+      "serie": "400",
+      "serie_label": "400 - Assainissement et Drainage",
+      "quantities": {
+        "S1": 905,
+        "S2": 4399,
+        "S3": 2900,
+        "total": 8204
+      },
+      "montants": {
+        "S1": 53143410,
+        "S2": 258318078,
+        "S3": 170293800,
+        "total": 481755288
+      }
+    },
+    {
+      "code": "422",
+      "designation": "Caniveaux Section 50 x 50 cm (ép. 12 cm)",
       "unite": "ml",
       "prix_unitaire": 68185,
       "serie": "400",
       "serie_label": "400 - Assainissement et Drainage",
       "quantities": {
-        "S1": 8829,
-        "S2": 4563,
-        "S3": 3650,
-        "total": 17042
+        "S1": 4529,
+        "S2": 3650,
+        "S3": 650,
+        "total": 8829
       },
       "montants": {
-        "S1": 602005365,
-        "S2": 308809865,
-        "S3": 248875250,
-        "total": 1159690480
+        "S1": 308809865,
+        "S2": 248875250,
+        "S3": 44320250,
+        "total": 602005365
       }
     },
     {
       "code": "433",
-      "designation": "Fossés triangulaires bétonnés 130 x 60",
+      "designation": "Construction des fossés triangulaire bétonnées (130 x 60)",
       "unite": "ml",
       "prix_unitaire": 37626,
       "serie": "400",
       "serie_label": "400 - Assainissement et Drainage",
       "quantities": {
-        "S1": 10000,
+        "S1": 0,
         "S2": 0,
-        "S3": 0,
+        "S3": 10000,
         "total": 10000
       },
       "montants": {
-        "S1": 376260000,
+        "S1": 0,
         "S2": 0,
-        "S3": 0,
+        "S3": 376260000,
         "total": 376260000
       }
     },
     {
+      "code": "435",
+      "designation": "Construction fossés en terre",
+      "unite": "ml",
+      "prix_unitaire": 2772,
+      "serie": "400",
+      "serie_label": "400 - Assainissement et Drainage",
+      "quantities": {
+        "S1": 2246,
+        "S2": 15519,
+        "S3": 3207,
+        "total": 20972
+      },
+      "montants": {
+        "S1": 6225912,
+        "S2": 43018668,
+        "S3": 8889804,
+        "total": 58134384
+      }
+    },
+    {
       "code": "441",
-      "designation": "Dallette sur caniveaux 58 cm (ép. 12 cm)",
+      "designation": "Dallettes sur caniveaux 48 x 58 cm (ep.12 cm)",
       "unite": "ml",
       "prix_unitaire": 38989,
       "serie": "400",
       "serie_label": "400 - Assainissement et Drainage",
       "quantities": {
-        "S1": 6665,
-        "S2": 2265,
-        "S3": 3750,
-        "total": 12680
+        "S1": 2265,
+        "S2": 3750,
+        "S3": 650,
+        "total": 6665
       },
       "montants": {
-        "S1": 259861685,
-        "S2": 88310085,
-        "S3": 146208750,
-        "total": 494380520
+        "S1": 88310085,
+        "S2": 146208750,
+        "S3": 25342850,
+        "total": 259861685
       }
     },
     {
       "code": "442",
-      "designation": "Dallette sur fossés triangulaires 48 x 150 cm (ép. 12 cm)",
+      "designation": "Dallette sur fossés triangulaires 48 x 150 cm (ep.12 cm)",
       "unite": "ml",
-      "prix_unitaire": 0,
+      "prix_unitaire": 93554,
       "serie": "400",
       "serie_label": "400 - Assainissement et Drainage",
       "quantities": {
-        "S1": 0,
-        "S2": 0,
+        "S1": 1449,
+        "S2": 1960,
         "S3": 1750,
-        "total": 1750
+        "total": 5159
       },
       "montants": {
         "S1": 135559746,
@@ -718,47 +646,47 @@
     },
     {
       "code": "470",
-      "designation": "Curage des ouvrages hydrauliques sous chaussée",
-      "unite": "U",
+      "designation": "Curages des ouvrages hydrauliques sous chaussée (buses et dalots)",
+      "unite": "ml",
       "prix_unitaire": 249134,
       "serie": "400",
       "serie_label": "400 - Assainissement et Drainage",
       "quantities": {
         "S1": 25,
-        "S2": 25,
+        "S2": 0,
         "S3": 0,
-        "total": 50
+        "total": 25
       },
       "montants": {
         "S1": 6228350,
-        "S2": 6228350,
+        "S2": 0,
         "S3": 0,
-        "total": 12456700
+        "total": 6228350
       }
     },
     {
       "code": "510.1",
-      "designation": "Dalot BA section 1.00 x 1.00",
+      "designation": "Dalots en béton armé de section 1.00 X 1.00",
       "unite": "ml",
       "prix_unitaire": 401672,
       "serie": "500",
       "serie_label": "500 - Ouvrages d'Art",
       "quantities": {
-        "S1": 1429,
-        "S2": 108,
+        "S1": 108,
+        "S2": 917,
         "S3": 404,
-        "total": 1941
+        "total": 1429
       },
       "montants": {
-        "S1": 573989288,
-        "S2": 43380576,
+        "S1": 43380576,
+        "S2": 368333224,
         "S3": 162275488,
-        "total": 779645352
+        "total": 573989288
       }
     },
     {
       "code": "510.3",
-      "designation": "Dalot BA section 2x2x1.00",
+      "designation": "Dalots en béton armé de section 2 X 2 X 1,0",
       "unite": "ml",
       "prix_unitaire": 871249,
       "serie": "500",
@@ -778,27 +706,27 @@
     },
     {
       "code": "510.4",
-      "designation": "Dalot BA section 2x1.00",
+      "designation": "Dalots en béton armé de section 2 X 1,0",
       "unite": "ml",
       "prix_unitaire": 728518,
       "serie": "500",
       "serie_label": "500 - Ouvrages d'Art",
       "quantities": {
-        "S1": 220,
-        "S2": 100,
+        "S1": 100,
+        "S2": 105,
         "S3": 15,
-        "total": 335
+        "total": 220
       },
       "montants": {
-        "S1": 160273960,
-        "S2": 72851800,
+        "S1": 72851800,
+        "S2": 76494390,
         "S3": 10927770,
-        "total": 244053530
+        "total": 160273960
       }
     },
     {
       "code": "510.5",
-      "designation": "Dalot BA section 1.50 x 2.00",
+      "designation": "Dalots en béton armé de section 1.50 X 2.00",
       "unite": "ml",
       "prix_unitaire": 625194,
       "serie": "500",
@@ -818,7 +746,7 @@
     },
     {
       "code": "510.6",
-      "designation": "Dalot BA section 2x1.50x2.00",
+      "designation": "Dalots en béton armé de section 2 X 1.50 X 2.00",
       "unite": "ml",
       "prix_unitaire": 1318591,
       "serie": "500",
@@ -838,7 +766,7 @@
     },
     {
       "code": "510.7",
-      "designation": "Dalot BA section 2.50 x 3.00",
+      "designation": "Dalots en béton armé de section 2.50 X 3.00",
       "unite": "ml",
       "prix_unitaire": 1240527,
       "serie": "500",
@@ -858,67 +786,167 @@
     },
     {
       "code": "510.8",
-      "designation": "Dalot BA section 3.00 x 3.00",
+      "designation": "Dalots en béton armé de section 3,0 X 3.00",
       "unite": "ml",
       "prix_unitaire": 1351307,
       "serie": "500",
       "serie_label": "500 - Ouvrages d'Art",
       "quantities": {
         "S1": 0,
-        "S2": 0,
+        "S2": 15,
         "S3": 0,
-        "total": 0
+        "total": 15
+      },
+      "montants": {
+        "S1": 0,
+        "S2": 20269605,
+        "S3": 0,
+        "total": 20269605
+      }
+    },
+    {
+      "code": "510.9",
+      "designation": "Dalots en béton armé de section 2.0 X 2,5",
+      "unite": "ml",
+      "prix_unitaire": 1027504,
+      "serie": "500",
+      "serie_label": "500 - Ouvrages d'Art",
+      "quantities": {
+        "S1": 16.5,
+        "S2": 15,
+        "S3": 0,
+        "total": 31.5
+      },
+      "montants": {
+        "S1": 16953816,
+        "S2": 15412560,
+        "S3": 0,
+        "total": 32366376
+      }
+    },
+    {
+      "code": "510.10",
+      "designation": "Dalots en béton armé de section 3 x 1.50 X 2.00",
+      "unite": "ml",
+      "prix_unitaire": 2277657,
+      "serie": "500",
+      "serie_label": "500 - Ouvrages d'Art",
+      "quantities": {
+        "S1": 0,
+        "S2": 0,
+        "S3": 15,
+        "total": 15
       },
       "montants": {
         "S1": 0,
         "S2": 0,
-        "S3": 0,
-        "total": 0
+        "S3": 34164855,
+        "total": 34164855
+      }
+    },
+    {
+      "code": "520.1",
+      "designation": "Ouvrages de tête pour dalots de section 1.00 X 1.00",
+      "unite": "U",
+      "prix_unitaire": 910406,
+      "serie": "500",
+      "serie_label": "500 - Ouvrages d'Art",
+      "quantities": {
+        "S1": 10,
+        "S2": 126,
+        "S3": 56,
+        "total": 192
+      },
+      "montants": {
+        "S1": 9104060,
+        "S2": 114711156,
+        "S3": 50982736,
+        "total": 174797952
+      }
+    },
+    {
+      "code": "520.3",
+      "designation": "Ouvrages de tête pour dalots de section 2 X 2 X 1,0",
+      "unite": "U",
+      "prix_unitaire": 1630297,
+      "serie": "500",
+      "serie_label": "500 - Ouvrages d'Art",
+      "quantities": {
+        "S1": 0,
+        "S2": 0,
+        "S3": 6,
+        "total": 6
+      },
+      "montants": {
+        "S1": 0,
+        "S2": 0,
+        "S3": 9781782,
+        "total": 9781782
       }
     },
     {
       "code": "520.4",
-      "designation": "Tête de dalot section 2x1.00",
+      "designation": "Ouvrages de tête pour dalots de section 2 X 1,0",
       "unite": "U",
       "prix_unitaire": 1337631,
       "serie": "500",
       "serie_label": "500 - Ouvrages d'Art",
       "quantities": {
-        "S1": 24,
-        "S2": 8,
-        "S3": 14,
-        "total": 46
+        "S1": 8,
+        "S2": 14,
+        "S3": 2,
+        "total": 24
       },
       "montants": {
-        "S1": 32103144,
-        "S2": 10701048,
-        "S3": 18726834,
-        "total": 61531026
+        "S1": 10701048,
+        "S2": 18726834,
+        "S3": 2675262,
+        "total": 32103144
       }
     },
     {
       "code": "520.5",
-      "designation": "Tête de dalot section 1.50x2.00",
+      "designation": "Ouvrages de tête pour dalots de section 1.50 X 2,00",
       "unite": "U",
-      "prix_unitaire": 4872808,
+      "prix_unitaire": 1218202,
+      "serie": "500",
+      "serie_label": "500 - Ouvrages d'Art",
+      "quantities": {
+        "S1": 0,
+        "S2": 4,
+        "S3": 6,
+        "total": 10
+      },
+      "montants": {
+        "S1": 0,
+        "S2": 4872808,
+        "S3": 7309212,
+        "total": 12182020
+      }
+    },
+    {
+      "code": "520.6",
+      "designation": "Ouvrages de tête pour dalots de section 2 X 1.50 X 2.00",
+      "unite": "U",
+      "prix_unitaire": 2979786,
       "serie": "500",
       "serie_label": "500 - Ouvrages d'Art",
       "quantities": {
         "S1": 0,
         "S2": 0,
-        "S3": 1.5,
-        "total": 1.5
+        "S3": 4,
+        "total": 4
       },
       "montants": {
         "S1": 0,
         "S2": 0,
-        "S3": 7309212,
-        "total": 7309212
+        "S3": 11919144,
+        "total": 11919144
       }
     },
     {
       "code": "520.7",
-      "designation": "Tête de dalot section 2.50x3.00",
+      "designation": "Ouvrages de tête pour dalots de section 2.50 X 3.00",
       "unite": "U",
       "prix_unitaire": 3619800,
       "serie": "500",
@@ -937,50 +965,130 @@
       }
     },
     {
-      "code": "520.9",
-      "designation": "Tête de dalot section 2.00x2.50",
+      "code": "520.8",
+      "designation": "Ouvrages de tête pour dalots de section 3,00 X 3.00",
       "unite": "U",
-      "prix_unitaire": 2752024,
+      "prix_unitaire": 4914795,
       "serie": "500",
       "serie_label": "500 - Ouvrages d'Art",
       "quantities": {
         "S1": 0,
         "S2": 2,
-        "S3": 2,
-        "total": 4
+        "S3": 0,
+        "total": 2
       },
       "montants": {
         "S1": 0,
+        "S2": 9829590,
+        "S3": 0,
+        "total": 9829590
+      }
+    },
+    {
+      "code": "520.9",
+      "designation": "Ouvrages de tête pour dalots de section 2.0 X 2,5",
+      "unite": "U",
+      "prix_unitaire": 2752024,
+      "serie": "500",
+      "serie_label": "500 - Ouvrages d'Art",
+      "quantities": {
+        "S1": 2,
+        "S2": 2,
+        "S3": 0,
+        "total": 4
+      },
+      "montants": {
+        "S1": 5504048,
         "S2": 5504048,
-        "S3": 5504048,
+        "S3": 0,
         "total": 11008096
       }
     },
     {
+      "code": "520.10",
+      "designation": "Ouvrages de tête pour dalots de section 3 x 1.50 X 2.00",
+      "unite": "U",
+      "prix_unitaire": 5393878,
+      "serie": "500",
+      "serie_label": "500 - Ouvrages d'Art",
+      "quantities": {
+        "S1": 0,
+        "S2": 0,
+        "S3": 2,
+        "total": 2
+      },
+      "montants": {
+        "S1": 0,
+        "S2": 0,
+        "S3": 10787756,
+        "total": 10787756
+      }
+    },
+    {
       "code": "540.1",
-      "designation": "Nettoyage des cours d'eau",
-      "unite": "ml",
+      "designation": "Nétoyage des cours d'eau",
+      "unite": "m2",
       "prix_unitaire": 1159,
       "serie": "500",
       "serie_label": "500 - Ouvrages d'Art",
       "quantities": {
-        "S1": 350,
-        "S2": 6000,
+        "S1": 6000,
+        "S2": 18000,
         "S3": 11000,
-        "total": 17350
+        "total": 35000
       },
       "montants": {
-        "S1": 405650,
-        "S2": 6954000,
+        "S1": 6954000,
+        "S2": 20862000,
         "S3": 12749000,
-        "total": 20108650
+        "total": 40565000
       }
     },
     {
       "code": "540.3",
-      "designation": "Perrés maçonnés",
+      "designation": "Exécution des Perrés maçonnés",
       "unite": "m2",
       "prix_unitaire": 38372,
+      "serie": "500",
+      "serie_label": "500 - Ouvrages d'Art",
+      "quantities": {
+        "S1": 237,
+        "S2": 1152,
+        "S3": 718,
+        "total": 2107
+      },
+      "montants": {
+        "S1": 9094164,
+        "S2": 44204544,
+        "S3": 27551096,
+        "total": 80849804
+      }
+    },
+    {
+      "code": "540.4",
+      "designation": "Enrochements",
+      "unite": "m3",
+      "prix_unitaire": 33436,
+      "serie": "500",
+      "serie_label": "500 - Ouvrages d'Art",
+      "quantities": {
+        "S1": 50,
+        "S2": 235,
+        "S3": 161,
+        "total": 446
+      },
+      "montants": {
+        "S1": 1671800,
+        "S2": 7857460,
+        "S3": 5383196,
+        "total": 14912456
+      }
+    },
+    {
+      "code": "540.5",
+      "designation": "Exécution des Gabions",
+      "unite": "m3",
+      "prix_unitaire": 45763,
       "serie": "500",
       "serie_label": "500 - Ouvrages d'Art",
       "quantities": {
@@ -997,48 +1105,28 @@
       }
     },
     {
-      "code": "540.4",
-      "designation": "Enrochements",
-      "unite": "m3",
-      "prix_unitaire": 27551,
-      "serie": "500",
-      "serie_label": "500 - Ouvrages d'Art",
-      "quantities": {
-        "S1": 0,
-        "S2": 0,
-        "S3": 0,
-        "total": 0
-      },
-      "montants": {
-        "S1": 0,
-        "S2": 14912456,
-        "S3": 0,
-        "total": 14912456
-      }
-    },
-    {
       "code": "540.8",
-      "designation": "Fouilles et remblaiement des fouilles",
+      "designation": "Fouille et remblaiement des fouilles",
       "unite": "m3",
       "prix_unitaire": 4657,
       "serie": "500",
       "serie_label": "500 - Ouvrages d'Art",
       "quantities": {
-        "S1": 0,
-        "S2": 0,
-        "S3": 0,
-        "total": 0
+        "S1": 1230,
+        "S2": 12360,
+        "S3": 6599,
+        "total": 20189
       },
       "montants": {
-        "S1": 94020173,
-        "S2": 5728000,
-        "S3": 1360570,
-        "total": 101108743
+        "S1": 5728110,
+        "S2": 57560520,
+        "S3": 30731543,
+        "total": 94020173
       }
     },
     {
       "code": "550.1.1.1",
-      "designation": "Fouilles en déblai (pont)",
+      "designation": "fouilles en déblai",
       "unite": "m3",
       "prix_unitaire": 3457,
       "serie": "550",
@@ -1058,7 +1146,7 @@
     },
     {
       "code": "550.1.1.2",
-      "designation": "Remblai (pont)",
+      "designation": "remblai",
       "unite": "m3",
       "prix_unitaire": 12857,
       "serie": "550",
@@ -1078,7 +1166,7 @@
     },
     {
       "code": "550.1.1.3",
-      "designation": "Béton de propreté dosé à 150 kg/m3",
+      "designation": "Béton de propreté dosé à 150kg/m3",
       "unite": "m3",
       "prix_unitaire": 131574,
       "serie": "550",
@@ -1098,7 +1186,7 @@
     },
     {
       "code": "550.1.1.4",
-      "designation": "Coffrage soigné (mur de front, retour, corbeau, garde-grève)",
+      "designation": "coffrage soigné pour (mur de front, mur en retour, corbeau, mur garde grève)",
       "unite": "m2",
       "prix_unitaire": 33849,
       "serie": "550",
@@ -1118,7 +1206,7 @@
     },
     {
       "code": "550.1.1.5.1",
-      "designation": "BA dosé à 400 kg/m3 pour semelles et bossage",
+      "designation": "Béton armé dosé à 400kg/m3 pour semelles et bossage des appareils d'appuis",
       "unite": "m3",
       "prix_unitaire": 294287,
       "serie": "550",
@@ -1138,7 +1226,7 @@
     },
     {
       "code": "550.1.1.5.2",
-      "designation": "BA dosé à 350 kg/m3 pour piles, chevêtres, culées, murs",
+      "designation": "Béton armé dosé à 350kg/m3 pour piles, chevêtres, culées, murs en retour et mur de front, dalles de transition, corbeau, mur garde-greve",
       "unite": "m3",
       "prix_unitaire": 261728,
       "serie": "550",
@@ -1158,36 +1246,36 @@
     },
     {
       "code": "550.1.1.6",
-      "designation": "Aciers HA pour béton armé (ponts)",
-      "unite": "kg",
-      "prix_unitaire": 1397,
+      "designation": "Béton cyclopéen",
+      "unite": "m3",
+      "prix_unitaire": 139727,
       "serie": "550",
       "serie_label": "550 - Ponts (Rivière Ngobo)",
       "quantities": {
         "S1": 0,
-        "S2": 100000,
+        "S2": 832,
         "S3": 0,
-        "total": 100000
+        "total": 832
       },
       "montants": {
         "S1": 0,
-        "S2": 139727000,
+        "S2": 116252864,
         "S3": 0,
-        "total": 139727000
+        "total": 116252864
       }
     },
     {
       "code": "550.1.1.7",
-      "designation": "Mise en place des appareils d'appui",
-      "unite": "U",
-      "prix_unitaire": 0,
+      "designation": "Mise en place des matériaux filtrants",
+      "unite": "Fft",
+      "prix_unitaire": 12843427,
       "serie": "550",
       "serie_label": "550 - Ponts (Rivière Ngobo)",
       "quantities": {
         "S1": 0,
-        "S2": 0,
+        "S2": 1,
         "S3": 0,
-        "total": 0
+        "total": 1
       },
       "montants": {
         "S1": 0,
@@ -1198,8 +1286,8 @@
     },
     {
       "code": "550.1.2.1",
-      "designation": "Fourniture et montage aciers charpente métallique",
-      "unite": "T",
+      "designation": "Fourniture et montage en usines des aciers pour charpente métallique et transport jusqu'au site",
+      "unite": "tonne",
       "prix_unitaire": 5053132,
       "serie": "550",
       "serie_label": "550 - Ponts (Rivière Ngobo)",
@@ -1218,8 +1306,8 @@
     },
     {
       "code": "550.1.2.2",
-      "designation": "Montage de la charpente métallique sur site",
-      "unite": "T",
+      "designation": "Montage de la charpente sur site",
+      "unite": "tonne",
       "prix_unitaire": 984294,
       "serie": "550",
       "serie_label": "550 - Ponts (Rivière Ngobo)",
@@ -1238,7 +1326,7 @@
     },
     {
       "code": "550.1.2.3",
-      "designation": "Peinture anticorrosion zone tropicale",
+      "designation": "peinture anti corrosion (Zone tropicale)",
       "unite": "m2",
       "prix_unitaire": 32376,
       "serie": "550",
@@ -1258,7 +1346,27 @@
     },
     {
       "code": "550.1.2.4",
-      "designation": "Béton pour la dalle (y compris clavetage)",
+      "designation": "Coffrage dalle",
+      "unite": "m2",
+      "prix_unitaire": 33849,
+      "serie": "550",
+      "serie_label": "550 - Ponts (Rivière Ngobo)",
+      "quantities": {
+        "S1": 0,
+        "S2": 300,
+        "S3": 0,
+        "total": 300
+      },
+      "montants": {
+        "S1": 0,
+        "S2": 10154700,
+        "S3": 0,
+        "total": 10154700
+      }
+    },
+    {
+      "code": "550.1.2.5",
+      "designation": "Béton pour la dalle (y compris bclavetage)",
       "unite": "m3",
       "prix_unitaire": 196721,
       "serie": "550",
@@ -1277,8 +1385,28 @@
       }
     },
     {
-      "code": "550.1.2.5",
-      "designation": "Mise en place éléments de dalle préfabriqués",
+      "code": "550.1.2.6",
+      "designation": "Armatures passives",
+      "unite": "kg",
+      "prix_unitaire": 1219,
+      "serie": "550",
+      "serie_label": "550 - Ponts (Rivière Ngobo)",
+      "quantities": {
+        "S1": 0,
+        "S2": 14200,
+        "S3": 0,
+        "total": 14200
+      },
+      "montants": {
+        "S1": 0,
+        "S2": 17309800,
+        "S3": 0,
+        "total": 17309800
+      }
+    },
+    {
+      "code": "550.1.2.7",
+      "designation": "Mise en place des éléments de dalle préfabriqués",
       "unite": "m2",
       "prix_unitaire": 123683,
       "serie": "550",
@@ -1297,17 +1425,17 @@
       }
     },
     {
-      "code": "550.1.2.6",
+      "code": "550.1.3.1",
       "designation": "Appareils d'appui en élastomère fretté",
       "unite": "U",
-      "prix_unitaire": 0,
+      "prix_unitaire": 7694906,
       "serie": "550",
       "serie_label": "550 - Ponts (Rivière Ngobo)",
       "quantities": {
         "S1": 0,
-        "S2": 0,
+        "S2": 4,
         "S3": 0,
-        "total": 0
+        "total": 4
       },
       "montants": {
         "S1": 0,
@@ -1317,23 +1445,23 @@
       }
     },
     {
-      "code": "550.1.2.7",
-      "designation": "Pré-dalles béton armé",
+      "code": "550.1.3.2",
+      "designation": "Chape d'étanchéité sur dalle",
       "unite": "m2",
-      "prix_unitaire": 12191,
+      "prix_unitaire": 60105,
       "serie": "550",
       "serie_label": "550 - Ponts (Rivière Ngobo)",
       "quantities": {
         "S1": 0,
-        "S2": 1420,
+        "S2": 315,
         "S3": 0,
-        "total": 1420
+        "total": 315
       },
       "montants": {
         "S1": 0,
-        "S2": 17309800,
+        "S2": 18933075,
         "S3": 0,
-        "total": 17309800
+        "total": 18933075
       }
     },
     {
@@ -1378,7 +1506,7 @@
     },
     {
       "code": "550.1.3.5",
-      "designation": "Gargouilles pour descentes d'eau pluviale",
+      "designation": "Gargouille pour les descentes d'eau pluviale",
       "unite": "U",
       "prix_unitaire": 621358,
       "serie": "550",
@@ -1399,7 +1527,7 @@
     {
       "code": "550.1.3.6",
       "designation": "Trottoirs en béton armé",
-      "unite": "m2",
+      "unite": "m3",
       "prix_unitaire": 261728,
       "serie": "550",
       "serie_label": "550 - Ponts (Rivière Ngobo)",
@@ -1418,8 +1546,8 @@
     },
     {
       "code": "550.1.3.7",
-      "designation": "Corniches préfabriquées",
-      "unite": "ml",
+      "designation": "corniches préfabriquées",
+      "unite": "m2",
       "prix_unitaire": 644103,
       "serie": "550",
       "serie_label": "550 - Ponts (Rivière Ngobo)",
@@ -1458,8 +1586,8 @@
     },
     {
       "code": "550.1.4.1",
-      "designation": "Épreuve de l'ouvrage",
-      "unite": "Ft",
+      "designation": "Epreuve de l'ouvrage",
+      "unite": "Fft",
       "prix_unitaire": 8475397,
       "serie": "550",
       "serie_label": "550 - Ponts (Rivière Ngobo)",
@@ -1474,20 +1602,12 @@
         "S2": 8475397,
         "S3": 0,
         "total": 8475397
-      },
-      "sous_detail": {
-        "code": "550.1.4.1",
-        "category": "PONT - EPREUVES",
-        "description": "Épreuve de l'ouvrage (fascicule 61 CPC, rapport, contrôle décennal)",
-        "unit": "Forfait",
-        "prix_ht": 8475397,
-        "prix_lettres": "Huit Millions Quatre Cent Soixante Quinze Mille Trois Cent Quatre Vingt Dix Sept FCFA"
       }
     },
     {
       "code": "550.2.1",
       "designation": "Réparation et renforcement des ossatures de ponts",
-      "unite": "Ft",
+      "unite": "Fft",
       "prix_unitaire": 70023896,
       "serie": "550",
       "serie_label": "550 - Ponts (Rivière Ngobo)",
@@ -1495,110 +1615,98 @@
         "S1": 0,
         "S2": 0.5,
         "S3": 0.5,
-        "total": 1.0
+        "total": 1
       },
       "montants": {
         "S1": 0,
         "S2": 35011948,
         "S3": 35011948,
         "total": 70023896
-      },
-      "sous_detail": {
-        "code": "550.2.1",
-        "category": "PONT - ENTRETIEN/REPARATION",
-        "description": "Réparation et renforcement ossatures ponts (YAAK, YA'A, NKEGUE)",
-        "unit": "Forfait",
-        "prix_ht": 70023896,
-        "prix_lettres": "Soixante Dix Millions Vingt Trois Mille Huit Cent Quatre Vingt Seize FCFA"
       }
     },
     {
       "code": "550.2.2",
-      "designation": "Perrés maçonnés pour protection talus (ponts)",
+      "designation": "Perrés maçonnés pour protection talus",
       "unite": "m2",
       "prix_unitaire": 38372,
       "serie": "550",
       "serie_label": "550 - Ponts (Rivière Ngobo)",
       "quantities": {
         "S1": 0,
-        "S2": 360,
+        "S2": 240,
         "S3": 120,
-        "total": 480
+        "total": 360
       },
       "montants": {
         "S1": 0,
-        "S2": 13813920,
+        "S2": 9209280,
         "S3": 4604640,
-        "total": 18418560
+        "total": 13813920
+      }
+    },
+    {
+      "code": "550.2.3",
+      "designation": "Peinture anti-corrosive sur poutrelle tablier",
+      "unite": "m2",
+      "prix_unitaire": 32376,
+      "serie": "550",
+      "serie_label": "550 - Ponts (Rivière Ngobo)",
+      "quantities": {
+        "S1": 0,
+        "S2": 100,
+        "S3": 40,
+        "total": 140
       },
-      "sous_detail": {
-        "code": "550.2.2",
-        "category": "PONT - ENTRETIEN",
-        "description": "Perrés maçonnés pour protection de talus (moellons 25cm)",
-        "unit": "M2",
-        "prix_ht": 38372,
-        "prix_lettres": "Trente Huit Mille Trois Cent Soixante Douze FCFA"
+      "montants": {
+        "S1": 0,
+        "S2": 3237600,
+        "S3": 1295040,
+        "total": 4532640
       }
     },
     {
       "code": "610.1",
-      "designation": "Marquage longitudinal - axiale",
+      "designation": "Ligne blanche longitudinale - axiale",
       "unite": "ml",
-      "prix_unitaire": 1183,
+      "prix_unitaire": 799,
       "serie": "600",
       "serie_label": "600 - Signalisation et Équipements",
       "quantities": {
-        "S1": 163000,
-        "S2": 18100,
-        "S3": 57000,
-        "total": 238100
+        "S1": 9050,
+        "S2": 43950,
+        "S3": 28500,
+        "total": 81500
       },
       "montants": {
-        "S1": 192829000,
-        "S2": 21412300,
-        "S3": 67431000,
-        "total": 281672300
-      },
-      "sous_detail": {
-        "code": "610.1",
-        "category": "SIGNALISATION HORIZONTALE",
-        "description": "Ligne blanche longitudinale - axiale",
-        "unit": "ML",
-        "prix_ht": 799,
-        "prix_lettres": "Sept Cent Quatre Vingt Dix Neuf FCFA"
+        "S1": 7230950,
+        "S2": 35116050,
+        "S3": 22771500,
+        "total": 65118500
       }
     },
     {
       "code": "610.2",
-      "designation": "Marquage longitudinal - rive",
+      "designation": "Ligne blanche longitudinale - rive",
       "unite": "ml",
       "prix_unitaire": 1183,
       "serie": "600",
       "serie_label": "600 - Signalisation et Équipements",
       "quantities": {
-        "S1": 163000,
+        "S1": 18100,
         "S2": 87900,
         "S3": 57000,
-        "total": 307900
+        "total": 163000
       },
       "montants": {
-        "S1": 192829000,
+        "S1": 21412300,
         "S2": 103985700,
         "S3": 67431000,
-        "total": 364245700
-      },
-      "sous_detail": {
-        "code": "610.2",
-        "category": "SIGNALISATION HORIZONTALE",
-        "description": "Ligne blanche longitudinale - rive",
-        "unit": "ML",
-        "prix_ht": 1183,
-        "prix_lettres": "Mille Cent Quatre Vingt Trois FCFA"
+        "total": 192829000
       }
     },
     {
       "code": "610.3",
-      "designation": "Marquage au sol (flèches, passages, stop, priorités)",
+      "designation": "Marquage au sol spécifique (flèches, passages, stop, priorités ...)",
       "unite": "m2",
       "prix_unitaire": 6328,
       "serie": "600",
@@ -1607,138 +1715,158 @@
         "S1": 3168,
         "S2": 15383,
         "S3": 9975,
-        "total": 28526
+        "total": 28525
       },
       "montants": {
         "S1": 20047104,
         "S2": 97343624,
         "S3": 63121800,
-        "total": 180512528
+        "total": 180506200
+      }
+    },
+    {
+      "code": "620.1",
+      "designation": "Indicateur de type A, AB, B ou C",
+      "unite": "u",
+      "prix_unitaire": 249512,
+      "serie": "600",
+      "serie_label": "600 - Signalisation et Équipements",
+      "quantities": {
+        "S1": 36,
+        "S2": 176,
+        "S3": 114,
+        "total": 326
       },
-      "sous_detail": {
-        "code": "610.3",
-        "category": "SIGNALISATION HORIZONTALE",
-        "description": "Marquages au sol (flèches, passages, stop, priorités)",
-        "unit": "M2",
-        "prix_ht": 6328,
-        "prix_lettres": "Six Mille Trois Cent Vingt Huit FCFA"
+      "montants": {
+        "S1": 8982432,
+        "S2": 43914112,
+        "S3": 28444368,
+        "total": 81340912
+      }
+    },
+    {
+      "code": "620.2",
+      "designation": "directionnel de type M",
+      "unite": "u",
+      "prix_unitaire": 178479,
+      "serie": "600",
+      "serie_label": "600 - Signalisation et Équipements",
+      "quantities": {
+        "S1": 18,
+        "S2": 88,
+        "S3": 57,
+        "total": 163
+      },
+      "montants": {
+        "S1": 3212622,
+        "S2": 15706152,
+        "S3": 10173303,
+        "total": 29092077
+      }
+    },
+    {
+      "code": "620.3",
+      "designation": "directionnel de type D, E et EB",
+      "unite": "u",
+      "prix_unitaire": 247131,
+      "serie": "600",
+      "serie_label": "600 - Signalisation et Équipements",
+      "quantities": {
+        "S1": 27,
+        "S2": 132,
+        "S3": 86,
+        "total": 245
+      },
+      "montants": {
+        "S1": 6672537,
+        "S2": 32621292,
+        "S3": 21253266,
+        "total": 60547095
       }
     },
     {
       "code": "630.1",
       "designation": "Balise J11",
-      "unite": "U",
-      "prix_unitaire": 88434,
+      "unite": "u",
+      "prix_unitaire": 88382,
       "serie": "600",
       "serie_label": "600 - Signalisation et Équipements",
       "quantities": {
-        "S1": 82,
-        "S2": 0,
+        "S1": 9,
+        "S2": 44,
         "S3": 29,
-        "total": 111
+        "total": 82
       },
       "montants": {
-        "S1": 7247324,
-        "S2": 9795438,
+        "S1": 795438,
+        "S2": 3888808,
         "S3": 2563078,
-        "total": 19605840
-      },
-      "sous_detail": {
-        "code": "630.1",
-        "category": "BALISES",
-        "description": "Balise J1",
-        "unit": "U",
-        "prix_ht": 88382,
-        "prix_lettres": "Quatre Vingt Huit Mille Trois Cent Quatre Vingt Deux FCFA"
+        "total": 7247324
       }
     },
     {
       "code": "630.2",
-      "designation": "Panneau de signalisation",
-      "unite": "U",
-      "prix_unitaire": 0,
+      "designation": "Balise J14",
+      "unite": "u",
+      "prix_unitaire": 98251,
       "serie": "600",
       "serie_label": "600 - Signalisation et Équipements",
       "quantities": {
-        "S1": 0,
-        "S2": 0,
-        "S3": 0,
-        "total": 0
+        "S1": 6,
+        "S2": 29,
+        "S3": 19,
+        "total": 54
       },
       "montants": {
-        "S1": 0,
-        "S2": 14230634,
-        "S3": 0,
-        "total": 14230634
-      },
-      "sous_detail": {
-        "code": "630.2",
-        "category": "BALISES",
-        "description": "Balise J14",
-        "unit": "U",
-        "prix_ht": 98251,
-        "prix_lettres": "Quatre Vingt Dix Huit Mille Deux Cent Cinquante-Un FCFA"
+        "S1": 589506,
+        "S2": 2849279,
+        "S3": 1866769,
+        "total": 5305554
       }
     },
     {
       "code": "630.3",
-      "designation": "Panneau de signalisation directionnel",
-      "unite": "U",
+      "designation": "Balises J1",
+      "unite": "u",
       "prix_unitaire": 87918,
       "serie": "600",
       "serie_label": "600 - Signalisation et Équipements",
       "quantities": {
-        "S1": 0,
-        "S2": 18,
+        "S1": 18,
+        "S2": 88,
         "S3": 57,
-        "total": 75
+        "total": 163
       },
       "montants": {
-        "S1": 0,
-        "S2": 1582524,
-        "S3": 5011526,
-        "total": 6594050
-      },
-      "sous_detail": {
-        "code": "630.3",
-        "category": "BALISES",
-        "description": "Balise J1 (variante)",
-        "unit": "U",
-        "prix_ht": 87918,
-        "prix_lettres": "Quatre Vingt Sept Mille Neuf Cent Dix Huit FCFA"
+        "S1": 1582524,
+        "S2": 7736784,
+        "S3": 5011326,
+        "total": 14330634
       }
     },
     {
       "code": "640.1",
       "designation": "Glissière DBA",
       "unite": "ml",
-      "prix_unitaire": 83357,
+      "prix_unitaire": 83577,
       "serie": "600",
       "serie_label": "600 - Signalisation et Équipements",
       "quantities": {
-        "S1": 3865,
-        "S2": 1293,
+        "S1": 1293,
+        "S2": 1758,
         "S3": 814,
-        "total": 5972
+        "total": 3865
       },
       "montants": {
-        "S1": 323025105,
-        "S2": 108065061,
+        "S1": 108065061,
+        "S2": 146928366,
         "S3": 68031678,
-        "total": 499121844
-      },
-      "sous_detail": {
-        "code": "640.1",
-        "category": "GLISSIERES DE SECURITE",
-        "description": "Glissière DBA",
-        "unit": "ML",
-        "prix_ht": 83577,
-        "prix_lettres": "Quatre Vingt Trois Mille Cinq Cent Soixante Dix Sept FCFA"
+        "total": 323025105
       }
     },
     {
       "code": "640.2",
-      "designation": "Glissière en béton type GBA",
+      "designation": "Glissière GBA",
       "unite": "ml",
       "prix_unitaire": 42843,
       "serie": "600",
@@ -1747,21 +1875,13 @@
         "S1": 823,
         "S2": 1465,
         "S3": 950,
-        "total": 3238
+        "total": 3237.73
       },
       "montants": {
-        "S1": 138713950,
+        "S1": 35248105,
         "S2": 62764995,
         "S3": 40700850,
-        "total": 242179795
-      },
-      "sous_detail": {
-        "code": "640.2",
-        "category": "GLISSIERES DE SECURITE",
-        "description": "Glissière GBA",
-        "unit": "ML",
-        "prix_ht": 42843,
-        "prix_lettres": "Quarante Deux Mille Huit Cent Quarante Trois FCFA"
+        "total": 138713950
       }
     },
     {
@@ -1772,52 +1892,36 @@
       "serie": "600",
       "serie_label": "600 - Signalisation et Équipements",
       "quantities": {
-        "S1": 2845.95,
-        "S2": 1006,
+        "S1": 1006,
+        "S2": 1221,
         "S3": 620,
-        "total": 4471.95
+        "total": 2845.25
       },
       "montants": {
-        "S1": 157500565,
-        "S2": 55646381,
+        "S1": 55646381,
+        "S2": 67569815,
         "S3": 34284369,
-        "total": 247431315
-      },
-      "sous_detail": {
-        "code": "640.3",
-        "category": "GLISSIERES DE SECURITE",
-        "description": "Glissière GS2 et GS4",
-        "unit": "ML",
-        "prix_ht": 55342,
-        "prix_lettres": "Cinquante Cinq Mille Trois Cent Quarante Deux FCFA"
+        "total": 157500565
       }
     },
     {
       "code": "650.2",
-      "designation": "Ouverture/fermeture tranchées et câbles",
-      "unite": "ml",
+      "designation": "Ouverture, fermeture tranchées et mise en place câbles y compris toutes sujétions",
+      "unite": "ML",
       "prix_unitaire": 16880,
       "serie": "600",
       "serie_label": "600 - Signalisation et Équipements",
       "quantities": {
-        "S1": 10300,
-        "S2": 9050,
-        "S3": 1250,
-        "total": 20600
+        "S1": 9050,
+        "S2": 1250,
+        "S3": 0,
+        "total": 10300
       },
       "montants": {
-        "S1": 173864000,
-        "S2": 152764000,
-        "S3": 21100000,
-        "total": 347728000
-      },
-      "sous_detail": {
-        "code": "650.2",
-        "category": "ECLAIRAGE PUBLIC",
-        "description": "Ouverture/fermeture tranchées et pose câbles",
-        "unit": "ML",
-        "prix_ht": 16880,
-        "prix_lettres": "Seize Mille Huit Cent Quatre Vingts FCFA"
+        "S1": 152764000,
+        "S2": 21100000,
+        "S3": 0,
+        "total": 173864000
       }
     },
     {
@@ -1828,16 +1932,16 @@
       "serie": "600",
       "serie_label": "600 - Signalisation et Équipements",
       "quantities": {
-        "S1": 6,
-        "S2": 4,
-        "S3": 2,
-        "total": 12
+        "S1": 4,
+        "S2": 2,
+        "S3": 0,
+        "total": 6
       },
       "montants": {
-        "S1": 17783376,
-        "S2": 11855584,
-        "S3": 5927792,
-        "total": 35566752
+        "S1": 11855584,
+        "S2": 5927792,
+        "S3": 0,
+        "total": 17783376
       }
     },
     {
@@ -1848,16 +1952,16 @@
       "serie": "600",
       "serie_label": "600 - Signalisation et Équipements",
       "quantities": {
-        "S1": 15,
-        "S2": 10,
-        "S3": 5,
-        "total": 30
+        "S1": 10,
+        "S2": 5,
+        "S3": 0,
+        "total": 15
       },
       "montants": {
-        "S1": 11383440,
-        "S2": 7588960,
-        "S3": 3794480,
-        "total": 22766880
+        "S1": 7588960,
+        "S2": 3794480,
+        "S3": 0,
+        "total": 11383440
       }
     },
     {
@@ -1868,114 +1972,142 @@
       "serie": "600",
       "serie_label": "600 - Signalisation et Équipements",
       "quantities": {
-        "S1": 103,
-        "S2": 91,
-        "S3": 12,
-        "total": 206
+        "S1": 91,
+        "S2": 12,
+        "S3": 0,
+        "total": 103
       },
       "montants": {
-        "S1": 93307288,
-        "S2": 82436536,
-        "S3": 10870752,
-        "total": 186614576
+        "S1": 82436536,
+        "S2": 10870752,
+        "S3": 0,
+        "total": 93307288
+      }
+    },
+    {
+      "code": "650.6",
+      "designation": "Luminaires type HESTLA",
+      "unite": "U",
+      "prix_unitaire": 163546,
+      "serie": "600",
+      "serie_label": "600 - Signalisation et Équipements",
+      "quantities": {
+        "S1": 192,
+        "S2": 29,
+        "S3": 0,
+        "total": 221
       },
-      "sous_detail": {
-        "code": "650.5",
-        "category": "ECLAIRAGE PUBLIC",
-        "description": "Candélabres 10m simple",
-        "unit": "U",
-        "prix_ht": 758896,
-        "prix_lettres": "Sept Cent Cinquante Huit Mille Huit Cent Quatre Vingt Seize FCFA"
+      "montants": {
+        "S1": 31400832,
+        "S2": 4742834,
+        "S3": 0,
+        "total": 36143666
       }
     },
     {
       "code": "660.1",
-      "designation": "Aménagement de ralentisseurs de vitesse",
+      "designation": "Bornes pentakilométriques",
       "unite": "U",
-      "prix_unitaire": 2929967,
+      "prix_unitaire": 122151,
       "serie": "600",
       "serie_label": "600 - Signalisation et Équipements",
       "quantities": {
-        "S1": 23,
-        "S2": 5,
-        "S3": 8,
-        "total": 36
+        "S1": 18,
+        "S2": 88,
+        "S3": 57,
+        "total": 163
       },
       "montants": {
-        "S1": 67389239,
-        "S2": 14638965,
-        "S3": 23422344,
-        "total": 105450548
+        "S1": 2198718,
+        "S2": 10749288,
+        "S3": 6962607,
+        "total": 19910613
+      }
+    },
+    {
+      "code": "660.2",
+      "designation": "Aménagement de ralentisseur de vitesse",
+      "unite": "u",
+      "prix_unitaire": 2927793,
+      "serie": "600",
+      "serie_label": "600 - Signalisation et Équipements",
+      "quantities": {
+        "S1": 5,
+        "S2": 10,
+        "S3": 8,
+        "total": 23
       },
-      "sous_detail": {
-        "code": "660.1",
-        "category": "EQUIPEMENTS",
-        "description": "Bornes penta-kilométriques",
-        "unit": "U",
-        "prix_ht": 122151,
-        "prix_lettres": "Cent Vingt Deux Mille Cent Cinquante-Un FCFA"
+      "montants": {
+        "S1": 14638965,
+        "S2": 29277930,
+        "S3": 23422344,
+        "total": 67339239
       }
     },
     {
       "code": "660.3",
       "designation": "Provision pour déplacement des réseaux",
       "unite": "Prov",
-      "prix_unitaire": 840873,
+      "prix_unitaire": 2548100,
       "serie": "600",
       "serie_label": "600 - Signalisation et Équipements",
       "quantities": {
-        "S1": 1,
-        "S2": 1,
-        "S3": 0,
-        "total": 2
+        "S1": 0.34,
+        "S2": 0.33,
+        "S3": 0.33,
+        "total": 1
       },
       "montants": {
-        "S1": 840873,
+        "S1": 866354,
         "S2": 840873,
+        "S3": 840873,
+        "total": 2548100
+      }
+    },
+    {
+      "code": "660.6",
+      "designation": "Aménagement d'une station de pesage",
+      "unite": "Prov",
+      "prix_unitaire": 600000000,
+      "serie": "600",
+      "serie_label": "600 - Signalisation et Équipements",
+      "quantities": {
+        "S1": 0,
+        "S2": 1,
         "S3": 0,
-        "total": 1681746
+        "total": 1
       },
-      "sous_detail": {
-        "code": "660.3",
-        "category": "EQUIPEMENTS",
-        "description": "Provision pour déplacement des réseaux (ENEO, CAMWATER, CAMTEL)",
-        "unit": "Provision",
-        "prix_ht": 2548100,
-        "prix_lettres": "Deux Millions Cinq Cent Quarante Huit Mille Cent FCFA"
+      "montants": {
+        "S1": 0,
+        "S2": 600000000,
+        "S3": 0,
+        "total": 600000000
       }
     },
     {
       "code": "660.7",
-      "designation": "Aménagement d'un poste de péage",
+      "designation": "Aménagement d'un poste de peage",
       "unite": "Prov",
       "prix_unitaire": 25000000,
       "serie": "600",
       "serie_label": "600 - Signalisation et Équipements",
       "quantities": {
-        "S1": 1,
-        "S2": 0,
+        "S1": 0,
+        "S2": 1,
         "S3": 0,
         "total": 1
       },
       "montants": {
-        "S1": 25000000,
-        "S2": 0,
+        "S1": 0,
+        "S2": 25000000,
         "S3": 0,
         "total": 25000000
-      },
-      "sous_detail": {
-        "code": "660.7",
-        "category": "EQUIPEMENTS",
-        "description": "Aménagement poste de péage",
-        "unit": "Provision",
-        "prix_ht": 25000000,
-        "prix_lettres": "Vingt Cinq Millions FCFA"
       }
     },
     {
       "code": "700.1",
       "designation": "Provision pour étude d'impact environnemental et social",
-      "unite": "Prov",
+      "unite": "prov",
       "prix_unitaire": 45000000,
       "serie": "700",
       "serie_label": "700 - Divers",
@@ -1983,21 +2115,33 @@
         "S1": 0.34,
         "S2": 0.33,
         "S3": 0.33,
-        "total": 1.0
+        "total": 1
       },
       "montants": {
         "S1": 15000000,
         "S2": 15000000,
         "S3": 15000000,
         "total": 45000000
+      }
+    },
+    {
+      "code": "700.2",
+      "designation": "Provision pour projets annexes",
+      "unite": "prov",
+      "prix_unitaire": 1750000000,
+      "serie": "700",
+      "serie_label": "700 - Divers",
+      "quantities": {
+        "S1": 0.3,
+        "S2": 0.4,
+        "S3": 0.3,
+        "total": 1
       },
-      "sous_detail": {
-        "code": "700.1",
-        "category": "DIVERS",
-        "description": "Provision pour projets connexes (routes secondaires, ponts, écoles, cases santé)",
-        "unit": "Provision",
-        "prix_ht": 1750000000,
-        "prix_lettres": "Un Milliard Sept Cent Cinquante Millions FCFA"
+      "montants": {
+        "S1": 525000000,
+        "S2": 700000000,
+        "S3": 525000000,
+        "total": 1750000000
       }
     }
   ]
