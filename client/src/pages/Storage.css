@@ -220,30 +220,11 @@
     flex-wrap: wrap;
 }
 
-.btn-success {
-    background-color: var(--success-color);
-    color: white;
+.cement-actions .btn {
     flex: 1;
-    padding: 1rem;
-    font-size: 1.1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    min-width: 200px;
-}
-
-.btn-danger {
-    background-color: var(--danger-color);
-    color: white;
-    flex: 1;
-    padding: 1rem;
-    font-size: 1.1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    min-width: 200px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    min-width: 180px;
 }
 
 .transaction-history h4 {
@@ -395,12 +376,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s;
+    transition: all var(--transition-fast);
 }
 
 .btn-icon:hover {
-    transform: scale(1.1);
-    background: var(--accent-color);
+    background: var(--primary-lighter);
 }
 
 .btn-delete-trans {
@@ -476,80 +456,10 @@
     border-bottom-right-radius: var(--radius-md);
 }
 
-.text-strong {
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: 1rem;
-}
-
-.text-muted {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-}
-
-/* Modern Progress Bar */
-.progress-container {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.progress-track {
-    background-color: #f1f5f9;
-    height: 6px;
-    border-radius: 99px;
-    overflow: hidden;
-    width: 100%;
-}
-
-.progress-fill {
-    height: 100%;
-    border-radius: 99px;
-    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.progress-stats {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    font-weight: 500;
-}
-
-.badge-time {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.35rem 1rem;
-    border-radius: 99px;
-    background-color: #f1f5f9;
-    color: var(--text-secondary);
-    font-size: 0.85rem;
-    font-weight: 600;
-    white-space: nowrap;
-    /* Prevent wrapping */
-    min-width: 80px;
-    /* Ensure uniform look */
-}
-
-.badge-time.done {
-    background-color: #dcfce7;
-    color: #15803d;
-}
-
-.badge-time.infinite {
-    background-color: #f3f4f6;
-    color: #6b7280;
-}
-
+/* Production table action visibility */
 .action-group {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    justify-content: flex-end;
-    /* Align actions to the right */
     opacity: 0.6;
-    transition: opacity 0.2s;
+    transition: opacity var(--transition-fast);
 }
 
 .production-table tbody tr:hover .action-group {
@@ -557,26 +467,10 @@
 }
 
 .production-table td {
-    padding: 1.25rem 1rem;
-    /* Slightly reduced horizontal padding */
+    padding: 1rem;
     vertical-align: middle;
     border: none;
     background: white;
-}
-
-.badge {
-    padding: 0.25rem 0.75rem;
-    border-radius: 99px;
-    /* Fully rounded for modern look */
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.025em;
-    text-transform: uppercase;
-}
-
-.badge-planned {
-    background-color: #e0f2fe;
-    color: #0369a1;
 }
 
 .btn-icon-action {

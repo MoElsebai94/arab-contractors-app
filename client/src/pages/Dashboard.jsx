@@ -4,6 +4,7 @@ import { Users, Briefcase, Factory, AlertTriangle, CheckCircle, Clock, Activity,
 import { useNavigate } from 'react-router-dom';
 import LoadingScreen from '../components/LoadingScreen';
 import { useLanguage } from '../context/LanguageContext';
+import './Dashboard.css';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -276,7 +277,7 @@ const Dashboard = () => {
                     <div className="card list-card">
                         <div className="card-header-row">
                             <h3 className="card-title">
-                                <UserCheck size={20} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
+                                <UserCheck size={18} />
                                 {t('employeeWorkload') || 'Employee Workload'}
                             </h3>
                             <button className="btn-link" onClick={() => navigate('/employees')}>{t('viewAll')} <ArrowRight size={16} /></button>
@@ -284,21 +285,14 @@ const Dashboard = () => {
                         <div className="list-content">
                             {employeeWorkload.map((emp, idx) => (
                                 <div key={idx} className="list-item">
-                                    <div className="list-item-icon" style={{
-                                        background: emp.active_projects >= 3 ? 'var(--danger-light)' : 'var(--warning-light)'
-                                    }}>
-                                        <Users size={18} style={{
-                                            color: emp.active_projects >= 3 ? 'var(--danger-color)' : 'var(--warning-color)'
-                                        }} />
+                                    <div className={`list-item-icon ${emp.active_projects >= 3 ? 'bg-red-light' : 'bg-orange-light'}`}>
+                                        <Users size={18} className={emp.active_projects >= 3 ? 'text-red' : 'text-orange'} />
                                     </div>
                                     <div className="list-item-details">
                                         <p className="item-title">{emp.name}</p>
                                         <p className="item-subtitle">{emp.role || 'No Role'}</p>
                                     </div>
-                                    <span style={{
-                                        fontWeight: 600,
-                                        color: emp.active_projects >= 3 ? 'var(--danger-color)' : 'var(--warning-color)'
-                                    }}>
+                                    <span className={`font-bold ${emp.active_projects >= 3 ? 'text-red' : 'text-orange'}`}>
                                         {emp.active_projects} {t('projects') || 'projects'}
                                     </span>
                                 </div>
@@ -308,224 +302,6 @@ const Dashboard = () => {
                 </div>
             )}
 
-            <style>{`
-                .dashboard-container {
-                    padding-bottom: 2rem;
-                }
-                .stats-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-                    gap: 1.5rem;
-                    margin-bottom: 2rem;
-                }
-                .stat-card {
-                    background: white;
-                    padding: 1.5rem;
-                    border-radius: var(--radius-lg);
-                    border: 1px solid var(--border-color);
-                    box-shadow: var(--shadow-sm);
-                    display: flex;
-                    align-items: center;
-                    gap: 1rem;
-                    cursor: pointer;
-                    transition: transform 0.2s, box-shadow 0.2s;
-                }
-                .stat-card:hover {
-                    transform: translateY(-2px);
-                    box-shadow: var(--shadow-md);
-                }
-                .stat-icon-wrapper {
-                    width: 48px;
-                    height: 48px;
-                    border-radius: 12px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-                .stat-label {
-                    color: var(--text-secondary);
-                    font-size: 0.875rem;
-                    font-weight: 500;
-                }
-                .stat-value {
-                    font-size: 1.5rem;
-                    font-weight: 700;
-                    color: var(--text-primary);
-                    line-height: 1.2;
-                }
-
-                .charts-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-                    gap: 1.5rem;
-                    margin-bottom: 2rem;
-                }
-                .chart-card {
-                    min-height: 300px;
-                    display: flex;
-                    flex-direction: column;
-                }
-                
-                /* Pie Chart */
-                .pie-chart-container {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 2rem;
-                    flex: 1;
-                }
-                .pie-chart {
-                    width: 160px;
-                    height: 160px;
-                    border-radius: 50%;
-                }
-                .pie-legend {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 0.75rem;
-                }
-                .legend-item {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.5rem;
-                    font-size: 0.9rem;
-                }
-                .legend-dot {
-                    width: 10px;
-                    height: 10px;
-                    border-radius: 50%;
-                }
-                .legend-value {
-                    font-weight: 600;
-                    margin-inline-start: auto;
-                }
-
-                /* Bar Chart */
-                .bar-chart {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 1rem;
-                    padding-top: 1rem;
-                }
-                .bar-row {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 0.25rem;
-                }
-                .bar-label {
-                    display: flex;
-                    justify-content: space-between;
-                    font-size: 0.875rem;
-                    font-weight: 500;
-                }
-                .bar-bg {
-                    height: 8px;
-                    background: var(--bg-secondary);
-                    border-radius: 4px;
-                    overflow: hidden;
-                }
-                .bar-fill {
-                    height: 100%;
-                    background: var(--primary-color);
-                    border-radius: 4px;
-                }
-
-                .lists-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-                    gap: 1.5rem;
-                }
-                .list-card {
-                    display: flex;
-                    flex-direction: column;
-                }
-                .card-header-row {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 1rem;
-                }
-                .btn-link {
-                    background: none;
-                    border: none;
-                    color: var(--primary-color);
-                    font-size: 0.875rem;
-                    font-weight: 500;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    gap: 0.25rem;
-                }
-                .list-content {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 1rem;
-                }
-                .list-item {
-                    display: flex;
-                    align-items: center;
-                    gap: 1rem;
-                    padding: 0.75rem;
-                    border-radius: var(--radius-md);
-                    background: var(--bg-secondary);
-                    transition: background 0.2s;
-                }
-                .list-item:hover {
-                    background: #f1f5f9;
-                }
-                .list-item-icon {
-                    width: 36px;
-                    height: 36px;
-                    border-radius: 8px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    background: white;
-                }
-                .list-item-details {
-                    flex: 1;
-                }
-                .item-title {
-                    font-weight: 600;
-                    font-size: 0.9rem;
-                    color: var(--text-primary);
-                }
-                .item-subtitle {
-                    font-size: 0.8rem;
-                    color: var(--text-secondary);
-                }
-                .empty-state {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 2rem;
-                    color: var(--text-secondary);
-                    text-align: center;
-                }
-
-                /* Utility Colors */
-                .bg-blue-light { background: #dbeafe; }
-                .text-blue { color: #2563eb; }
-                .bg-purple-light { background: #f3e8ff; }
-                .text-purple { color: #9333ea; }
-                .bg-green-light { background: #dcfce7; }
-                .text-green { color: #16a34a; }
-                .bg-orange-light { background: #ffedd5; }
-                .text-orange { color: #ea580c; }
-                .bg-red-light { background: #fee2e2; }
-                .text-red { color: #dc2626; }
-
-                @media (max-width: 768px) {
-                    .charts-grid, .lists-grid {
-                        grid-template-columns: 1fr;
-                    }
-                    .pie-chart-container {
-                        flex-direction: column;
-                        gap: 1rem;
-                    }
-                }
-            `}</style>
         </div>
     );
 };
